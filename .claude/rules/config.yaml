@@ -24,7 +24,6 @@ commands:
       - implement
       - tdd-enforcement
       - git-operations
-      - python-tooling
       - coding-standards
       - project-conventions
       - error-handling
@@ -40,11 +39,9 @@ commands:
     inject_skills: true
     rules:
       - verify
-      - git-operations
-      - python-tooling
-      - code-review
-      - execution-verification
       - testing-strategies
+      - git-operations
+      - execution-verification
       - coding-standards
       - error-handling
       - validation
@@ -58,7 +55,6 @@ commands:
     rules:
       - quick
       - git-operations
-      - python-tooling
       - coding-standards
       - project-conventions
       - error-handling

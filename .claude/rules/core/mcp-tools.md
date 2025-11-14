@@ -20,9 +20,6 @@
 - `getDiagnostics()` - Check errors/warnings
 - `executeCode(code)` - Run code in Jupyter kernel (notebooks only)
 
-**Database** (`mcp__dbhub-postgres__execute_sql`)
-- Execute PostgreSQL queries
-
 ### Documentation & Research
 
 **Ref** (`mcp__Ref__`)

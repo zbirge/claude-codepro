@@ -51,7 +51,6 @@
       "mcp__cipher__ask_cipher",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__dbhub-postgres__execute_sql",
       "mcp__mcp-funnel__load_toolset",
       "SlashCommand(/remember:*)",
       "SlashCommand(/implement:*)",
@@ -67,7 +66,6 @@
     "context7",
     "claude-context",
     "cipher",
-    "dbhub-postgres",
     "mcp-funnel"
   ],
   "hooks": {
@@ -77,11 +75,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/workspaces/claude-codepro/.claude/hooks/file_checker_qlty.sh"
+            "command": ".claude/hooks/file_checker_qlty.sh"
           },
           {
             "type": "command",
-            "command": "/workspaces/claude-codepro/.claude/hooks/file_checker_python.sh"
+            "command": ".claude/hooks/file_checker_python.sh"
           }
         ]
       }

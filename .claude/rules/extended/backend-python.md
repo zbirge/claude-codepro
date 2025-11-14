@@ -1,6 +1,26 @@
-## Python Tooling Standards
+---
+name: Backend Python
+description: Apply Python tooling standards including uv package management, pytest testing, ruff/mypy code quality, one-line docstrings, and self-documenting code practices. Use this skill when working with Python backend code, managing dependencies, running tests, or ensuring code quality. Apply when installing packages, writing tests, formatting code, type checking, adding docstrings, organizing imports, or deciding whether to create new files vs. extending existing ones. Use for any Python development task requiring adherence to tooling standards and best practices.
+---
 
-**Python:** `uv` not pip | One-line docstrings | No inline comments | Edit > Create
+# Backend Python
+
+## When to use this skill
+
+- When installing or managing Python packages and dependencies
+- When writing or running unit tests, integration tests, or test suites
+- When formatting Python code or fixing linting issues
+- When adding type hints or running type checking
+- When writing function/method docstrings
+- When organizing imports in Python files
+- When deciding whether to create a new Python file or extend existing ones
+- When setting up code quality checks (linting, formatting, type checking)
+- When running coverage reports or analyzing test results
+- When ensuring code follows Python best practices and tooling standards
+
+This Skill provides Claude Code with specific guidance on how to adhere to Python tooling standards and best practices for backend development.
+
+## Instructions
 
 ### Package Management - uv Only
 
@@ -29,13 +49,18 @@ uv run pytest --cov=src --cov-report=term-missing  # With coverage
 
 **Ruff (Linting & Formatting):**
 ```bash
-uv run ruff check . --fix      # Auto-fix issues
-uv run ruff format .           # Format all code
+ruff check . --fix      # Auto-fix issues
+ruff format .           # Format all code
 ```
 
 **Mypy (Type Checking):**
 ```bash
-uv run mypy src --strict       # Strict type checking
+mypy src --strict       # Strict type checking
+```
+
+**Basedpyright (Alternative Type Checker):**
+```bash
+basedpyright src        # Type checking with basedpyright
 ```
 
 ### Docstring Style

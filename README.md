@@ -16,12 +16,13 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 
 #### 🆕 What's New in v2.1.0
 
+- **One-Line Installation** - Install into any existing project with a single curl command
 - **Modular Rules System** - Configurable rules builder system for Slash Commands and Skills
 - **`/quick` Command** - Alternative to spec-driven workflow for fast fixes and refactoring
 
 ---
 
-#### [⭐ Star this repo](https://github.com/maxritter/claude-codepro) • [📦 Releases](https://github.com/maxritter/claude-codepro/releases) • [🎓 Join the Academy](https://www.claude-code.pro)
+#### [⭐ Star this repo](https://github.com/maxritter/claude-codepro) • [🎓 Join the Academy](https://www.claude-code.pro) • [📦 Releases](https://github.com/maxritter/claude-codepro/releases)
 
 </div>
 
@@ -40,7 +41,7 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 - `/plan` - Based on your input asks the right questions → Detailed spec with exact code (Opus 4.1)
 - `/implement` - Execute spec with mandatory TDD → Auto-manages context when full (Sonnet 4.5)
 - `/remember` - Stores learnings in cross-session memory → Continue after /clear (Sonnet 4.5)
-- `/verify` - E2E spec verification with CodeRabbit AI review → All tests, quality, security (Sonnet 4.5)
+- `/verify` - End-to-end spec verification → All tests, quality, security (Sonnet 4.5)
 
 ### 💡 Modular Rules System with Auto-Generated Commands & Skills
 - **Rules Builder** - Automatically assembles commands and skills from markdown rules on every `cc` startup
@@ -52,20 +53,20 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 ### 🔌 Enhanced Context and Capabilities via MCP Servers
 - **Cipher & Claude Context** - Cross-session memory and semantic code search for optimal context
 - **Context7 & Ref** - Up-to-date library documentation with limited context blur
-- **DBHub & FireCrawl** - Database access and web scraping for dynamic data retrieval
+- **FireCrawl** - Web scraping and search for dynamic data retrieval in MarkDown format
 - **MCP Funnel** - Allows to plug-in more MCP servers as needed without wasting context
 
 ### 🛠️ Testing and Quality via Automated Tool Installation
-- **CodeRabbit** - AI-powered code review for quality and security
+- **Post-Edit Hooks** - Automated formatting and code checking after every edit
 - **Qlty** - Automated code quality hooks for all programming languages
+- **uv, ruff, mypy, basedpyright** - Python linter, formatter, and type checker (optional)
 - **Newman** - API end-to-end testing with Postman collections
-- **uv, ruff, mypy, basedpyright** - Python linter, formatter, and type checker
 
-### 🏗️ Automated Dev Container Setup (VS Code / Cursor / Windsurf)
-- **Integrated Features** - Zsh, Node.js, Docker-in-Docker, uv, ruff, basedpyright, git, fzf
-- **IDE Extensions** - Python, Docker, SQL, testing, formatting, and development tools
-- **CLI Tools** - qlty, Claude Code, Statusline, dotenvx, CodeRabbit, Cipher, Newman
-- **Local Database** - Local PostgreSQL instance on port 5433 for development and testing
+### 🏗️ One-Command Installation
+- **Automated Setup Script** - Installs and configures everything in one command
+- **Global Tools** - Python tools, qlty, Claude Code, Cipher, Newman installed globally
+- **Shell Integration** - Auto-configures bash, zsh, and fish with `cc` alias
+- **IDE Compatible** - Works with VS Code, Cursor, Windsurf, or any terminal
 
 ---
 
@@ -73,31 +74,54 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 
 ### 📋 Prerequisites
 
-- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** or **[OrbStack](https://orbstack.dev/download)**
-- **[VS Code](https://code.visualstudio.com/)** or **[Cursor](https://cursor.com/)** or **[Windsurf](https://windsurf.dev/)**
-- **[Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)**
-- **Optional**: **[Warp](https://www.warp.dev/)** for the best terminal experience
+- **Linux/macOS/WSL** - Shell environment required
+- **Node.js & npm** - For MCP servers and tooling
 
 ### 📥 Installation
 
-1. Clone this repository:
-```bash
-git clone https://github.com/maxritter/claude-codepro.git
-```
-2. Copy `.env.example` to `.env` and add your credentials and API keys
-```bash
-cp .env.example .env
-vim .env
-```
-3. Open folder in VS Code, click on the button on the bottom-left: `Reopen in Container` or open the command pallette via `Ctrl + Shift + P` and then use `> Dev Containers: Reopen in Container`
-4. Wait for automatic build to finish, this can take a couple of minutes (feel free to watch the logs in `Terminal`)
-<img src="docs/img/ide-setup-finish.png" alt="Setup finish Screenshot" width="600">
+Run this one-liner in any existing project directory:
 
-5. Run `cr` to finish CodeRabbit setup, and `cc` (which is an alias we created) in the Terminal to finish the CC setup
 ```bash
-cr # coderabbit cmd line tool and setup. After sign in close with CTRL + C
-cc # alias to spawn claude code with loaded environment variables
+curl -sSL https://raw.githubusercontent.com/maxritter/claude-codepro/main/scripts/install.sh | bash
 ```
+
+**Installation steps:**
+
+1. **Optional Python Support** - Choose whether to install advanced Python features
+   - Answer `y` to install: uv, ruff, mypy, basedpyright, and Python quality hooks
+   - Answer `n` for language-agnostic setup (Node.js, Go, Rust, etc.)
+
+2. **Claude CodePro Files** - Downloads configuration and rules
+   - `.claude/` - Commands, skills, hooks, and settings
+   - `.cipher/` - Persistent memory configuration
+   - `.qlty/` - Code quality configuration
+   - `.mcp.json` & `.mcp-funnel.json` - MCP server configuration
+
+3. **API Keys Setup** - Interactive wizard guides you through:
+   - Zilliz Cloud (vector DB for memory and semantic search)
+   - OpenAI API (for memory LLM calls)
+   - Context7 (library documentation)
+   - Ref (documentation search)
+   - Firecrawl (web scraping)
+
+4. **Dependencies Installation** - Automatically installs:
+   - **Core** (always): Claude Code CLI, qlty, Cipher, Newman, dotenvx, Statusline
+   - **Python** (optional): uv, ruff, mypy, basedpyright
+
+5. **Shell Configuration** - Adds `cc` alias to bash, zsh, and fish
+
+6. **Build Commands & Skills** - Generates all slash commands and skills from rules
+
+**After installation:**
+
+1. Reload your shell: `source ~/.bashrc` (or `~/.zshrc`)
+2. Run: `cc`
+3. Configure with `/config`:
+   - Set 'Auto-connect to IDE' = true
+   - Set 'Auto-compact' = false
+4. Verify setup:
+   - `/ide` - Connect to VS Code
+   - `/mcp` - Check MCP servers are online
 
 ---
 
@@ -105,7 +129,7 @@ cc # alias to spawn claude code with loaded environment variables
 
 ### ⚙️ Configuration
 
-1. Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
+1. Open Claude Code in the IDE Terminal, Extension or an external Terminal with the `cc` command
 
 2. In CC, run `/config` to set `Auto-connect to IDE=true` and set `Auto-compact=false` for best experience
 <img src="docs/img/ide-setup-config.png" alt="Setup config Screenshot" width="600">
@@ -115,9 +139,6 @@ cc # alias to spawn claude code with loaded environment variables
 
 4. In CC, run `/context` to verify context looks similar to this screenshot with less than 20% used
 <img src="docs/img/ide-setup-context.png" alt="Setup context Screenshot" width="600">
-
-5. In VS Code, click `START` in the lower bar of the IDE to start a split terminal and monitor CC usage with `/usage`
-<img src="docs/img/ide-setup-start.png" alt="Start command Screenshot" width="600">
 
 ### 👣 First Steps
 
@@ -129,7 +150,7 @@ cc # alias to spawn claude code with loaded environment variables
 - Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
 - Use `/implement` to execute the spec with automatic TDD, best practices and context management
 - When context fills, `/remember` automatically updates your plan and stores learnings
-- After spec completion, run `/verify` to run CodeRabbit AI review, all tests, and quality checks
+- After spec completion, run `/verify` to run end-to-end review, all tests, and quality checks
 
 ### 🎯 Rules Builder
 The system uses a modular rules-based architecture that automatically generates slash commands and skills:
@@ -138,7 +159,6 @@ The system uses a modular rules-based architecture that automatically generates 
 - `.claude/rules/workflow/` - Command-specific behavior (plan.md, implement.md, verify.md, quick.md, remember.md)
 - `.claude/rules/extended/` - Domain-specific rules auto-converted to individual skills
 - `.claude/rules/config.yaml` - Defines which rules are included in which commands
-- `.claude/rules/builder.py` - Assembles markdown rules into commands and skills
 
 **Auto-Rebuild:** Commands and skills are automatically regenerated on every `cc` startup, making customization seamless.
 
@@ -146,13 +166,14 @@ The system uses a modular rules-based architecture that automatically generates 
 
 **Compared to Other Spec-Driven Frameworks (SpecKit, AgentOS, OpenSpec):**
 
+- 📦 **One-Line Installation** - No containers, no complex setup, just one curl command
+- 🤓 **Language Agnostic** - Works with Python, Node.js, Go, Rust, or any language
 - 💾 **Persistent Memory** - Cross-session memory maintains knowledge between resets
 - ⚡ **Token-Optimized** - No tokens wasted during too complex planning, just works
 - ✅ **Production-Grade** - Actively used in client and enterprise projects
 - 📝 **Enforced TDD** - Code written before tests gets deleted automatically
 - 💯 **Real Verification** - Must show actual outputs based on tests, not assumptions
 - 🛠️ **Complete Ecosystem** - Skills, MCP servers, testing tools are integrated and configured
-- 📦 **Works Immediately** - Pre-configured automated setup with everything you need
 
 ---
 
@@ -181,13 +202,7 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 
 ## 🙏 Acknowledgments
 
-- **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
-- **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
-- **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
-- **[python/mypy](https://github.com/python/mypy)** - Static type checker for Python
-- **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Environment variable management
-- **[postmanlabs/newman](https://github.com/postmanlabs/newman)** - End-to-End API testing
-- **[pytest-dev/pytest](https://github.com/pytest-dev/pytest)** - Python testing framework
+- **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Automatic .env loading for Claude Code
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 - **[obra/superpowers](https://github.com/obra/superpowers)** - CC Skills inspiration
 - **[buildermethods/agent-os](https://github.com/buildermethods/agent-os)** - CC Spec-Driven inspiration
@@ -197,11 +212,15 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 - **[upstash/context7](https://github.com/upstash/context7)** - MCP Library documentation
 - **[ref-tools/ref-tools-mcp](https://github.com/ref-tools/ref-tools-mcp)** - MCP Documentation search
 - **[mendableai/firecrawl-mcp](https://github.com/mendableai/firecrawl)** - MCP Web scraping
-- **[bytebase/dbhub](https://github.com/bytebase/dbhub)** - MCP PostgreSQL connectivity
 - **[chris-schra/mcp-funnel](https://github.com/chris-schra/mcp-funnel)** - MCP Tool filtering
+- **[postmanlabs/newman](https://github.com/postmanlabs/newman)** - End-to-End API testing
+- **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
+- **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
+- **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
+- **[python/mypy](https://github.com/python/mypy)** - Static type checker for Python
 
 ---
 
-Made with ❤️ by [Max Ritter](https://www.maxritter.net)
+Made with ❤️ by [Max Ritter](https://www.maxritter.net) and [Manuel Vogel](https://www.manuel-vogel.de)
 
 [🌐 claude-code.pro](https://www.claude-code.pro)

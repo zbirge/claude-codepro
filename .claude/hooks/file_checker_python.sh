@@ -4,9 +4,10 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# Change to workspace root if not already there
-if [[ -d "/workspaces/claude-codepro" ]]; then
-	cd /workspaces/claude-codepro || exit 1
+# Get workspace root dynamically
+WORKSPACE_ROOT="${containerWorkspaceFolder:-$(pwd)}"
+if [[ -d "$WORKSPACE_ROOT" ]]; then
+	cd "$WORKSPACE_ROOT" || exit 1
 fi
 
 # Find THE most recently modified file (excluding cache/build dirs)
@@ -17,27 +18,18 @@ files=$(find . -type f -not -path '*/.ruff_cache/*' -not -path '*/__pycache__/*'
 [[ $files != *.py ]] && exit 0
 [[ $files == *test* || $files == *spec* ]] && exit 0
 
-# Get absolute path and find nearest .venv
+# Get absolute path
 file_abs_path=$(realpath "$files")
-PROJECT_ROOT=""
-current_dir=$(dirname "$file_abs_path")
-while [[ $current_dir != "/" ]]; do
-	if [[ -d "$current_dir/.venv" ]]; then
-		PROJECT_ROOT="$current_dir"
-		break
-	fi
-	current_dir=$(dirname "$current_dir")
-done
 
-# Exit if no venv found
-[[ -z $PROJECT_ROOT ]] && exit 0
-
-# Define tools with their venv paths
+# Define tools with global paths (installed via uv tool install)
 declare -A TOOLS=(
-	[ruff]="$PROJECT_ROOT/.venv/bin/ruff"
-	[basedpyright]="$PROJECT_ROOT/.venv/bin/basedpyright"
-	[mypy]="$PROJECT_ROOT/.venv/bin/mypy"
+	[ruff]="$(command -v ruff 2>/dev/null || true)"
+	[basedpyright]="$(command -v basedpyright 2>/dev/null || true)"
+	[mypy]="$(command -v mypy 2>/dev/null || true)"
 )
+
+# Exit if no tools found
+[[ -z ${TOOLS[ruff]} && -z ${TOOLS[basedpyright]} && -z ${TOOLS[mypy]} ]] && exit 0
 
 # Auto-format before checks
 if [[ -x ${TOOLS[ruff]} ]]; then
@@ -57,11 +49,11 @@ run_check() {
 		[[ -n $output && $output != *"All checks passed"* ]]
 		;;
 	basedpyright)
-		output=$(cd "$PROJECT_ROOT" && $bin --pythonpath "$PROJECT_ROOT/.venv/bin/python" --outputjson "$file_abs_path" 2>&1 || true)
+		output=$($bin --outputjson "$file_abs_path" 2>&1 || true)
 		echo "$output" | grep -qE '"errorCount":\s*[1-9]|" error"'
 		;;
 	mypy)
-		output=$(cd "$PROJECT_ROOT" && $bin "$file_abs_path" 2>&1 || true)
+		output=$($bin "$file_abs_path" 2>&1 || true)
 		echo "$output" | grep -qE 'error:' && [[ $output != *"Success:"* ]]
 		;;
 	esac
