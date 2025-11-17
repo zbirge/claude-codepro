@@ -21,7 +21,6 @@ commands:
         - project-conventions
         - context-management
       custom: []
-
   implement:
     description: Execute implementation plans in batches
     model: sonnet
@@ -40,7 +39,6 @@ commands:
         - testing-strategies
         - context-management
       custom: []
-
   verify:
     description: Run tests and fix issues end-to-end
     model: sonnet
@@ -57,7 +55,6 @@ commands:
         - validation
         - context-management
       custom: []
-
   quick:
     description: Fast, focused development without spec-driven workflow overhead
     model: sonnet
@@ -74,7 +71,6 @@ commands:
         - execution-verification
         - context-management
       custom: []
-
   remember:
     description: Store learnings before clearing context
     model: sonnet
