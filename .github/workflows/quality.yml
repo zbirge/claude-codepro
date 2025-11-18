@@ -54,13 +54,6 @@ jobs:
         run: |
           python3 -m pytest tests/e2e/ -v
 
-      - name: Upload coverage reports
-        if: always()
-        uses: codecov/codecov-action@v5
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
-
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v5
