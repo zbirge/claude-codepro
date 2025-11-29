@@ -2,6 +2,23 @@
 
 **Rule:** Query memory first, verify with diagnostics, store learnings last
 
+### Exa - Web Search & Code Context (PREFERRED)
+
+**ALWAYS use Exa instead of Claude Code's built-in WebFetch and WebSearch tools.** Exa returns higher quality, LLM-optimized content with better code examples.
+
+| Task | Use This | NOT This |
+|------|----------|----------|
+| Code examples, library docs | `get_code_context_exa()` | ~~WebSearch/WebFetch~~ |
+| General web search | `web_search_exa()` | ~~WebSearch~~ |
+| Fetch specific URL | `crawling_exa()` | ~~WebFetch~~ |
+
+**Examples:**
+```
+get_code_context_exa("pytest fixtures with database setup")
+web_search_exa("Python asyncio error handling patterns")
+crawling_exa("https://docs.python.org/3/library/asyncio.html")
+```
+
 ### Cipher - Project Memory
 
 **Tool:** `mcp_cipher_ask_cipher`
@@ -66,34 +83,6 @@
 
 **Never skip diagnostics.** Passing tests don't guarantee no type errors or linting issues.
 
-### Ref - External Documentation
-
-**Tools:**
-- `mcp_Ref_ref_search_documentation` - Search docs, examples, articles
-- `mcp_Ref_ref_read_url` - Read specific documentation pages
-
-**Search for:**
-- Library API documentation
-- Code examples and snippets
-- GitHub repository documentation
-- Technical articles and guides
-- Best practices and patterns
-
-**Usage patterns:**
-```
-ref_search_documentation("fastapi dependency injection")
-ref_search_documentation("pytest fixtures scope")
-ref_read_url("https://raw.githubusercontent.com/org/repo/main/README.md")
-```
-
-**When to use:**
-- Learning unfamiliar library APIs
-- Finding code examples for specific features
-- Understanding best practices
-- Researching implementation approaches
-
-**Important:** Use exact URLs from search results, including hash fragments for specific sections.
-
 ### MCP Funnel - Tool Discovery
 
 **Tools:**
@@ -120,7 +109,7 @@ Use sparingly - core tools handle most needs.
 1. **Check diagnostics:** `getDiagnostics()` - Understand current state
 2. **Query memory:** `ask_cipher("How did we handle X?")` - Learn from past
 3. **Search codebase:** `search_code(path, "relevant pattern")` - Find examples
-4. **Search docs if needed:** `ref_search_documentation("library feature")` - External knowledge
+4. **Search docs if needed:** `web_search_exa("library feature")` or `get_code_context_exa("code pattern")` - External knowledge
 
 ### Task End Sequence
 
@@ -131,7 +120,7 @@ Use sparingly - core tools handle most needs.
 
 1. Query Cipher for past solutions to similar problems
 2. Search codebase for existing patterns
-3. Search Ref for external documentation and examples
+3. Search Exa for external documentation and examples
 4. Consider MCP Funnel for specialized tools
 
 ## Common Mistakes to Avoid
@@ -152,7 +141,11 @@ Use sparingly - core tools handle most needs.
 Need to check for errors? → getDiagnostics
 Need to remember past decisions? → ask_cipher (query)
 Need to find existing code? → search_code
-Need external documentation? → ref_search_documentation
+Need code examples/library docs? → get_code_context_exa (ALWAYS use Exa)
+Need to search the web? → web_search_exa (ALWAYS use Exa, NOT WebSearch)
+Need to fetch URL content? → crawling_exa (ALWAYS use Exa, NOT WebFetch)
 Need specialized functionality? → discover_tools_by_words
 Finished task? → getDiagnostics + ask_cipher (store)
 ```
+
+**Remember:** NEVER use WebFetch or WebSearch - ALWAYS use Exa tools instead.

@@ -6,6 +6,18 @@ model: opus
 
 **Execute ALL tasks continuously. NO stopping unless context manager says context is full.**
 
+## MCP Servers - Use Throughout Implementation
+
+| Server | Purpose | When to Use |
+|--------|---------|-------------|
+| **Cipher** | Project memory | Query gotchas, store learnings after each task |
+| **Claude Context** | Semantic code search | Find related code, verify patterns |
+| **Exa** | Web search & code examples | Look up library APIs, find solutions |
+| **MCP Funnel** | Tool discovery | Find specialized tools when stuck |
+
+**Query Cipher at start and store learnings at end of each task.**
+
+
 ## Mandatory Context Gathering Phase (REQUIRED)
 
 **Before ANY implementation, you MUST:**
@@ -19,7 +31,8 @@ model: opus
    - Plan progress: Check for `[x]` completed tasks
 5. **Query knowledge base:**
    - Cipher: Past implementations and gotchas
-   - Codebase: Related patterns and components
+   - Claude Context: Related patterns and components
+   - Exa: External documentation if needed
 
 ## Per-Task Execution Flow
 

@@ -4,6 +4,18 @@ model: opus
 ---
 # PLAN MODE: Five-Phase Planning Process
 
+## MCP Servers - Use Throughout Planning
+
+| Server | Purpose | When to Use |
+|--------|---------|-------------|
+| **Cipher** | Project memory | Query past decisions, store plan context |
+| **Claude Context** | Semantic code search | Find patterns, similar implementations |
+| **Exa** | Web search & code examples | Research libraries, find documentation |
+| **MCP Funnel** | Tool discovery | Find specialized tools when needed |
+
+**Start every planning session by querying Cipher for relevant history.**
+
+
 ## Using AskUserQuestion - Core Planning Tool
 
 **The AskUserQuestion tool is essential for effective planning.** Questions are grouped into batches so users answer related questions together without interruption.

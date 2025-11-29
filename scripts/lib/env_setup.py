@@ -103,10 +103,10 @@ def get_api_config(key: str) -> tuple[str, str, str]:
             "Low-usage LLM calls in Cipher memory system",
             "https://platform.openai.com/account/api-keys",
         ),
-        "REF_API_KEY": (
-            "3. Ref API Key - Unified Documentation & Web Search",
-            "Searching documentation, code snippets, web scraping, and library docs",
-            "https://ref.tools/dashboard",
+        "EXA_API_KEY": (
+            "3. Exa API Key - AI-Powered Web Search & Code Context",
+            "Web search, code examples, documentation lookup, and URL content extraction",
+            "https://dashboard.exa.ai/home",
         ),
     }
 
@@ -139,7 +139,7 @@ def setup_env_file(project_dir: Path) -> None:
     vector_store_username = ""
     vector_store_password = ""
     openai_api_key = ""
-    ref_api_key = ""
+    exa_api_key = ""
 
     if not append_mode or not key_is_set("MILVUS_TOKEN", env_file):
         prompt_api_key(
@@ -173,7 +173,7 @@ def setup_env_file(project_dir: Path) -> None:
         ui.print_success("Zilliz Cloud configuration already set (found in environment or .env file), skipping")
         print("")
 
-    for key in ["OPENAI_API_KEY", "REF_API_KEY"]:
+    for key in ["OPENAI_API_KEY", "EXA_API_KEY"]:
         if not append_mode or not key_is_set(key, env_file):
             title, description, url = get_api_config(key)
             prompt_api_key(title, key, description, url)
@@ -185,8 +185,8 @@ def setup_env_file(project_dir: Path) -> None:
 
             if key == "OPENAI_API_KEY":
                 openai_api_key = value
-            elif key == "REF_API_KEY":
-                ref_api_key = value
+            elif key == "EXA_API_KEY":
+                exa_api_key = value
 
             print("")
         else:
@@ -219,9 +219,9 @@ def setup_env_file(project_dir: Path) -> None:
             env_file,
         )
         add_env_key(
-            "REF_API_KEY",
-            ref_api_key,
-            "Ref API Key - Free Tier Available - Unified Documentation & Web Search",
+            "EXA_API_KEY",
+            exa_api_key,
+            "Exa API Key - AI-Powered Web Search & Code Context",
             env_file,
         )
         add_env_key("USE_ASK_CIPHER", "true", "Configuration Settings", env_file)
@@ -242,10 +242,9 @@ def setup_env_file(project_dir: Path) -> None:
                         # Create at https://platform.openai.com/account/api-keys
                         OPENAI_API_KEY={openai_api_key}
 
-                        # Ref API Key - Free Tier Available, You can add your own Resources in the UI
-                        # Unified solution for documentation search, web scraping, code snippets, and library docs
-                        # Create at https://ref.tools/dashboard
-                        REF_API_KEY={ref_api_key}
+                        # Exa API Key - AI-Powered Web Search & Code Context
+                        # Create at https://dashboard.exa.ai/home
+                        EXA_API_KEY={exa_api_key}
 
                         # Configuration Settings - No need to adjust
                         USE_ASK_CIPHER=true

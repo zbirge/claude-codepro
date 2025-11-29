@@ -39,8 +39,9 @@
       "WebSearch",
       "Write",
       "mcp__ide__getDiagnostics",
-      "mcp__Ref__ref_read_url",
-      "mcp__Ref__ref_search_documentation",
+      "mcp__exa__web_search_exa",
+      "mcp__exa__get_code_context_exa",
+      "mcp__exa__crawling_exa",
       "mcp__claude-context__index_codebase",
       "mcp__claude-context__get_indexing_status",
       "mcp__claude-context__search_code",
@@ -58,7 +59,7 @@
     "deny": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["Ref", "claude-context", "cipher", "mcp-funnel"],
+  "enabledMcpjsonServers": ["exa", "claude-context", "cipher", "mcp-funnel"],
   "hooks": {
     "PostToolUse": [
       {

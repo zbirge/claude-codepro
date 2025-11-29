@@ -1,8 +1,12 @@
 {
   "mcpServers": {
-    "Ref": {
-      "type": "http",
-      "url": "https://api.ref.tools/mcp?apiKey=${REF_API_KEY}"
+    "exa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.exa.ai/mcp?tools=web_search_exa,get_code_context_exa,crawling_exa"
+      ]
     },
     "claude-context": {
       "command": "npx",

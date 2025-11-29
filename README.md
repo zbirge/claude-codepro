@@ -57,7 +57,7 @@ The installer will guide you through the setup process with interactive prompts.
 
 - **Cipher** - Cross-session memory for persistent knowledge and learnings stored in Vector DB
 - **Claude Context** - Semantic code search for optimal codebase context retrieval
-- **Ref** - Unified documentation search, web scraping, code snippets, and library docs
+- **Exa** - AI-powered web search, code context retrieval, and URL content extraction
 - **MCP Funnel** - Allows to plug-in more MCP servers as needed without wasting context
 
 ### 🛠️ Testing and Quality via Automated Tool Installation
@@ -153,7 +153,7 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 - **[campfirein/cipher](https://github.com/campfirein/cipher)** - CC Cross-session memory
 - **[zilliztech/claude-context](https://github.com/zilliztech/claude-context)** - CC Semantic code search
 - **[sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)** - CC Status line integration
-- **[ref-tools/ref-tools-mcp](https://github.com/ref-tools/ref-tools-mcp)** - MCP Unified documentation, web scraping, and code search
+- **[exa-labs/exa-mcp-server](https://github.com/exa-labs/exa-mcp-server)** - AI-powered web search and code context
 - **[chris-schra/mcp-funnel](https://github.com/chris-schra/mcp-funnel)** - MCP Tool filtering
 - **[postmanlabs/newman](https://github.com/postmanlabs/newman)** - End-to-End API testing
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager

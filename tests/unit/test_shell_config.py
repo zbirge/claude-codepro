@@ -28,11 +28,10 @@ class TestAddShellAlias:
                 'alias ccp="cd /project && claude"',
                 ".bashrc",
                 "ccp",
-                Path("/project"),
             )
 
             content = shell_file.read_text()
-            assert "# Claude CodePro alias - /project" in content
+            assert "# Claude CodePro alias" in content
             assert 'alias ccp="cd /project && claude"' in content
 
     def test_add_shell_alias_updates_existing_marker_section(self):
@@ -41,7 +40,7 @@ class TestAddShellAlias:
             shell_file = Path(tmpdir) / ".bashrc"
             shell_file.write_text(
                 "# Existing content\n"
-                "# Claude CodePro alias - /project\n"
+                "# Claude CodePro alias\n"
                 'alias ccp="cd /old && claude"\n'
                 "export PATH=/usr/bin\n"
             )
@@ -51,7 +50,6 @@ class TestAddShellAlias:
                 'alias ccp="cd /new && claude"',
                 ".bashrc",
                 "ccp",
-                Path("/project"),
             )
 
             content = shell_file.read_text()
@@ -73,11 +71,10 @@ class TestAddShellAlias:
                 'alias ccp="cd /project && claude"',
                 ".bashrc",
                 "ccp",
-                Path("/project"),
             )
 
             content = shell_file.read_text()
-            assert "# Claude CodePro alias - /project" in content
+            assert "# Claude CodePro alias" in content
             assert 'alias ccp="cd /project && claude"' in content
             assert 'alias ccp="some other command"' not in content
 
@@ -93,7 +90,6 @@ class TestAddShellAlias:
                 'alias ccp="cd /project && claude"',
                 ".bashrc",
                 "ccp",
-                Path("/project"),
             )
 
             # File should still not exist
@@ -116,7 +112,6 @@ class TestAddShellAlias:
                 'alias ccp="cd /project && claude"',
                 ".zshrc",
                 "ccp",
-                Path("/project"),
             )
 
             content = shell_file.read_text()
@@ -127,3 +122,28 @@ class TestAddShellAlias:
             assert "# End of config" in content
             # Check new alias is added
             assert 'alias ccp="cd /project && claude"' in content
+
+    def test_add_shell_alias_migrates_old_marker_format(self):
+        """Test that add_shell_alias removes old project-specific marker format."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shell_file = Path(tmpdir) / ".bashrc"
+            shell_file.write_text(
+                "# Existing content\n"
+                "# Claude CodePro alias - /old/project/path\n"
+                'alias ccp="cd /old && claude"\n'
+                "export PATH=/usr/bin\n"
+            )
+
+            add_shell_alias(
+                shell_file,
+                'alias ccp="cd /new && claude"',
+                ".bashrc",
+                "ccp",
+            )
+
+            content = shell_file.read_text()
+            # Old marker format should be removed
+            assert "# Claude CodePro alias - /old/project/path" not in content
+            # New marker should be present
+            assert "# Claude CodePro alias" in content
+            assert 'alias ccp="cd /new && claude"' in content
