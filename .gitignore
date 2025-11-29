@@ -234,6 +234,7 @@ CLAUDE.local.md
 premium/dist/
 premium/build/
 .claude/bin/
+docs/plans
 
 # Git-crypt key (NEVER commit this!)
 .keys/

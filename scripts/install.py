@@ -337,7 +337,7 @@ def main() -> None:
             print("")
 
         # Check for premium license early (before settings generation)
-        premium_license_key = premium.prompt_for_premium(args.non_interactive)
+        premium_license_key = premium.prompt_for_premium(args.non_interactive, project_dir)
         print("")
 
         ui.print_section("Installing Claude CodePro Files")
@@ -475,7 +475,9 @@ def main() -> None:
 
         ui.print_section("Premium Features")
         if premium_license_key:
-            is_premium = premium.install_premium_with_key(project_dir, premium_license_key, VERSION)
+            is_premium = premium.install_premium_with_key(
+                project_dir, premium_license_key, VERSION, local_mode, local_repo_dir
+            )
         else:
             is_premium = False
             ui.print_status("Skipping premium features")

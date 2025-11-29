@@ -82,16 +82,36 @@ def validate_license_key(license_key: str) -> tuple[bool, str]:
         return False, f"Validation error: {e}"
 
 
-def download_premium_binary(dest_dir: Path, version: str) -> tuple[bool, str]:
-    """Download premium binary from GitHub releases."""
+def download_premium_binary(
+    dest_dir: Path,
+    version: str,
+    local_mode: bool = False,
+    local_repo_dir: Path | None = None,
+) -> tuple[bool, str]:
+    """Download premium binary from GitHub releases or copy from local dist."""
+    import shutil
+
     binary_name = get_platform_binary_name()
     dest_path = dest_dir / "ccp-premium"
 
-    # Add .exe extension on Windows
-    if platform.system().lower() == "windows":
-        dest_path = dest_dir / "ccp-premium.exe"
+    # Local mode: copy from premium/dist/ instead of downloading
+    if local_mode and local_repo_dir:
+        source_path = local_repo_dir / "premium" / "dist" / binary_name
+        if not source_path.exists():
+            return False, f"Premium binary not found at {source_path}"
 
-    # GitHub releases download URL (uses version tag, e.g., v2.5.11)
+        try:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, dest_path)
+
+            # Make executable on Unix
+            dest_path.chmod(dest_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+            return True, str(dest_path)
+        except Exception as e:
+            return False, f"Copy error: {e}"
+
+    # Network mode: download from GitHub releases
     url = f"https://github.com/{GITHUB_REPO}/releases/download/{version}/{binary_name}"
 
     try:
@@ -105,8 +125,7 @@ def download_premium_binary(dest_dir: Path, version: str) -> tuple[bool, str]:
             dest_path.write_bytes(response.read())
 
             # Make executable on Unix
-            if platform.system().lower() != "windows":
-                dest_path.chmod(dest_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            dest_path.chmod(dest_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
             return True, str(dest_path)
 
@@ -161,16 +180,28 @@ def remove_premium_hook_from_settings(settings_file: Path) -> bool:
         return False
 
 
-def prompt_for_premium(non_interactive: bool) -> str | None:
+def prompt_for_premium(non_interactive: bool, project_dir: Path | None = None) -> str | None:
     """Prompt user for premium license key."""
     from lib import ui
 
+    # Check environment variable first (works in both modes)
+    license_key = os.getenv("CCP_LICENSE_KEY")
+    if license_key:
+        ui.print_status("Found license key in CCP_LICENSE_KEY environment variable")
+        return license_key
+
+    # Check .env file if project_dir provided
+    if project_dir:
+        env_file = project_dir / ".env"
+        if env_file.exists():
+            for line in env_file.read_text().splitlines():
+                if line.startswith("CCP_LICENSE_KEY="):
+                    license_key = line.split("=", 1)[1].strip()
+                    if license_key:
+                        ui.print_status("Found license key in .env file")
+                        return license_key
+
     if non_interactive:
-        # Check environment variable in non-interactive mode
-        license_key = os.getenv("CCP_LICENSE_KEY")
-        if license_key:
-            ui.print_status("Found license key in CCP_LICENSE_KEY environment variable")
-            return license_key
         return None
 
     print("")
@@ -195,7 +226,13 @@ def prompt_for_premium(non_interactive: bool) -> str | None:
     return license_key
 
 
-def install_premium_with_key(project_dir: Path, license_key: str, version: str) -> bool:
+def install_premium_with_key(
+    project_dir: Path,
+    license_key: str,
+    version: str,
+    local_mode: bool = False,
+    local_repo_dir: Path | None = None,
+) -> bool:
     """Install premium features with a pre-validated license key."""
     from lib import ui
 
@@ -212,13 +249,17 @@ def install_premium_with_key(project_dir: Path, license_key: str, version: str) 
     save_license_to_env(project_dir, license_key)
     ui.print_success("Saved license key to .env")
 
-    # Download binary from GitHub releases
-    ui.print_status(f"Downloading premium binary ({version})...")
+    # Download or copy binary
+    if local_mode:
+        ui.print_status("Copying premium binary from local dist...")
+    else:
+        ui.print_status(f"Downloading premium binary ({version})...")
+
     bin_dir = project_dir / ".claude" / "bin"
-    success, result = download_premium_binary(bin_dir, version)
+    success, result = download_premium_binary(bin_dir, version, local_mode, local_repo_dir)
 
     if not success:
-        ui.print_error(f"Download failed: {result}")
+        ui.print_error(f"{'Copy' if local_mode else 'Download'} failed: {result}")
         ui.print_warning("Premium features will not be available")
         return False
 
