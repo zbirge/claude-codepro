@@ -24,13 +24,13 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "sed -i 's/^__version__ = \".*\"/__version__ = \"${nextRelease.version}\"/' installer/__init__.py"
+        "prepareCmd": "sed -i 's/^__version__ = \".*\"/__version__ = \"${nextRelease.version}\"/' installer/__init__.py && sed -i 's|claude-codepro/v[0-9.]*|claude-codepro/v${nextRelease.version}|g' README.md"
       }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["installer/__init__.py"],
+        "assets": ["installer/__init__.py", "README.md"],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
