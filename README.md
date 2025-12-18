@@ -103,7 +103,7 @@ Built on [Claude Code's modular rules](https://code.claude.com/docs/en/memory#mo
 3. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
    <img src="docs/img/ide-setup-mcp.png" alt="Setup mcp Screenshot" width="600">
 
-4. In CC, run `/plugins` → Marketplaces → thedotmack → Click "Update marketplace" & "Enable auto-update" → Restart with `ccp` → Open http://localhost:37777/ → Settings → Advanced → Set Model to 'opus'
+4. In CC, run `/plugins` → Marketplaces → thedotmack → Click "Update marketplace" & "Enable auto-update" → Restart with `ccp` → Open http://localhost:37777/ to see Web UI
    <img src="docs/img/ide-setup-plugin.png" alt="Setup plugin Screenshot" width="600">
 
 5. In CC, run `/context` to verify context looks similar to this screenshot with rules loaded
