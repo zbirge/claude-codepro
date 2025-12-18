@@ -6,7 +6,7 @@
 set -e
 
 # Fallback version (updated by semantic-release)
-FALLBACK_VERSION="3.2.3"
+FALLBACK_VERSION="3.2.0"
 
 REPO="maxritter/claude-codepro"
 
