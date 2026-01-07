@@ -99,7 +99,7 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.5.1/ins
 - When context fills up, run `/clear` then continue with `/implement` mentioning your plan file
 - After spec completion, run `/verify` to run end-to-end review, all tests, and quality checks
 
-### Context Management
+### 📖 Context Management
 
 **Never use `/compact`** - Claude CodePro is designed to use the full 200k context window:
 
