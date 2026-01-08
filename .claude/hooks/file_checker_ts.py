@@ -17,7 +17,6 @@ NC = "\033[0m"
 
 TS_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"}
 
-# Enable debug mode with: HOOK_DEBUG=true
 DEBUG = os.environ.get("HOOK_DEBUG", "").lower() == "true"
 
 
@@ -51,7 +50,7 @@ def find_git_root() -> Path | None:
 def find_most_recent_file(root: Path) -> Path | None:
     """Find most recently modified file (excluding cache/build dirs)."""
     debug_log(f"Searching for most recent file in: {root}")
-    
+
     exclude_patterns = [
         "node_modules",
         ".next",
@@ -98,14 +97,14 @@ def find_most_recent_file(root: Path) -> Path | None:
         debug_log(f"Most recent file: {most_recent_file}")
     else:
         debug_log("No files found")
-    
+
     return most_recent_file
 
 
 def find_project_root(file_path: Path) -> Path | None:
     """Find the nearest directory with package.json."""
     debug_log(f"Looking for package.json starting from: {file_path.parent}")
-    
+
     current = file_path.parent
     depth = 0
     while current != current.parent:
@@ -115,10 +114,10 @@ def find_project_root(file_path: Path) -> Path | None:
             return current
         current = current.parent
         depth += 1
-        if depth > 20:  # Safety limit
+        if depth > 20:
             debug_log("Reached max depth searching for package.json")
             break
-    
+
     debug_log("No package.json found")
     return None
 
@@ -126,7 +125,7 @@ def find_project_root(file_path: Path) -> Path | None:
 def find_tool(tool_name: str, project_root: Path | None) -> str | None:
     """Find tool binary, preferring local node_modules."""
     debug_log(f"Looking for tool: {tool_name}")
-    
+
     if project_root:
         local_bin = project_root / "node_modules" / ".bin" / tool_name
         debug_log(f"Checking local: {local_bin}")
@@ -141,14 +140,14 @@ def find_tool(tool_name: str, project_root: Path | None) -> str | None:
         debug_log(f"Found global {tool_name}: {global_bin}")
     else:
         debug_log(f"Global {tool_name} not found")
-    
+
     return global_bin
 
 
 def auto_format(file_path: Path, project_root: Path | None) -> None:
     """Auto-format file with prettier before checks."""
     debug_log("Attempting auto-format with prettier...")
-    
+
     prettier_bin = find_tool("prettier", project_root)
     if not prettier_bin:
         debug_log("Prettier not available, skipping auto-format")
@@ -175,7 +174,7 @@ def auto_format(file_path: Path, project_root: Path | None) -> None:
 def run_eslint_check(file_path: Path, project_root: Path | None) -> tuple[bool, str]:
     """Run eslint check."""
     debug_log("Running ESLint check...")
-    
+
     eslint_bin = find_tool("eslint", project_root)
     if not eslint_bin:
         debug_log("ESLint not available")
@@ -185,7 +184,7 @@ def run_eslint_check(file_path: Path, project_root: Path | None) -> tuple[bool, 
         cmd = [eslint_bin, "--format", "json", str(file_path)]
         debug_log(f"Running: {' '.join(cmd)}")
         debug_log(f"Working directory: {project_root}")
-        
+
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -193,9 +192,9 @@ def run_eslint_check(file_path: Path, project_root: Path | None) -> tuple[bool, 
             check=False,
             cwd=project_root,
         )
-        
+
         debug_log(f"ESLint exit code: {result.returncode}")
-        
+
         output = result.stdout
         try:
             data = json.loads(output)
@@ -216,7 +215,7 @@ def run_eslint_check(file_path: Path, project_root: Path | None) -> tuple[bool, 
 def run_tsc_check(file_path: Path, project_root: Path | None) -> tuple[bool, str]:
     """Run TypeScript compiler check."""
     debug_log("Running TypeScript compiler check...")
-    
+
     if file_path.suffix not in {".ts", ".tsx", ".mts"}:
         debug_log(f"File extension {file_path.suffix} not suitable for tsc, skipping")
         return False, ""
@@ -247,7 +246,7 @@ def run_tsc_check(file_path: Path, project_root: Path | None) -> tuple[bool, str
 
         debug_log(f"Running: {' '.join(cmd)}")
         debug_log(f"Working directory: {project_root}")
-        
+
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -255,18 +254,18 @@ def run_tsc_check(file_path: Path, project_root: Path | None) -> tuple[bool, str
             check=False,
             cwd=project_root,
         )
-        
+
         debug_log(f"TSC exit code: {result.returncode}")
-        
+
         output = result.stdout + result.stderr
         has_issues = result.returncode != 0
-        
+
         if has_issues:
             error_count = len([line for line in output.splitlines() if "error TS" in line])
             debug_log(f"TSC found {error_count} type errors")
         else:
             debug_log("TSC check passed")
-        
+
         return has_issues, output
     except Exception as e:
         debug_log(f"Error running TSC: {e}")
@@ -327,7 +326,7 @@ def display_tsc_result(output: str) -> None:
             code_end = error_msg.find(":")
             if code_end > 0:
                 code = "TS" + error_msg[:code_end]
-                msg = error_msg[code_end + 1:].strip()
+                msg = error_msg[code_end + 1 :].strip()
                 print(f"  {location}) [{code}]: {msg}", file=sys.stderr)
             else:
                 print(f"  {line}", file=sys.stderr)
@@ -367,15 +366,6 @@ def main() -> int:
     if most_recent.suffix not in TS_EXTENSIONS:
         debug_log(f"File extension {most_recent.suffix} not in {TS_EXTENSIONS}, skipping")
         return 0
-
-    # Check for test files
-    # if any(pattern in most_recent.name for pattern in ["test.", "spec.", ".test.", ".spec."]):
-    #     debug_log(f"File {most_recent.name} appears to be a test file, skipping")
-    #     return 0
-
-    # if any(pattern in str(most_recent) for pattern in ["/test/", "/tests/", "/__tests__/"]):
-    #     debug_log(f"File {most_recent} is in a test directory, skipping")
-    #     return 0
 
     project_root = find_project_root(most_recent)
     debug_log(f"Project root: {project_root}")
@@ -436,7 +426,7 @@ def main() -> int:
         print("", file=sys.stderr)
         print(f"{GREEN}✅ TypeScript: All checks passed{NC}", file=sys.stderr)
         debug_log("Exiting with code 0 (success)")
-        return 0  
+        return 0
 
 
 if __name__ == "__main__":

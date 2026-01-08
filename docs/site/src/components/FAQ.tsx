@@ -8,7 +8,11 @@ interface FaqItem {
 const faqs: FaqItem[] = [
   {
     question: "What is Claude CodePro?",
-    answer: "Claude CodePro is a professional development environment for Claude Code. It provides a structured workflow with spec-driven development, TDD enforcement, persistent memory, semantic search, and a modular rules system - all running inside a Dev Container.",
+    answer: "Claude CodePro is a professional development environment for Claude Code. It provides automated context management, spec-driven development, TDD enforcement, persistent memory, semantic search, quality hooks, and a modular rules system - all running inside a Dev Container.",
+  },
+  {
+    question: "How does /ccp work?",
+    answer: "The /ccp command is your single entry point. It handles everything: auto-setup on first run, creates a detailed plan for your approval, implements with TDD enforcement, verifies completion, and manages context across sessions automatically.",
   },
   {
     question: "Is Claude CodePro free?",
@@ -20,15 +24,11 @@ const faqs: FaqItem[] = [
   },
   {
     question: "Do I need Docker?",
-    answer: "Yes, you need a container runtime like Docker Desktop or OrbStack (macOS). Claude CodePro runs inside a Dev Container to provide complete isolation, consistent tooling, and cross-platform compatibility.",
+    answer: "Yes, you need a container runtime like Docker Desktop or OrbStack (macOS). Claude CodePro runs inside a Dev Container to provide complete isolation, consistent tooling, and cross-platform compatibility on Windows, Mac and Linux.",
   },
   {
-    question: "How do I customize the rules?",
-    answer: "Add custom rules by creating .md files in .claude/rules/custom/. Standard rules in .claude/rules/standard/ are updated with each install. You can also use path-specific rules with YAML frontmatter to scope rules to specific files.",
-  },
-  {
-    question: "Why shouldn't I use manual or auto compaction?",
-    answer: "Claude CodePro is designed to use the full 200k context window. When context fills up, use /clear instead of /compact. Claude Mem automatically injects relevant context from your previous session when you continue with /implement. This ensures maximum context utilization with seamless session continuity.",
+    question: "How is context managed?",
+    answer: "Auto-compact is disabled during installation (saves 20% context). The /ccp command handles session clears automatically when context fills up. Claude Mem preserves relevant information across sessions for seamless continuity.",
   },
 ];
 

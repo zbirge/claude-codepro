@@ -48,8 +48,8 @@ const HeroSection = () => {
 
         {/* Subtitle */}
         <p className="text-muted-foreground text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl max-w-[90%] xs:max-w-xl sm:max-w-2xl mx-auto mb-6 xs:mb-8 animate-fade-in animation-delay-200 leading-relaxed px-1">
-          Start shipping systematically with Spec-Driven Development, TDD, Semantic Search,
-          Persistent Memory, Context Management, Quality Hooks, and Modular Rules System.
+          Start shipping systematically with Automated Context Management, Spec-Driven Development,
+          Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, and more.
         </p>
 
         {/* Feature badges */}

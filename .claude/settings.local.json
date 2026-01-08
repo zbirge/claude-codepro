@@ -40,13 +40,16 @@
       "WebFetch",
       "WebSearch",
       "Write",
-      "mcp__ide__getDiagnostics",
-      "SlashCommand(/implement:*)",
-      "SlashCommand(/plan:*)",
-      "SlashCommand(/verify:*)",
-      "SlashCommand(/setup:*)",
-      "Skill(claude-mem:mem-search)",
-      "Skill(claude-mem:troubleshoot)"
+      "mcp__ide__*",
+      "mcp__firecrawl__*",
+      "mcp__plugin_claude-mem_mcp-search__*",
+      "mcp__plugin_context7_context7__*",
+      "Skill(ccp)",
+      "Skill(vexor-cli)",
+      "Skill(plan)",
+      "Skill(implement)",
+      "Skill(verify)",
+      "Skill(setup)"
     ],
     "deny": []
   },

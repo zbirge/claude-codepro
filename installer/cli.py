@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -142,6 +144,51 @@ def install(
 def version() -> None:
     """Show version information."""
     typer.echo(f"ccp-installer (build: {__build__})")
+
+
+def find_wrapper_script() -> Path | None:
+    """Find the wrapper.py script in .claude/scripts/."""
+    # Look relative to current working directory
+    wrapper_path = Path.cwd() / ".claude" / "scripts" / "wrapper.py"
+    if wrapper_path.exists():
+        return wrapper_path
+
+    # Look relative to this module (for installed package)
+    module_path = Path(__file__).parent.parent / ".claude" / "scripts" / "wrapper.py"
+    if module_path.exists():
+        return module_path
+
+    return None
+
+
+def run_with_wrapper(args: list[str]) -> int:
+    """Run Claude via the wrapper script."""
+    wrapper_path = find_wrapper_script()
+    if wrapper_path is None:
+        typer.echo("Error: wrapper.py not found in .claude/scripts/", err=True)
+        return 1
+
+    cmd = [sys.executable, str(wrapper_path)] + args
+    return subprocess.call(cmd)
+
+
+@app.command()
+def launch(
+    no_wrapper: bool = typer.Option(False, "--no-wrapper", help="Bypass wrapper, run claude directly"),
+    args: Optional[list[str]] = typer.Argument(None, help="Arguments to pass to claude"),
+) -> None:
+    """Launch Claude Code (via wrapper by default)."""
+    claude_args = args or []
+
+    if no_wrapper:
+        # Run claude directly
+        cmd = ["claude"] + claude_args
+        exit_code = subprocess.call(cmd)
+    else:
+        # Run via wrapper
+        exit_code = run_with_wrapper(claude_args)
+
+    raise typer.Exit(exit_code)
 
 
 def main() -> None:

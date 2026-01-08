@@ -19,7 +19,15 @@ const Index = () => {
         "name": "What is Claude CodePro?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Claude CodePro is a professional development environment for Claude Code. It provides a structured workflow with spec-driven development, TDD enforcement, persistent memory, semantic search, and a modular rules system."
+          "text": "Claude CodePro is a professional development environment for Claude Code. It provides automated context management, spec-driven development, TDD enforcement, persistent memory, semantic search, quality hooks, and a modular rules system."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does /ccp work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The /ccp command is your single entry point. It handles everything: auto-setup on first run, creates a detailed plan for your approval, implements with TDD enforcement, verifies completion, and manages context across sessions automatically."
         }
       },
       {
@@ -43,23 +51,15 @@ const Index = () => {
         "name": "Do I need Docker?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, you need a container runtime like Docker Desktop or OrbStack (macOS). Claude CodePro runs inside a Dev Container."
+          "text": "Yes, you need a container runtime like Docker Desktop or OrbStack (macOS). Claude CodePro runs inside a Dev Container for complete isolation and cross-platform compatibility."
         }
       },
       {
         "@type": "Question",
-        "name": "How do I customize the rules?",
+        "name": "How is context managed?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Add custom rules by creating .md files in .claude/rules/custom/. Standard rules are updated with each install."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What plugins are included?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Claude CodePro includes Claude Mem (persistent memory), Vexor (semantic search), Context7 (library docs), Firecrawl (web search) and LSP servers (Python/TypeScript)."
+          "text": "Auto-compact is disabled during installation (saves 20% context). The /ccp command handles session clears automatically when context fills up. Claude Mem preserves relevant information across sessions."
         }
       }
     ]
@@ -82,7 +82,7 @@ const Index = () => {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Claude CodePro",
-    "description": "Professional Development Environment for Claude Code - Spec-Driven Development, TDD, Semantic Search, Persistent Memory, Context Management, Quality Hooks, and Modular Rules System.",
+    "description": "Professional Development Environment for Claude Code - Automated Context Management, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, and Modular Rules System.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Linux, macOS, Windows (via Docker)",
     "offers": {
@@ -104,7 +104,7 @@ const Index = () => {
     <>
       <SEO
         title="Claude CodePro - Professional Development Environment for Claude Code"
-        description="Start shipping systematically with Spec-Driven Development, TDD, Semantic Search, Persistent Memory, Context Management, Quality Hooks, and Modular Rules System. Free and open source."
+        description="Start shipping systematically with Automated Context Management, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, and more. Free and open source."
         structuredData={[faqStructuredData, breadcrumbStructuredData, softwareStructuredData]}
       />
       <NavBar />

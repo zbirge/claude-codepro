@@ -90,13 +90,11 @@ class FinalizeStep(BaseStep):
                     f'     docker exec -it $(docker ps --filter "name={project_slug}" -q) zsh',
                 ),
                 ("Start Claude CodePro", "Run: ccp"),
-                (
-                    "View claude-mem Memory UI",
-                    "Open http://localhost:37777/ to see the Memory Web UI",
-                ),
                 ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
-                ("Initialize project", "Run: /setup → Scans and indexes codebase"),
-                ("Start building!", "/plan → /implement → /verify"),
+                (
+                    "Start building!",
+                    '/ccp "your task" → Handles setup, planning, implementation, and verification',
+                ),
             ]
         )
 

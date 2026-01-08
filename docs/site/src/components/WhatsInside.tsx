@@ -17,12 +17,12 @@ interface InsideItem {
 const insideItems: InsideItem[] = [
   {
     icon: Terminal,
-    title: "Slash Commands",
+    title: "One-Command Workflow",
     items: [
-      "/setup - Initialize project context and indexing",
-      "/plan - Generate detailed specs from requirements",
-      "/implement - Execute specs with TDD enforcement",
-      "/verify - Run comprehensive verification checks",
+      "/ccp - Single entry point for everything",
+      "Auto-setup on first run",
+      "Plan approval gate before implementation",
+      "TDD enforcement and verification",
     ],
   },
   {
@@ -32,17 +32,17 @@ const insideItems: InsideItem[] = [
       "Auto-loaded from .claude/rules/*.md",
       "Standard rules for TDD, context, best practices",
       "Custom rules in .claude/rules/custom/",
-      "Path-specific rules with YAML frontmatter",
+      "Command and standards skills",
     ],
   },
   {
     icon: Plug2,
-    title: "Plugins",
+    title: "Enhanced Context",
     items: [
       "Claude Mem - Cross-session persistent memory",
       "Vexor - Local semantic code search",
       "Context7 - Library documentation lookup",
-      "Firecrawl - Web search and scraping capabilities"
+      "Firecrawl - Web search and scraping"
     ],
   },
   {
@@ -57,22 +57,22 @@ const insideItems: InsideItem[] = [
   },
   {
     icon: Container,
-    title: "Dev Container Setup",
+    title: "One-Command Installer",
     items: [
-      "Isolated Linux environment",
-      "Pre-configured tools and extensions",
-      "Global Python tools and qlty installed",
+      "Automated Dev Container setup",
+      "Optional Python & TypeScript support",
       "Shell integration with ccp alias",
+      "Works with VS Code, Cursor, Windsurf",
     ],
   },
   {
     icon: Sparkles,
-    title: "Skills System",
+    title: "Context Management",
     items: [
-      "Reusable prompts in .claude/skills/",
-      "Backend and frontend standards skills",
-      "Testing guidelines and anti-patterns",
-      "Invoked automatically when relevant",
+      "Auto-compact disabled (saves 20% context)",
+      "Status bar shows real usage up to 95%",
+      "Automatic session clears when needed",
+      "Claude Mem preserves continuity",
     ],
   },
 ];

@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+experiment/
 eggs/
 .eggs/
 lib/
@@ -229,6 +230,7 @@ CLAUDE.md
 .claude/rules/custom/*
 !.claude/rules/custom/python-rules.md
 !.claude/rules/custom/typescript-rules.md
+tmp/
 
 # Build artifacts
 .claude/bin/

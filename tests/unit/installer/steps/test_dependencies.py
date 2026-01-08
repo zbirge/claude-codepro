@@ -41,14 +41,12 @@ class TestDependenciesStep:
     @patch("installer.steps.dependencies.install_context7")
     @patch("installer.steps.dependencies.install_claude_mem")
     @patch("installer.steps.dependencies.install_typescript_lsp")
-    @patch("installer.steps.dependencies.run_tweakcc")
     @patch("installer.steps.dependencies.install_claude_code")
     @patch("installer.steps.dependencies.install_nodejs")
     def test_dependencies_run_installs_core(
         self,
         mock_nodejs,
         mock_claude,
-        mock_tweakcc,
         mock_typescript_lsp,
         mock_claude_mem,
         mock_context7,
@@ -65,7 +63,6 @@ class TestDependenciesStep:
         # Setup mocks
         mock_nodejs.return_value = True
         mock_claude.return_value = True
-        mock_tweakcc.return_value = True
         mock_typescript_lsp.return_value = True
         mock_claude_mem.return_value = True
         mock_context7.return_value = True
@@ -87,7 +84,6 @@ class TestDependenciesStep:
             mock_nodejs.assert_called_once()
             mock_typescript_lsp.assert_called_once()
             mock_claude.assert_called_once()
-            mock_tweakcc.assert_called_once()
 
     @patch("installer.steps.dependencies.install_dotenvx")
     @patch("installer.steps.dependencies.run_qlty_check")
@@ -97,7 +93,6 @@ class TestDependenciesStep:
     @patch("installer.steps.dependencies.install_claude_mem")
     @patch("installer.steps.dependencies.install_pyright_lsp")
     @patch("installer.steps.dependencies.install_typescript_lsp")
-    @patch("installer.steps.dependencies.run_tweakcc")
     @patch("installer.steps.dependencies.install_claude_code")
     @patch("installer.steps.dependencies.install_python_tools")
     @patch("installer.steps.dependencies.install_uv")
@@ -108,7 +103,6 @@ class TestDependenciesStep:
         mock_uv,
         mock_python_tools,
         mock_claude,
-        mock_tweakcc,
         mock_typescript_lsp,
         mock_pyright_lsp,
         mock_claude_mem,
@@ -128,7 +122,6 @@ class TestDependenciesStep:
         mock_uv.return_value = True
         mock_python_tools.return_value = True
         mock_claude.return_value = True
-        mock_tweakcc.return_value = True
         mock_typescript_lsp.return_value = True
         mock_pyright_lsp.return_value = True
         mock_claude_mem.return_value = True
@@ -194,9 +187,7 @@ class TestClaudeCodeInstall:
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_removes_native_binaries(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl
-    ):
+    def test_install_claude_code_removes_native_binaries(self, mock_remove, mock_run, mock_config, mock_firecrawl):
         """install_claude_code removes native binaries before npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -210,9 +201,7 @@ class TestClaudeCodeInstall:
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_always_runs_npm_install(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl
-    ):
+    def test_install_claude_code_always_runs_npm_install(self, mock_remove, mock_run, mock_config, mock_firecrawl):
         """install_claude_code always runs npm install (upgrades if exists)."""
         from installer.steps.dependencies import install_claude_code
 
@@ -229,9 +218,7 @@ class TestClaudeCodeInstall:
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_defaults(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl
-    ):
+    def test_install_claude_code_configures_defaults(self, mock_remove, mock_run, mock_config, mock_firecrawl):
         """install_claude_code configures Claude defaults after npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -245,9 +232,7 @@ class TestClaudeCodeInstall:
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_firecrawl_mcp(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl
-    ):
+    def test_install_claude_code_configures_firecrawl_mcp(self, mock_remove, mock_run, mock_config, mock_firecrawl):
         """install_claude_code configures Firecrawl MCP after npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -259,8 +244,9 @@ class TestClaudeCodeInstall:
 
     def test_patch_claude_config_creates_file(self):
         """_patch_claude_config creates config file if it doesn't exist."""
-        from installer.steps.dependencies import _patch_claude_config
         import json
+
+        from installer.steps.dependencies import _patch_claude_config
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
@@ -274,8 +260,9 @@ class TestClaudeCodeInstall:
 
     def test_patch_claude_config_merges_existing(self):
         """_patch_claude_config merges with existing config."""
-        from installer.steps.dependencies import _patch_claude_config
         import json
+
+        from installer.steps.dependencies import _patch_claude_config
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / ".claude.json"
@@ -289,14 +276,30 @@ class TestClaudeCodeInstall:
                 assert config["existing_key"] == "existing_value"
                 assert config["new_key"] == "new_value"
 
+    def test_configure_claude_defaults_sets_respect_gitignore_false(self):
+        """_configure_claude_defaults sets respectGitignore to False."""
+        import json
+
+        from installer.steps.dependencies import _configure_claude_defaults
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_claude_defaults()
+
+                assert result is True
+                config_path = Path(tmpdir) / ".claude.json"
+                config = json.loads(config_path.read_text())
+                assert config["respectGitignore"] is False
+
 
 class TestFirecrawlMcpConfig:
     """Test Firecrawl MCP server configuration."""
 
     def test_configure_firecrawl_mcp_creates_config(self):
         """_configure_firecrawl_mcp creates config with mcpServers if not exists."""
-        from installer.steps.dependencies import _configure_firecrawl_mcp
         import json
+
+        from installer.steps.dependencies import _configure_firecrawl_mcp
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
@@ -314,16 +317,13 @@ class TestFirecrawlMcpConfig:
 
     def test_configure_firecrawl_mcp_preserves_existing_mcp_servers(self):
         """_configure_firecrawl_mcp preserves other MCP servers."""
-        from installer.steps.dependencies import _configure_firecrawl_mcp
         import json
+
+        from installer.steps.dependencies import _configure_firecrawl_mcp
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {
-                "mcpServers": {
-                    "other_server": {"command": "other", "args": ["--flag"]}
-                }
-            }
+            existing_config = {"mcpServers": {"other_server": {"command": "other", "args": ["--flag"]}}}
             config_path.write_text(json.dumps(existing_config))
 
             with patch.object(Path, "home", return_value=Path(tmpdir)):
@@ -337,16 +337,13 @@ class TestFirecrawlMcpConfig:
 
     def test_configure_firecrawl_mcp_skips_if_already_exists(self):
         """_configure_firecrawl_mcp skips if firecrawl already configured."""
-        from installer.steps.dependencies import _configure_firecrawl_mcp
         import json
+
+        from installer.steps.dependencies import _configure_firecrawl_mcp
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {
-                "mcpServers": {
-                    "firecrawl": {"command": "custom", "args": ["custom"]}
-                }
-            }
+            existing_config = {"mcpServers": {"firecrawl": {"command": "custom", "args": ["custom"]}}}
             config_path.write_text(json.dumps(existing_config))
 
             with patch.object(Path, "home", return_value=Path(tmpdir)):
@@ -359,8 +356,9 @@ class TestFirecrawlMcpConfig:
 
     def test_configure_firecrawl_mcp_adds_to_existing_config(self):
         """_configure_firecrawl_mcp adds mcpServers to existing config."""
-        from installer.steps.dependencies import _configure_firecrawl_mcp
         import json
+
+        from installer.steps.dependencies import _configure_firecrawl_mcp
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / ".claude.json"
@@ -472,46 +470,6 @@ class TestPyrightLspInstall:
         assert "claude plugin install pyright-lsp" in third_call[2]
 
 
-class TestTweakcc:
-    """Test tweakcc customizations."""
-
-    def test_run_tweakcc_exists(self):
-        """run_tweakcc function exists."""
-        from installer.steps.dependencies import run_tweakcc
-
-        assert callable(run_tweakcc)
-
-    @patch("subprocess.run")
-    def test_run_tweakcc_runs_npx_tweakcc(self, mock_run):
-        """run_tweakcc runs npx tweakcc --apply."""
-        from installer.steps.dependencies import run_tweakcc
-
-        mock_run.return_value = MagicMock(returncode=0)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            result = run_tweakcc(project_dir)
-
-            assert result is True
-            mock_run.assert_called_once()
-            call_args = mock_run.call_args[0][0]
-            assert call_args == ["npx", "-y", "tweakcc", "--apply"]
-            assert mock_run.call_args[1]["cwd"] == project_dir
-
-    @patch("subprocess.run")
-    def test_run_tweakcc_returns_false_on_failure(self, mock_run):
-        """run_tweakcc returns False on non-zero exit code."""
-        from installer.steps.dependencies import run_tweakcc
-
-        mock_run.return_value = MagicMock(returncode=1)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            result = run_tweakcc(project_dir)
-
-            assert result is False
-
-
 class TestClaudeMemInstall:
     """Test claude-mem plugin installation."""
 
@@ -534,7 +492,7 @@ class TestClaudeMemInstall:
         # First call adds marketplace
         first_call = mock_run.call_args_list[0][0][0]
         assert "claude plugin marketplace add" in first_call[2]
-        assert "thedotmack/claude-mem" in first_call[2]
+        assert "maxritter/claude-mem" in first_call[2]
         # Second call installs plugin
         second_call = mock_run.call_args_list[1][0][0]
         assert "claude plugin install claude-mem" in second_call[2]
@@ -625,8 +583,9 @@ class TestVexorInstall:
 
     def test_configure_vexor_defaults_creates_config(self):
         """_configure_vexor_defaults creates config file."""
-        from installer.steps.dependencies import _configure_vexor_defaults
         import json
+
+        from installer.steps.dependencies import _configure_vexor_defaults
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
@@ -642,8 +601,9 @@ class TestVexorInstall:
 
     def test_configure_vexor_defaults_merges_existing(self):
         """_configure_vexor_defaults merges with existing config."""
-        from installer.steps.dependencies import _configure_vexor_defaults
         import json
+
+        from installer.steps.dependencies import _configure_vexor_defaults
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_dir = Path(tmpdir) / ".vexor"

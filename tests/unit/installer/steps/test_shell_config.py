@@ -114,7 +114,7 @@ class TestAliasHelpers:
         from installer.steps.shell_config import get_alias_line
 
         result = get_alias_line("bash")
-        assert "dotenvx run claude" in result
+        assert "dotenvx run --" in result
 
     def test_alias_uses_nvm(self):
         """Alias sets Node.js version via nvm."""
@@ -138,5 +138,5 @@ class TestAliasHelpers:
         result = get_alias_line("fish")
         # Fish uses 'and' for chaining commands, 'test' instead of '[]'
         assert "test -d" in result or "and" in result
-        assert "dotenvx run claude" in result
+        assert "dotenvx run --" in result
         assert "nvm use 22" in result

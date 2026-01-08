@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -48,7 +49,6 @@ def process_settings(settings_content: str, install_python: bool, install_typesc
     """
     config: dict[str, Any] = json.loads(settings_content)
 
-    # Match by filename, not full path (source file may have absolute paths)
     files_to_remove: list[str] = []
     if not install_python:
         files_to_remove.append("file_checker_python.py")
@@ -59,8 +59,7 @@ def process_settings(settings_content: str, install_python: bool, install_typesc
         try:
             for hook_group in config["hooks"]["PostToolUse"]:
                 hook_group["hooks"] = [
-                    h for h in hook_group["hooks"]
-                    if not any(f in h.get("command", "") for f in files_to_remove)
+                    h for h in hook_group["hooks"] if not any(f in h.get("command", "") for f in files_to_remove)
                 ]
         except (KeyError, TypeError, AttributeError):
             pass
@@ -111,9 +110,11 @@ class ClaudeFilesStep(BaseStep):
 
         categories: dict[str, list[str]] = {
             "commands": [],
+            "rules_standard": [],
             "rules": [],
             "hooks": [],
             "skills": [],
+            "scripts": [],
             "other": [],
         }
 
@@ -147,22 +148,51 @@ class ClaudeFilesStep(BaseStep):
 
             if "/commands/" in file_path:
                 categories["commands"].append(file_path)
+            elif "/rules/standard/" in file_path:
+                categories["rules_standard"].append(file_path)
             elif "/rules/" in file_path:
                 categories["rules"].append(file_path)
             elif "/hooks/" in file_path:
                 categories["hooks"].append(file_path)
             elif "/skills/" in file_path:
                 categories["skills"].append(file_path)
+            elif "/scripts/" in file_path:
+                categories["scripts"].append(file_path)
             else:
                 categories["other"].append(file_path)
 
         category_names = {
             "commands": "slash commands",
-            "rules": "rules",
+            "rules_standard": "standard rules",
+            "rules": "custom rules",
             "hooks": "hooks",
             "skills": "skills",
+            "scripts": "scripts",
             "other": "config files",
         }
+
+        source_is_destination = (
+            config.local_mode and config.local_repo_dir and config.local_repo_dir.resolve() == ctx.project_dir.resolve()
+        )
+
+        if not source_is_destination:
+            dirs_to_clear = [
+                ("commands", categories["commands"], ctx.project_dir / ".claude" / "commands"),
+                ("hooks", categories["hooks"], ctx.project_dir / ".claude" / "hooks"),
+                ("scripts", categories["scripts"], ctx.project_dir / ".claude" / "scripts"),
+                ("skills", categories["skills"], ctx.project_dir / ".claude" / "skills"),
+                ("standard rules", categories["rules_standard"], ctx.project_dir / ".claude" / "rules" / "standard"),
+            ]
+
+            for name, has_files, dir_path in dirs_to_clear:
+                if dir_path.exists() and has_files:
+                    if ui:
+                        ui.status(f"Clearing old {name}...")
+                    try:
+                        shutil.rmtree(dir_path)
+                    except (OSError, IOError) as e:
+                        if ui:
+                            ui.warning(f"Failed to clear {name} directory: {e}")
 
         for category, files in categories.items():
             if not files:
@@ -193,7 +223,12 @@ class ClaudeFilesStep(BaseStep):
             if ui:
                 with ui.spinner("Installing settings..."):
                     success = self._install_settings(
-                        settings_path, settings_dest, config, ctx.install_python, ctx.install_typescript, ctx.project_dir
+                        settings_path,
+                        settings_dest,
+                        config,
+                        ctx.install_python,
+                        ctx.install_typescript,
+                        ctx.project_dir,
                     )
                     if success:
                         file_count += 1

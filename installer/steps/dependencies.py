@@ -143,6 +143,7 @@ def _configure_claude_defaults() -> bool:
             "verbose": True,
             "autoCompactEnabled": False,
             "autoConnectIde": True,
+            "respectGitignore": False,
         }
     )
 
@@ -243,19 +244,6 @@ def install_dotenvx() -> bool:
         return True
 
     return _run_bash_with_retry("curl -sfS https://dotenvx.sh | sh")
-
-
-def run_tweakcc(project_dir: Path) -> bool:
-    """Run tweakcc to apply Claude Code customizations (LSP, themes, toolsets, etc.)."""
-    try:
-        result = subprocess.run(
-            ["npx", "-y", "tweakcc", "--apply"],
-            capture_output=True,
-            cwd=project_dir,
-        )
-        return result.returncode == 0
-    except subprocess.SubprocessError:
-        return False
 
 
 def _ensure_official_marketplace() -> bool:
@@ -373,18 +361,46 @@ def install_vexor() -> bool:
         return False
 
 
-def install_claude_mem() -> bool:
-    """Install claude-mem plugin via claude plugin marketplace."""
+def _ensure_maxritter_marketplace() -> bool:
+    """Ensure claude-mem marketplace points to maxritter repo.
+
+    Checks known_marketplaces.json for thedotmack entry. If it exists
+    but doesn't contain 'maxritter' in the URL, removes and re-adds it.
+    """
+    import json
+
+    marketplaces_path = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+
+    if marketplaces_path.exists():
+        try:
+            data = json.loads(marketplaces_path.read_text())
+            thedotmack = data.get("thedotmack", {})
+            source = thedotmack.get("source", {})
+            url = source.get("url", "")
+
+            if thedotmack and "maxritter" not in url:
+                subprocess.run(
+                    ["bash", "-c", "claude plugin marketplace rm thedotmack"],
+                    capture_output=True,
+                )
+        except (json.JSONDecodeError, KeyError):
+            pass
+
     try:
         result = subprocess.run(
-            ["bash", "-c", "claude plugin marketplace add thedotmack/claude-mem"],
+            ["bash", "-c", "claude plugin marketplace add https://github.com/maxritter/claude-mem.git"],
             capture_output=True,
             text=True,
         )
         output = (result.stdout + result.stderr).lower()
-        if result.returncode != 0 and "already installed" not in output:
-            return False
+        return result.returncode == 0 or "already installed" in output
     except Exception:
+        return False
+
+
+def install_claude_mem() -> bool:
+    """Install claude-mem plugin via claude plugin marketplace."""
+    if not _ensure_maxritter_marketplace():
         return False
 
     if not _run_bash_with_retry("claude plugin install claude-mem"):
@@ -441,16 +457,6 @@ class DependenciesStep(BaseStep):
             installed.append("claude_code")
             if ui:
                 ui.success("Claude Code config defaults applied")
-
-            if ui:
-                with ui.spinner("Applying tweakcc customizations..."):
-                    tweakcc_result = run_tweakcc(ctx.project_dir)
-                if tweakcc_result:
-                    ui.success("tweakcc customizations applied")
-                else:
-                    ui.warning("Could not apply tweakcc - LSP plugins may not work")
-            else:
-                run_tweakcc(ctx.project_dir)
 
         if ctx.install_typescript:
             if _install_with_spinner(ui, "TypeScript LSP", install_typescript_lsp):

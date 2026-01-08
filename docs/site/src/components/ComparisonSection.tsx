@@ -1,4 +1,4 @@
-import { Clock, Zap, AlertTriangle, CheckCircle2, Brain, FileCode2, ShieldCheck, Search, Plug2 } from "lucide-react";
+import { Clock, Zap, AlertTriangle, CheckCircle2, Brain, FileCode2, ShieldCheck } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
 const ComparisonSection = () => {
@@ -105,45 +105,43 @@ const ComparisonSection = () => {
 
               {/* Terminal content */}
               <div className="bg-background/50 rounded-b-lg p-4 font-mono text-xs sm:text-sm space-y-2.5">
+                {/* /ccp command */}
+                <div>
+                  <span className="text-primary">/ccp</span>
+                  <span className="text-muted-foreground ml-2">"Add user authentication"</span>
+                </div>
                 {/* Context injection */}
                 <div className="text-green-400/80 flex items-center gap-2 text-xs">
                   <Brain className="h-3 w-3 flex-shrink-0" />
-                  <span>Claude Mem: Context from last session injected</span>
-                </div>
-                <div className="text-green-400/80 flex items-center gap-2 text-xs">
-                  <Search className="h-3 w-3 flex-shrink-0" />
-                  <span>Vexor: Local semantic code search</span>
+                  <span>Claude Mem: Context injected</span>
                 </div>
                 <div className="text-green-400/80 flex items-center gap-2 text-xs">
                   <FileCode2 className="h-3 w-3 flex-shrink-0" />
-                  <span>Rules: 12 project rules loaded</span>
+                  <span>Rules + Skills loaded</span>
                 </div>
-                <div className="text-green-400/80 flex items-center gap-2 text-xs">
-                  <Plug2 className="h-3 w-3 flex-shrink-0" />
-                  <span>Plugins: Context7, Firecrawl, Claude Mem, LSP</span>
-                </div>
-                <div className="border-t border-border/50 pt-2.5">
-                  <span className="text-primary">/plan</span>
-                  <span className="text-muted-foreground ml-2">Add user authentication</span>
+                <div className="border-t border-border/50 pt-2.5 text-xs">
+                  <span className="text-blue-400">→ Planning:</span>
+                  <span className="text-muted-foreground ml-1">Exploring codebase...</span>
                 </div>
                 <div className="text-green-400/80 flex items-center gap-2 text-xs">
                   <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
-                  <span>Spec created with test cases</span>
+                  <span>Plan created → Waiting for approval</span>
                 </div>
-                <div className="border-t border-border/50 pt-2.5">
-                  <span className="text-primary">/implement</span>
-                </div>
-                <div className="text-green-400/80 flex items-center gap-2 text-xs">
-                  <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
-                  <span>TDD Enforcer: Tests first</span>
+                <div className="border-t border-border/50 pt-2.5 text-xs">
+                  <span className="text-blue-400">→ Implementing:</span>
+                  <span className="text-muted-foreground ml-1">TDD enforced</span>
                 </div>
                 <div className="text-green-400/80 flex items-center gap-2 text-xs">
                   <ShieldCheck className="h-3 w-3 flex-shrink-0" />
-                  <span>Qlty: Auto-formatted, linted</span>
+                  <span>Quality hooks: formatted, linted</span>
                 </div>
-                <div className="border-t border-border/50 pt-2.5">
-                  <span className="text-primary">/verify</span>
-                  <span className="text-green-400 ml-2">All checks passed</span>
+                <div className="border-t border-border/50 pt-2.5 text-xs">
+                  <span className="text-blue-400">→ Verifying:</span>
+                  <span className="text-green-400 ml-1">All checks passed ✓</span>
+                </div>
+                <div className="text-green-400/80 flex items-center gap-2 text-xs">
+                  <Zap className="h-3 w-3 flex-shrink-0" />
+                  <span>Complete! Anything else?</span>
                 </div>
               </div>
             </div>

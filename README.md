@@ -4,7 +4,7 @@
 
 ### 🛠️ Professional Development Environment for Claude Code (CC)
 
-Start shipping systematically with Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Context Management, Quality Hooks, Modular Rules System, and much more 🚀
+Start shipping systematically with Cross-Session Context Management, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, Modular Rules System, and much more 🚀
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 ![Opus 4.5](https://img.shields.io/badge/Opus_4.5-Compatible-purple.svg)
@@ -26,7 +26,7 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, LSP, Se
 - **IDE** - [VS Code](https://code.visualstudio.com/), [Cursor](https://cursor.sh/), [Windsurf](https://windsurf.com/editor), or [Antigravity](https://antigravity.google/)
 - **Dev Containers extension** - [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-> **Note:** Claude CodePro runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility.
+> **Note:** Claude CodePro automatically runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility on Windows, Mac and Linux. You can bring your own Dev Container configuration if you prefer.
 
 ### Installation
 
@@ -42,26 +42,35 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.5.4/ins
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
 4. Installation completes automatically inside the container
 
-> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run the install command from step 2 again.
+> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run the install command from step 2 again in the container terminal IDE.
 
 ---
 
 ## 📦 What's Inside
 
-### 📋 Spec-Driven Workflow
+### 🚀 One-Command Workflow
 
-- `/setup` - Initialize project context, semantic search indexing, and persistent memory
-- `/plan` - Based on your input asks the right questions → Detailed spec with exact code
-- `/implement` - Execute spec with mandatory TDD → Auto-manages context when full
-- `/verify` - End-to-end spec verification → All tests, quality, security
+- **Context** - Intelligently handles context accross multiple session in `/ccp` mode via wrapper
+- **Setup** - Automated first-time initialization (creates project context and semantic search index)
+- **Planning** - Creates a detailed implementation plan for your review as markdown in `docs/plans/`
+- **Implementation** - Executes the plan with TDD enforcement and context management
+- **Verification** - Runs tests, quality checks, and validates completion based on the plan
+
+### 🏗️ One-Command Installer
+
+- **Automated Container Setup** - Isolated Linux environment with pre-configured tools and extensions
+- **Extended Language Support** - Optionally install extended support for Python & TypeScript
+- **Automated Setup Script** - Installs and configures everything in one installation command
+- **Shell Integration** - Auto-configures bash, fish and zsh with `ccp` alias
+- **IDE Compatible** - Works with VS Code, Cursor, Windsurf or Antigravity
 
 ### 💡 Modular Rules System
 
 - **Auto Loading** - Claude Code automatically loads all `.claude/rules/*.md` files as project memory
 - **Standard Rules** - Best-Practices for TDD, Context Management, etc. in `.claude/rules/standard/`
 - **Custom Rules** - Project-specific rules in `.claude/rules/custom/` (never touched by updates)
-- **Commands** - Workflow-specific modes: /plan, /implement, /verify, /setup
-- **Skills** - Domain-specific @-referenceable guides (e.g., @backend-python-standards)
+- **Command Skills** - Workflow-specific modes that are launched by `/ccp`: plan, implement, verify, setup
+- **Standards Skills** - Best-Practices for Frontend, Backend, Testing, etc. automatically injected
 
 ### 🔌 Enhanced Context Capabilities
 
@@ -79,37 +88,33 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.5.4/ins
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
 - **Context Monitor** - Post-tool hook that warns CC automatically at 85%/95% context usage
 
-### 🏗️ One Command Installation
-
-- **Dev Container Required** - Isolated Linux environment with pre-configured tools and extensions
-- **Extended Language Support** - Optionally install extended support for Python & TypeScript
-- **Automated Setup Script** - Installs and configures everything in one installation command
-- **Shell Integration** - Auto-configures bash, fish and zsh with `ccp` alias
-- **IDE Compatible** - Works with VS Code, Cursor, Windsurf or Antigravity
-
 ---
 
-## 📒 How-to-use
+## 📒 How-to-Use
 
-### 👣 First Steps
+### 👣 Quick Start
 
-- Use the `ccp` alias command inside the dev container to open Claude CodePro in any terminal
-- Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
-- Use `/implement` to execute the spec with automatic TDD, best practices and context management
-- When context fills up, run `/clear` then continue with `/implement` mentioning your plan file
-- After spec completion, run `/verify` to run end-to-end review, all tests, and quality checks
+```bash
+ccp                         # Launch Claude CodePro inside your Dev Container with wrapper
+> /ccp "<YOUR TASK HERE>"   # Prove your detailed task description to the unified command
+```
+
+**The `/ccp` workflow:**
+1. **First run** - Automatically sets up project context and semantic search
+2. **Creates plan** - Explores codebase, asks clarifying questions, generates detailed spec
+3. **Waits for approval** - You review and approve (or edit) the markdown plan
+4. **Implements** - Executes tasks with TDD enforcement and quality hooks
+5. **Verifies** - Runs tests, quality checks and validates plan completion
+
 
 ### 📖 Context Management
 
-**Never use `/compact`** - Claude CodePro is designed to use the full 200k context window:
+**Never use `/compact`** - Claude CodePro uses the full 200k context window and manages context automatically.
 
-- **Auto-compact must be disabled** in `/config`
-- **Ignore the compact warning** in the bottom right of Claude Code - it appears too early
-- **Use the full context** during `/implement` sessions until context is actually full
-- **When context is full**, run `/clear` to start a fresh session
-- **Claude Mem auto-injects** relevant context from your previous session when you continue with `/implement`
-
-This approach ensures maximum context utilization and seamless session continuity via persistent memory.
+- **Context is managed automatically** - `/ccp` handles session clears and continuity over a wrapper
+- **Auto-compact is automatically disabled** during installation and saves 20% of your total context window
+- **Ignore compact warnings** - they appear too early, look at the status bar for real context usage up to 95%
+- **Claude Mem preserves context** - relevant information is automatically ingested and flows across sessions
 
 ### 🎯 Customizing Rules
 
@@ -134,8 +139,8 @@ paths: src/**/*.py
 
 - **[thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)** - CC Persistent Memory system
 - **[sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)** - CC Status line integration
-- **[Piebald-AI/tweakcc](https://github.com/Piebald-AI/tweakcc)** - CC Customizations and tweaks for LSP
 - **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search
+- **[ManuelKugelmann/BitBot](https://github.com/ManuelKugelmann/BitBot)** - CC Wrapper control inspirations
 - **[upstash/context7](https://github.com/upstash/context7)** - Library code context retrieval
 - **[firecrawl/firecrawl](https://github.com/firecrawl/firecrawl)** - Web search and scraping tool
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager

@@ -123,10 +123,10 @@ const InstallSection = () => {
               </div>
               <div>
                 <h4 className="text-foreground font-semibold text-sm sm:text-base mb-1">
-                  Start using Claude CodePro
+                  Start building with /ccp
                 </h4>
                 <p className="text-muted-foreground text-xs sm:text-sm">
-                  Run <code className="text-primary text-xs">ccp</code> in terminal or use the IDE extension
+                  Run <code className="text-primary text-xs">ccp</code> then <code className="text-primary text-xs">/ccp "your task"</code>
                 </p>
               </div>
             </div>

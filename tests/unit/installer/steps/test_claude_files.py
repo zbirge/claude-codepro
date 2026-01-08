@@ -553,6 +553,116 @@ class TestClaudeFilesCustomRulesPreservation:
             assert not (dest_dir / ".claude" / "hooks" / "__pycache__").exists()
 
 
+class TestDirectoryClearing:
+    """Test directory clearing behavior in local and normal mode."""
+
+    def test_clears_directories_in_normal_local_mode(self):
+        """Directories are cleared when source != destination in local mode."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with skills
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_skills = source_claude / "skills" / "test-skill"
+            source_skills.mkdir(parents=True)
+            (source_skills / "SKILL.md").write_text("new skill")
+
+            # Create destination with OLD skills (should be cleared)
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_skills = dest_claude / "skills" / "old-skill"
+            dest_skills.mkdir(parents=True)
+            (dest_skills / "SKILL.md").write_text("old skill to be removed")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Old skill should be GONE (directory was cleared)
+            assert not (dest_claude / "skills" / "old-skill").exists()
+            # New skill should be installed
+            assert (dest_claude / "skills" / "test-skill" / "SKILL.md").exists()
+
+    def test_skips_clearing_when_source_equals_destination(self):
+        """Directories are NOT cleared when source == destination (same dir)."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create .claude directory (source AND destination are same)
+            claude_dir = Path(tmpdir) / ".claude"
+            skills_dir = claude_dir / "skills" / "my-skill"
+            skills_dir.mkdir(parents=True)
+            (skills_dir / "SKILL.md").write_text("existing skill content")
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=Path(tmpdir),  # Same as project_dir!
+            )
+
+            step.run(ctx)
+
+            # Skill should still exist (NOT cleared because source==dest)
+            assert (skills_dir / "SKILL.md").exists()
+            assert (skills_dir / "SKILL.md").read_text() == "existing skill content"
+
+    def test_custom_rules_never_cleared(self):
+        """Custom rules directory is NEVER cleared, only standard rules."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with standard rules only
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_standard = source_claude / "rules" / "standard"
+            source_standard.mkdir(parents=True)
+            (source_standard / "new-rule.md").write_text("new standard rule")
+
+            # Create destination with custom rules AND old standard rules
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_custom = dest_claude / "rules" / "custom"
+            dest_standard = dest_claude / "rules" / "standard"
+            dest_custom.mkdir(parents=True)
+            dest_standard.mkdir(parents=True)
+            (dest_custom / "my-project.md").write_text("USER CUSTOM RULE")
+            (dest_standard / "old-rule.md").write_text("old standard rule")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Custom rules should be PRESERVED (never cleared)
+            assert (dest_custom / "my-project.md").exists()
+            assert (dest_custom / "my-project.md").read_text() == "USER CUSTOM RULE"
+
+            # Old standard rule should be GONE (directory was cleared)
+            assert not (dest_standard / "old-rule.md").exists()
+            # New standard rule should be installed
+            assert (dest_standard / "new-rule.md").exists()
+
+
 class TestClaudeFilesRollback:
     """Test ClaudeFilesStep rollback."""
 

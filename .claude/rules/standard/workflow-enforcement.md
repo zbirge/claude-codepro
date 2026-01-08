@@ -34,8 +34,8 @@ The project uses a three-phase workflow that must be followed strictly:
 
 | Phase | Command | Status | Next Action |
 |-------|---------|--------|-------------|
-| Planning | `/plan` | Creates plan with `Status: PENDING` | User reviews, then `/implement` |
-| Implementation | `/implement` | Updates to `Status: COMPLETE` | Run `/verify` |
+| Planning | `/plan` | Creates plan with `Status: PENDING` | Ask user approval, then auto-continue |
+| Implementation | `/implement` | Updates to `Status: COMPLETE` | Auto-continue to `/verify` |
 | Verification | `/verify` | Updates to `Status: VERIFIED` | Done |
 
 **Status values in plan files:**
