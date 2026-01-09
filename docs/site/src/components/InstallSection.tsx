@@ -45,9 +45,9 @@ const InstallSection = () => {
             </span>
           </div>
 
-          <div className="bg-background/50 rounded-lg p-3 sm:p-4 font-mono text-sm overflow-hidden">
+          <div className="bg-background/50 rounded-lg p-3 sm:p-4 font-mono text-sm">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
-              <code className="text-muted-foreground truncate min-w-0 text-xs sm:text-sm">
+              <code className="text-muted-foreground min-w-0 text-xs sm:text-sm break-all">
                 <span className="text-primary">$</span> {installCommand}
               </code>
               <Button

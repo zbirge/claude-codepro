@@ -19,7 +19,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center px-3 xs:px-4 sm:px-6 relative overflow-hidden pt-16 xs:pt-20">
+    <section className="min-h-[90vh] flex flex-col items-center justify-center px-3 xs:px-4 sm:px-6 relative overflow-hidden pt-16 xs:pt-20 pb-8">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-48 xs:w-64 sm:w-96 h-48 xs:h-64 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -85,10 +85,10 @@ const HeroSection = () => {
         </div>
 
         {/* Install command box */}
-        <div className="glass rounded-lg xs:rounded-xl p-2 xs:p-3 sm:p-4 w-full max-w-[95%] xs:max-w-xl sm:max-w-2xl mx-auto animate-fade-in animation-delay-500 glow-primary overflow-hidden">
+        <div className="glass rounded-lg xs:rounded-xl p-2 xs:p-3 sm:p-4 w-full max-w-[95%] xs:max-w-xl sm:max-w-2xl mx-auto animate-fade-in animation-delay-500 glow-primary">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
           <div className="flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-4">
-            <code className="text-[8px] xs:text-[10px] sm:text-sm text-muted-foreground font-mono truncate flex-1 text-left min-w-0">
+            <code className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground font-mono flex-1 text-left min-w-0 break-all">
               <span className="text-primary">$</span> {installCommand}
             </code>
             <Button
