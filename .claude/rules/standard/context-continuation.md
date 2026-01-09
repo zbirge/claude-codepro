@@ -2,6 +2,19 @@
 
 **Rule:** When context reaches critical levels, save state and continue seamlessly in a new session.
 
+## Quality Over Speed - CRITICAL
+
+**NEVER rush or compromise quality due to context pressure.**
+
+- Context warnings are **informational**, not emergencies
+- You can ALWAYS continue in the next session - work is never lost
+- A well-done task split across 2 sessions is better than a rushed task in 1 session
+- **Quality is the #1 metric** - clean code, proper tests, thorough implementation
+- If context is high, finish the CURRENT task properly, then hand off cleanly
+- Do NOT skip tests, compress explanations, or cut corners to "beat" context limits
+
+**The context limit is not your enemy.** It's just a checkpoint. The plan file, Claude Mem, and continuation files ensure seamless handoff. Trust the system.
+
 ## How It Works
 
 This enables "endless mode" for any development session, not just /spec workflows:

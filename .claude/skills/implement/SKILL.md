@@ -8,7 +8,17 @@ description: Execute implementation plans in batches with Claude CodePro
 > Perform ALL exploration and implementation yourself using direct tool calls (Read, Grep, Glob, MCP tools).
 > Sub-agents lose context and make implementation inconsistent.
 
-**Execute ALL tasks continuously. NO stopping unless context manager says context is full.**
+## Quality Over Speed - CRITICAL
+
+**NEVER rush or compromise quality due to context pressure.**
+
+- Context warnings are informational, not emergencies
+- Work spans sessions seamlessly via plan file and continuation mechanisms
+- Finish the CURRENT task with full quality, then hand off cleanly
+- Do NOT skip tests, compress code, or cut corners to "beat" context limits
+- **Quality is the #1 metric** - a well-done task split across sessions beats rushed work
+
+**Execute tasks continuously with full quality. Hand off cleanly when context is high.**
 
 ## ⛔ CRITICAL: Task Completion Tracking is MANDATORY
 

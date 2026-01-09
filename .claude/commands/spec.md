@@ -217,6 +217,16 @@ User selects: "Yes, proceed with implementation"
    Report: "Workflow complete! Is there anything else?"
 ```
 
+## Quality Over Speed - CRITICAL
+
+**NEVER rush or compromise quality due to context pressure.**
+
+- Context warnings are informational, not emergencies
+- Work spans sessions seamlessly - nothing is lost
+- Finish the CURRENT task with full quality, then hand off cleanly
+- Do NOT skip tests or cut corners to "beat" context limits
+- A well-done task split across 2 sessions beats a rushed task in 1
+
 ## Important
 
 1. **Run /setup first** - Use `/setup` command to initialize project before first /spec
