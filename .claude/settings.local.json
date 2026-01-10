@@ -49,7 +49,8 @@
       "Skill(plan)",
       "Skill(implement)",
       "Skill(verify)",
-      "Skill(setup)"
+      "Skill(setup)",
+      "Skill(commit)"
     ],
     "deny": []
   },
