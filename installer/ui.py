@@ -151,7 +151,7 @@ class Console:
         license_text.append("commercial license", style="bold yellow")
         license_text.append(".\n", style="dim white")
         license_text.append("     Contact: ", style="dim white")
-        license_text.append("mail@maxritter.net", style="cyan")
+        license_text.append("zach@birge-consulting.com", style="cyan")
         self._console.print(license_text)
         self._console.print()
 

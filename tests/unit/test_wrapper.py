@@ -112,9 +112,7 @@ class TestClaudeWrapper:
         from scripts.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
-        wrapper = ClaudeWrapper(
-            claude_args=["--model", "opus", "--verbose"], pipe_dir=pipe_dir
-        )
+        wrapper = ClaudeWrapper(claude_args=["--model", "opus", "--verbose"], pipe_dir=pipe_dir)
 
         assert wrapper.claude_args == ["--model", "opus", "--verbose"]
 

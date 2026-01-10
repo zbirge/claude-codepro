@@ -128,7 +128,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            python:3.12-slim-bullseye \
+            python:3.12-slim-trixie \
             bash -c "
               apt-get update && apt-get install -y binutils && \
               pip install pyinstaller rich httpx typer platformdirs && \
@@ -176,7 +176,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            python:3.12-slim-bullseye \
+            python:3.12-slim-trixie \
             bash -c "
               apt-get update && apt-get install -y binutils && \
               pip install pyinstaller rich httpx typer platformdirs && \

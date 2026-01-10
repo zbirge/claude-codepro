@@ -47,7 +47,7 @@ const NavBar = () => {
         {/* Right side */}
         <div className="flex items-center gap-3 sm:gap-4">
           <a
-            href="https://github.com/maxritter/claude-codepro"
+            href="https://github.com/zbirge/claude-codepro"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground text-lg sm:text-xl transition-colors"

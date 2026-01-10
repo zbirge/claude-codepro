@@ -43,7 +43,7 @@ def print_banner() -> None:
     print()
     print("  ─────────────────────────────────────────────────────────────────")
     print("  📜 Free for individuals, freelancers & open source (AGPL-3.0)")
-    print("     Companies with proprietary software: mail@maxritter.net")
+    print("     Companies with proprietary software: zach@birge-consulting.com")
     print()
 
 

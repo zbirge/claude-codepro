@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
+
 import pytest
 
 
@@ -23,7 +24,10 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {"type": "command", "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py"},
+                            {
+                                "type": "command",
+                                "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
+                            },
                             {"type": "command", "command": python_hook},
                         ],
                     }
@@ -51,7 +55,10 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {"type": "command", "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py"},
+                            {
+                                "type": "command",
+                                "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
+                            },
                             {"type": "command", "command": python_hook},
                         ],
                     }
@@ -140,7 +147,10 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {"type": "command", "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py"},
+                            {
+                                "type": "command",
+                                "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
+                            },
                             {"type": "command", "command": ts_hook},
                         ],
                     }
@@ -170,7 +180,10 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {"type": "command", "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py"},
+                            {
+                                "type": "command",
+                                "command": "python3 /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
+                            },
                             {"type": "command", "command": python_hook},
                             {"type": "command", "command": ts_hook},
                         ],

@@ -55,6 +55,7 @@ class TestStatuslineConfig:
             # Create statusline.json
             statusline_config = {"status": "enabled"}
             import json
+
             (claude_dir / "statusline.json").write_text(json.dumps(statusline_config))
 
             ctx = InstallContext(

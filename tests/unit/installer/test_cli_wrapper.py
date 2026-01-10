@@ -79,6 +79,7 @@ class TestLaunchCommand:
 
                 # Simulate CLI invocation
                 from typer.testing import CliRunner
+
                 from installer.cli import app
 
                 runner = CliRunner()
@@ -95,6 +96,7 @@ class TestLaunchCommand:
             mock_call.return_value = 0
 
             from typer.testing import CliRunner
+
             from installer.cli import app
 
             runner = CliRunner()
@@ -114,6 +116,7 @@ class TestLaunchCommand:
                 mock_wrapper.return_value = 0
 
                 from typer.testing import CliRunner
+
                 from installer.cli import app
 
                 runner = CliRunner()

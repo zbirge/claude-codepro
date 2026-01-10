@@ -20,7 +20,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: "Is Claude CodePro free?",
-    answer: "Free for individuals, freelancers, and open source projects under AGPL-3.0. Companies using it in proprietary/closed-source products need a commercial license. Contact mail@maxritter.net for licensing.",
+    answer: "Free for individuals, freelancers, and open source projects under AGPL-3.0. Companies using it in proprietary/closed-source products need a commercial license. Contact zach@birge-consulting.com for licensing.",
   },
   {
     question: "What IDEs are supported?",
@@ -32,11 +32,11 @@ const faqs: FaqItem[] = [
   },
   {
     question: "Can I contribute or request features?",
-    answer: "Pull requests are welcome! Issues are disabled as this project evolves alongside the author's freelance work. If you want a feature, submit a PR. For custom development or enterprise needs, contact mail@maxritter.net.",
+    answer: "Pull requests are welcome! If you want a feature, submit a PR. For custom development or enterprise needs, contact zach@birge-consulting.com.",
   },
   {
     question: "Do you offer professional services?",
-    answer: "Yes! Max Ritter (the author) is a freelancer near Munich, Germany, offering custom development, enterprise integration, training, and consulting in DevOps, Data Engineering, and AI. Contact mail@maxritter.net.",
+    answer: "For professional services, custom development, enterprise integration, or consulting, contact zach@birge-consulting.com.",
   },
 ];
 

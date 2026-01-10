@@ -71,7 +71,7 @@ const Footer = () => {
                 className="border-primary/50 hover:bg-primary/10 transition-all duration-300 hover:scale-110 hover:border-primary"
                 asChild
               >
-                <a href="https://github.com/maxritter/claude-codepro" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <a href="https://github.com/zbirge/claude-codepro" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                   <Github className="h-5 w-5" />
                 </a>
               </Button>
@@ -81,7 +81,7 @@ const Footer = () => {
                 className="border-primary/50 hover:bg-primary/10 transition-all duration-300 hover:scale-110 hover:border-primary"
                 asChild
               >
-                <a href="https://www.linkedin.com/in/rittermax/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <a href="https://www.linkedin.com/in/zbirge/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <Linkedin className="h-5 w-5" />
                 </a>
               </Button>
@@ -91,7 +91,7 @@ const Footer = () => {
                 className="border-primary/50 hover:bg-primary/10 transition-all duration-300 hover:scale-110 hover:border-primary"
                 asChild
               >
-                <a href="mailto:mail@maxritter.net" aria-label="Email">
+                <a href="mailto:zach@birge-consulting.com" aria-label="Email">
                   <Mail className="h-5 w-5" />
                 </a>
               </Button>
@@ -113,12 +113,12 @@ const Footer = () => {
               </a>
             </p>
             <a
-              href="https://github.com/maxritter/claude-codepro"
+              href="https://github.com/zbirge/claude-codepro"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-primary hover:underline font-mono"
             >
-              github.com/maxritter/claude-codepro
+              github.com/zbirge/claude-codepro
             </a>
           </div>
         </div>

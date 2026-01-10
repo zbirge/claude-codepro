@@ -105,14 +105,14 @@ class FinalizeStep(BaseStep):
 
         ui.rule()
         ui.print()
-        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
+        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/zbirge/claude-codepro")
         ui.print()
 
         ui.print("  [bold white]📜 License:[/bold white] Free for individuals, freelancers & open source (AGPL-3.0)")
         ui.print(
             "             Companies with proprietary software require a [bold yellow]commercial license[/bold yellow]."
         )
-        ui.print("             Contact: [cyan]mail@maxritter.net[/cyan]")
+        ui.print("             Contact: [cyan]zach@birge-consulting.com[/cyan]")
         ui.print()
         ui.print("  [dim]💝 Enjoying Claude CodePro? Consider sponsoring: https://github.com/sponsors/maxritter[/dim]")
         ui.print()

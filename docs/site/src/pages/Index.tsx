@@ -36,7 +36,7 @@ const Index = () => {
         "name": "Is Claude CodePro free?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Free for individuals, freelancers, and open source projects under AGPL-3.0. Companies using it in proprietary/closed-source products need a commercial license. Contact mail@maxritter.net for licensing."
+          "text": "Free for individuals, freelancers, and open source projects under AGPL-3.0. Companies using it in proprietary/closed-source products need a commercial license. Contact zach@birge-consulting.com for licensing."
         }
       },
       {
@@ -68,7 +68,7 @@ const Index = () => {
         "name": "Do you offer professional services?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes! Max Ritter (the author) is a freelancer near Munich, Germany, offering custom development, enterprise integration, training, and consulting in DevOps, Data Engineering, and AI. Contact mail@maxritter.net."
+          "text": "For professional services, custom development, enterprise integration, or consulting, contact zach@birge-consulting.com."
         }
       }
     ]
@@ -105,8 +105,8 @@ const Index = () => {
       "url": "https://maxritter.net/"
     },
     "license": "https://www.gnu.org/licenses/agpl-3.0",
-    "url": "https://github.com/maxritter/claude-codepro",
-    "downloadUrl": "https://github.com/maxritter/claude-codepro"
+    "url": "https://github.com/zbirge/claude-codepro",
+    "downloadUrl": "https://github.com/zbirge/claude-codepro"
   };
 
   return (

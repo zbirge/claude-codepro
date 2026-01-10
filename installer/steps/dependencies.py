@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from installer.platform_utils import command_exists
+from installer.platform_utils import command_exists, has_nvidia_gpu
 from installer.steps.base import BaseStep
 
 if TYPE_CHECKING:
@@ -315,8 +315,46 @@ def _configure_claude_mem_defaults() -> bool:
         return False
 
 
-def _configure_vexor_defaults() -> bool:
-    """Configure Vexor with recommended defaults for semantic search."""
+def _get_vexor_pip_path() -> Path | None:
+    """Get path to pip in vexor's uv tool environment."""
+    vexor_pip = Path.home() / ".local" / "share" / "uv" / "tools" / "vexor" / "bin" / "pip"
+    return vexor_pip if vexor_pip.exists() else None
+
+
+def _fix_vexor_onnxruntime_conflict() -> bool:
+    """Remove CPU-only onnxruntime from vexor to fix CUDA provider conflict."""
+    vexor_pip = _get_vexor_pip_path()
+    if not vexor_pip:
+        return False
+
+    try:
+        result = subprocess.run(
+            [str(vexor_pip), "list"],
+            capture_output=True,
+            text=True,
+        )
+        packages = result.stdout.lower()
+
+        if "onnxruntime-gpu" in packages and "onnxruntime " in packages:
+            subprocess.run(
+                [str(vexor_pip), "uninstall", "-y", "onnxruntime"],
+                capture_output=True,
+            )
+        return True
+    except subprocess.SubprocessError:
+        return False
+
+
+def _configure_vexor_defaults(
+    provider_mode: str = "cpu",
+    api_key: str | None = None,
+) -> bool:
+    """Configure Vexor with defaults based on provider mode.
+
+    Args:
+        provider_mode: One of "cuda", "cpu", or "openai"
+        api_key: OpenAI API key (used if provider_mode is "openai")
+    """
     import json
 
     config_dir = Path.home() / ".vexor"
@@ -330,38 +368,103 @@ def _configure_vexor_defaults() -> bool:
         else:
             config = {}
 
+        # Common settings for all modes
         config.update(
             {
-                "model": "text-embedding-3-small",
                 "batch_size": 64,
                 "embed_concurrency": 4,
                 "extract_concurrency": 4,
                 "extract_backend": "auto",
-                "provider": "openai",
                 "auto_index": True,
-                "local_cuda": False,
                 "rerank": "bm25",
             }
         )
+
+        # Mode-specific settings
+        if provider_mode == "cuda":
+            config.update(
+                {
+                    "provider": "local",
+                    "local_cuda": True,
+                }
+            )
+            # Remove api_key and model if switching from openai mode
+            config.pop("api_key", None)
+            config.pop("model", None)
+        elif provider_mode == "openai":
+            config.update(
+                {
+                    "provider": "openai",
+                    "local_cuda": False,
+                    "model": "text-embedding-3-small",
+                }
+            )
+            if api_key:
+                config["api_key"] = api_key
+        else:  # cpu
+            config.update(
+                {
+                    "provider": "local",
+                    "local_cuda": False,
+                }
+            )
+            # Remove api_key and model if switching from openai mode
+            config.pop("api_key", None)
+            config.pop("model", None)
+
         config_path.write_text(json.dumps(config, indent=2) + "\n")
         return True
     except Exception:
         return False
 
 
-def install_vexor() -> bool:
-    """Install Vexor semantic search tool and configure defaults."""
+def _get_openai_api_key() -> str | None:
+    """Get OpenAI API key from environment."""
+    import os
+
+    return os.environ.get("OPENAI_API_KEY")
+
+
+def install_vexor(
+    provider_mode: str | None = None,
+    api_key: str | None = None,
+) -> bool:
+    """Install Vexor semantic search tool and configure defaults.
+
+    Args:
+        provider_mode: One of "cuda", "cpu", or "openai". If None, auto-detects based on GPU.
+        api_key: OpenAI API key (used if provider_mode is "openai")
+    """
+    # Auto-detect provider mode if not specified
+    if provider_mode is None:
+        gpu_available = has_nvidia_gpu()
+        provider_mode = "cuda" if gpu_available else "cpu"
+
     if command_exists("vexor"):
-        _configure_vexor_defaults()
+        if provider_mode == "cuda":
+            _fix_vexor_onnxruntime_conflict()
+        _configure_vexor_defaults(provider_mode, api_key)
         return True
 
     try:
+        # Select package based on provider mode
+        if provider_mode == "cuda":
+            package = "vexor[local-cuda]"
+        elif provider_mode == "openai":
+            package = "vexor"
+        else:  # cpu
+            package = "vexor[local]"
+
         subprocess.run(
-            ["uv", "tool", "install", "vexor"],
+            ["uv", "tool", "install", package],
             check=True,
             capture_output=True,
         )
-        _configure_vexor_defaults()
+
+        if provider_mode == "cuda":
+            _fix_vexor_onnxruntime_conflict()
+
+        _configure_vexor_defaults(provider_mode, api_key)
         return True
     except subprocess.CalledProcessError:
         return False
@@ -478,7 +581,26 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "Context7 plugin", install_context7):
             installed.append("context7")
 
-        if _install_with_spinner(ui, "Vexor semantic search", install_vexor):
+        # Vexor: determine provider mode before spinner (prompt must happen outside spinner)
+        gpu_available = has_nvidia_gpu()
+        if gpu_available:
+            provider_mode = "cuda"
+            api_key = None
+        else:
+            api_key = _get_openai_api_key()
+            if ui and not ui.non_interactive:
+                use_openai = ui.confirm(
+                    "Use OpenAI for embeddings? (Recommended)",
+                    default=False,
+                )
+                provider_mode = "openai" if use_openai else "cpu"
+            else:
+                # Non-interactive: use OpenAI if key exists
+                provider_mode = "openai" if api_key else "cpu"
+
+        if _install_with_spinner(
+            ui, "Vexor semantic search", install_vexor, provider_mode, api_key if provider_mode == "openai" else None
+        ):
             installed.append("vexor")
 
         qlty_result = install_qlty(ctx.project_dir)

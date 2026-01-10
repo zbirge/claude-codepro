@@ -101,4 +101,19 @@ This helps you:
 
 ### Exception: Explicit User Override
 
-If user explicitly says "checkout branch X" or "switch to branch Y", you may execute `git checkout` or `git switch` as directly requested. This is the only write operation exception.
+If user explicitly says "checkout branch X" or "switch to branch Y", you may execute `git checkout` or `git switch` as directly requested.
+
+### Exception: /commit Skill
+
+When the user explicitly invokes the `/commit` skill, you MAY execute:
+- `git add` - Stage files (with user confirmation)
+- `git commit` - Create commits
+- `git push` - Push to remote (with safety checks)
+
+This exception ONLY applies when the skill is actively invoked. During normal conversation, git write operations remain prohibited.
+
+**Safety requirements when /commit is invoked:**
+- Never force push to main/master
+- Never commit files containing secrets
+- Always run pre-commit hooks if available
+- Always use conventional commit format

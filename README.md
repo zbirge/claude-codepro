@@ -13,7 +13,7 @@ Start shipping systematically with Endless Mode, Spec-Driven Development, Skills
 ![Spec-Driven](https://img.shields.io/badge/Spec-Driven-yellow.svg)
 ![TDD](https://img.shields.io/badge/TDD-Enforcement-green.svg)
 
-#### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
+#### ⭐ [Star this repository](https://github.com/zbirge/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/zbirge/) · ✉️ [Get in touch](mailto:zach@birge-consulting.com)
 
 </div>
 
@@ -37,7 +37,7 @@ Claude CodePro can be installed into any existing project:
 2. Run this command in the terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.1.8/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.1.8/install.sh | bash
 ```
 
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
@@ -193,36 +193,21 @@ This applies to:
 - Internal tools at companies that don't want to open-source
 - SaaS products using Claude CodePro
 
-**Contact:** [mail@maxritter.net](mailto:mail@maxritter.net) for commercial licensing inquiries.
+**Contact:** [zach@birge-consulting.com](mailto:zach@birge-consulting.com) for commercial licensing inquiries.
 
 ---
 
-## 💼 Professional Services
+## 💼 Fork Maintainer
 
-I'm **Max Ritter**, a senior IT freelancer based near **Munich, Germany**, specializing in:
-
-- **AWS Cloud** - Cloud Infrastructure, Architecture & Development
-- **Data Engineering** - Data Pipelines, ETL, Analytics Infrastructure
-- **Artificial Intelligence** - LLM Integration, AI-Assisted Development, Agents
-- **DevOps** - CI/CD, Infrastructure as Code, Automation
-
-### Paid Services Available
-
-| Service | Description |
-|---------|-------------|
-| **Custom Development** | Claude CodePro doesn't work in your setup? Containerized environment issues? Specific software restrictions? I can customize it for your needs. |
-| **Enterprise Integration** | Need Claude CodePro integrated into your company's existing toolchain and workflows? |
-| **Consulting** | General DevOps, Data Engineering, or AI consulting for your projects |
+This fork is maintained by **zbirge**.
 
 ### Contact & Connect
 
 | | |
 |---|---|
-| ✉️ **Email** | [mail@maxritter.net](mailto:mail@maxritter.net) |
-| 💼 **LinkedIn** | [linkedin.com/in/rittermax](https://www.linkedin.com/in/rittermax/) |
-| 📄 **CV** | [flowcv.com/resume/hcaa0q4wdd](https://flowcv.com/resume/hcaa0q4wdd) |
-| 📝 **Blog** | [blog.maxritter.net](http://blog.maxritter.net/) |
-| 🌐 **Website** | [maxritter.net](https://maxritter.net) |
+| ✉️ **Email** | [zach@birge-consulting.com](mailto:zach@birge-consulting.com) |
+| 💼 **LinkedIn** | [linkedin.com/in/zbirge](https://www.linkedin.com/in/zbirge/) |
+| 🐦 **Twitter** | [@zachbirge](https://twitter.com/zachbirge) |
 
 ---
 

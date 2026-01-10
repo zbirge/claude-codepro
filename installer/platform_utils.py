@@ -4,9 +4,23 @@ from __future__ import annotations
 
 import platform
 import shutil
+import subprocess
 from pathlib import Path
 
 import platformdirs
+
+
+def has_nvidia_gpu() -> bool:
+    """Check if NVIDIA GPU is available via nvidia-smi."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi"],
+            capture_output=True,
+            timeout=10,
+        )
+        return result.returncode == 0
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        return False
 
 
 def is_macos() -> bool:

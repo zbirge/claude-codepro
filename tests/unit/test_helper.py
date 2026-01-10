@@ -47,9 +47,7 @@ class TestContextPercentage:
         assert isinstance(percentage, float)
         assert 49.0 <= percentage <= 51.0  # ~50%
 
-    def test_get_context_percentage_returns_zero_on_missing_session(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_context_percentage_returns_zero_on_missing_session(self, tmp_path: Path) -> None:
         """get_context_percentage returns 0 when session file missing."""
         from scripts.helper import get_context_percentage
 
@@ -72,9 +70,7 @@ class TestCheckContext:
 
         assert result == "OK"
 
-    def test_check_context_returns_clear_needed_above_threshold(
-        self, tmp_path: Path
-    ) -> None:
+    def test_check_context_returns_clear_needed_above_threshold(self, tmp_path: Path) -> None:
         """check_context returns 'CLEAR_NEEDED' when above threshold."""
         from scripts.helper import check_context
 

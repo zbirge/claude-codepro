@@ -1,13 +1,16 @@
 {
-  "name": "{{PROJECT_NAME}}",
+  "name": "Claude CodePro",
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "hostRequirements": {
+    "gpu": "optional" 
+  },
   "runArgs": [
     "--name",
-    "{{PROJECT_SLUG}}"
+    "claude-codepro"
   ],
-  "workspaceFolder": "/workspaces/{{PROJECT_SLUG}}",
+  "workspaceFolder": "/workspaces/claude-codepro",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -86,9 +89,22 @@
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/spaceship */
     "ghcr.io/braun-daniel/devcontainer-features/spaceship:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/fzf */
-    "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {}
+    "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {},
+	/* https://github.com/devcontainers/features/tree/main/src/nvidia-cuda */
+	"ghcr.io/devcontainers/features/nvidia-cuda:2": {
+		"installCudnnDev": true,
+		"installToolkit": true,
+		"cudaVersion": "12.5",
+		"cudnnVersion": "automatic"
+	},
+	/* https://github.com/devcontainers/features/tree/main/src/python */
+	"ghcr.io/devcontainers/features/python:1": {
+		"version": "3.10"
+	},
+	/* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
+	"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.1.8/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.1.8/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }
