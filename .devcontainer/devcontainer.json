@@ -1,5 +1,5 @@
 {
-  "name": "Claude CodePro",
+  "name": "{{PROJECT_NAME}}",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -8,9 +8,9 @@
   },
   "runArgs": [
     "--name",
-    "claude-codepro"
+    "{{PROJECT_SLUG}}"
   ],
-  "workspaceFolder": "/workspaces/claude-codepro",
+  "workspaceFolder": "/workspaces/{{PROJECT_SLUG}}",
   "customizations": {
     "vscode": {
       "extensions": [
