@@ -4,6 +4,9 @@ version = "1.0.0"
 description = "Claude CodePro"
 requires-python = ">=3.12,<3.13"
 readme = "README.md"
+maintainers = [
+    { name = "Zach Birge", email = "zach@birge-consulting.com" }
+]
 dependencies = [
     "rich>=14.0.0",
     "httpx>=0.28.1",
@@ -11,6 +14,14 @@ dependencies = [
     "platformdirs>=4.3.6",
     "pyinstaller>=6.17.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/zbirge/claude-codepro"
+Homepage = "https://claude-code.pro"
+Issues = "https://github.com/zbirge/claude-codepro/issues"
+
+[project.scripts]
+ccp-installer = "installer.cli:app"
 
 [dependency-groups]
 dev = [
