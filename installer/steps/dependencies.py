@@ -386,11 +386,11 @@ def _configure_vexor_defaults(
                 {
                     "provider": "local",
                     "local_cuda": True,
+                    "model": "intfloat/multilingual-e5-small",
                 }
             )
-            # Remove api_key and model if switching from openai mode
+            # Remove api_key if switching from openai mode
             config.pop("api_key", None)
-            config.pop("model", None)
         elif provider_mode == "openai":
             config.update(
                 {
@@ -406,11 +406,11 @@ def _configure_vexor_defaults(
                 {
                     "provider": "local",
                     "local_cuda": False,
+                    "model": "intfloat/multilingual-e5-small",
                 }
             )
-            # Remove api_key and model if switching from openai mode
+            # Remove api_key if switching from openai mode
             config.pop("api_key", None)
-            config.pop("model", None)
 
         config_path.write_text(json.dumps(config, indent=2) + "\n")
         return True
@@ -582,15 +582,22 @@ class DependenciesStep(BaseStep):
             installed.append("context7")
 
         # Vexor: determine provider mode before spinner (prompt must happen outside spinner)
-        gpu_available = has_nvidia_gpu()
+        gpu_info = has_nvidia_gpu(verbose=True)
+        gpu_available = gpu_info["detected"] if isinstance(gpu_info, dict) else gpu_info
         if gpu_available:
             provider_mode = "cuda"
             api_key = None
+            if ui:
+                method = gpu_info.get("method", "unknown") if isinstance(gpu_info, dict) else "unknown"
+                ui.status(f"NVIDIA GPU detected via {method}")
         else:
+            # Inform user CUDA is unavailable
+            if ui:
+                ui.info("CUDA/GPU not available. Using CPU for local embeddings.")
             api_key = _get_openai_api_key()
             if ui and not ui.non_interactive:
                 use_openai = ui.confirm(
-                    "Use OpenAI for embeddings? (Recommended)",
+                    "Use OpenAI API for embeddings instead?",
                     default=False,
                 )
                 provider_mode = "openai" if use_openai else "cpu"

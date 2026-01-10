@@ -207,6 +207,52 @@ class TestHasNvidiaGpu:
         mock_run.side_effect = OSError("Permission denied")
         assert has_nvidia_gpu() is False
 
+    @patch("installer.platform_utils.subprocess.run")
+    def test_verbose_returns_dict_with_diagnostic_info(self, mock_run):
+        """has_nvidia_gpu with verbose=True returns diagnostic dict."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.return_value = MagicMock(returncode=0, stdout=b"GPU 0: NVIDIA", stderr=b"")
+        result = has_nvidia_gpu(verbose=True)
+        assert isinstance(result, dict)
+        assert "detected" in result
+        assert "method" in result
+        assert result["detected"] is True
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_verbose_includes_error_on_failure(self, mock_run):
+        """has_nvidia_gpu verbose mode includes error info when nvidia-smi fails."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = FileNotFoundError("nvidia-smi not found")
+        result = has_nvidia_gpu(verbose=True)
+        assert isinstance(result, dict)
+        assert result["detected"] is False
+        assert "error" in result
+
+    @patch("installer.platform_utils.subprocess.run")
+    @patch("installer.platform_utils.Path.glob")
+    def test_fallback_to_dev_nvidia_when_smi_fails(self, mock_glob, mock_run):
+        """has_nvidia_gpu falls back to /dev/nvidia* check when nvidia-smi fails."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = FileNotFoundError()
+        mock_glob.return_value = [Path("/dev/nvidia0")]
+        result = has_nvidia_gpu(verbose=True)
+        assert result["detected"] is True
+        assert result["method"] == "dev_nvidia"
+
+    @patch("installer.platform_utils.subprocess.run")
+    @patch("installer.platform_utils.Path.glob")
+    def test_returns_false_when_all_methods_fail(self, mock_glob, mock_run):
+        """has_nvidia_gpu returns False when nvidia-smi and /dev/nvidia* both fail."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = FileNotFoundError()
+        mock_glob.return_value = []
+        result = has_nvidia_gpu(verbose=True)
+        assert result["detected"] is False
+
 
 class TestIsWsl:
     """Test is_wsl function."""

@@ -10,17 +10,63 @@ from pathlib import Path
 import platformdirs
 
 
-def has_nvidia_gpu() -> bool:
-    """Check if NVIDIA GPU is available via nvidia-smi."""
+def has_nvidia_gpu(verbose: bool = False) -> bool | dict:
+    """Check if NVIDIA GPU is available via nvidia-smi or /dev/nvidia* fallback.
+
+    Args:
+        verbose: If True, return dict with diagnostic info instead of bool.
+
+    Returns:
+        bool if verbose=False, dict with detection details if verbose=True.
+    """
+    result_info: dict = {
+        "detected": False,
+        "method": None,
+        "error": None,
+        "nvidia_smi_output": None,
+    }
+
+    # Method 1: nvidia-smi command
     try:
-        result = subprocess.run(
+        proc = subprocess.run(
             ["nvidia-smi"],
             capture_output=True,
             timeout=10,
         )
-        return result.returncode == 0
-    except (subprocess.SubprocessError, FileNotFoundError, OSError):
-        return False
+        if proc.returncode == 0:
+            result_info["detected"] = True
+            result_info["method"] = "nvidia_smi"
+            result_info["nvidia_smi_output"] = proc.stdout.decode("utf-8", errors="replace")[:500]
+            return result_info if verbose else True
+        else:
+            result_info["error"] = f"nvidia-smi exited with code {proc.returncode}"
+            stderr = proc.stderr.decode("utf-8", errors="replace")[:200]
+            if stderr:
+                result_info["error"] += f": {stderr}"
+    except FileNotFoundError as e:
+        result_info["error"] = f"nvidia-smi not found: {e}"
+    except subprocess.TimeoutExpired:
+        result_info["error"] = "nvidia-smi timed out after 10 seconds"
+    except OSError as e:
+        result_info["error"] = f"OSError running nvidia-smi: {e}"
+    except subprocess.SubprocessError as e:
+        result_info["error"] = f"SubprocessError running nvidia-smi: {e}"
+
+    # Method 2: Check for /dev/nvidia* devices (fallback)
+    try:
+        nvidia_devices = list(Path("/dev").glob("nvidia*"))
+        if nvidia_devices:
+            result_info["detected"] = True
+            result_info["method"] = "dev_nvidia"
+            result_info["nvidia_devices"] = [str(d) for d in nvidia_devices[:5]]
+            return result_info if verbose else True
+    except (OSError, PermissionError) as e:
+        if result_info["error"]:
+            result_info["error"] += f"; /dev/nvidia* check failed: {e}"
+        else:
+            result_info["error"] = f"/dev/nvidia* check failed: {e}"
+
+    return result_info if verbose else False
 
 
 def is_macos() -> bool:

@@ -708,7 +708,7 @@ class TestVexorCudaSupport:
         mock_config.assert_called_once_with("cpu", None)
 
     def test_configure_vexor_defaults_cuda_mode(self):
-        """_configure_vexor_defaults sets local_cuda True and provider local for cuda mode."""
+        """_configure_vexor_defaults sets local_cuda True, provider local, and e5 model for cuda mode."""
         import json
 
         from installer.steps.dependencies import _configure_vexor_defaults
@@ -722,9 +722,10 @@ class TestVexorCudaSupport:
                 config = json.loads(config_path.read_text())
                 assert config["local_cuda"] is True
                 assert config["provider"] == "local"
+                assert config["model"] == "intfloat/multilingual-e5-small"
 
     def test_configure_vexor_defaults_cpu_mode(self):
-        """_configure_vexor_defaults sets local_cuda False and provider local for cpu mode."""
+        """_configure_vexor_defaults sets local_cuda False, provider local, and e5 model for cpu mode."""
         import json
 
         from installer.steps.dependencies import _configure_vexor_defaults
@@ -738,6 +739,7 @@ class TestVexorCudaSupport:
                 config = json.loads(config_path.read_text())
                 assert config["local_cuda"] is False
                 assert config["provider"] == "local"
+                assert config["model"] == "intfloat/multilingual-e5-small"
 
     def test_configure_vexor_defaults_openai_mode_with_key(self):
         """_configure_vexor_defaults sets openai provider and saves api_key."""
