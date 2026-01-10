@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -159,3 +159,308 @@ class TestPlatformSuffix:
 
         result = get_platform_suffix()
         assert result == "darwin-arm64"
+
+
+class TestHasNvidiaGpu:
+    """Test has_nvidia_gpu function."""
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_returns_true_when_nvidia_smi_succeeds(self, mock_run):
+        """has_nvidia_gpu returns True when nvidia-smi exits 0."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.return_value = MagicMock(returncode=0)
+        assert has_nvidia_gpu() is True
+        mock_run.assert_called_once()
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_returns_false_when_nvidia_smi_fails(self, mock_run):
+        """has_nvidia_gpu returns False when nvidia-smi exits non-zero."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.return_value = MagicMock(returncode=1)
+        assert has_nvidia_gpu() is False
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_returns_false_on_file_not_found(self, mock_run):
+        """has_nvidia_gpu returns False when nvidia-smi not found."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = FileNotFoundError()
+        assert has_nvidia_gpu() is False
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_returns_false_on_timeout(self, mock_run):
+        """has_nvidia_gpu returns False on timeout."""
+        import subprocess
+
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="nvidia-smi", timeout=10)
+        assert has_nvidia_gpu() is False
+
+    @patch("installer.platform_utils.subprocess.run")
+    def test_returns_false_on_os_error(self, mock_run):
+        """has_nvidia_gpu returns False on OSError."""
+        from installer.platform_utils import has_nvidia_gpu
+
+        mock_run.side_effect = OSError("Permission denied")
+        assert has_nvidia_gpu() is False
+
+
+class TestIsWsl:
+    """Test is_wsl function."""
+
+    @patch("installer.platform_utils.is_linux", return_value=False)
+    def test_is_wsl_returns_false_on_non_linux(self, mock_linux):
+        """is_wsl returns False on non-Linux systems."""
+        from installer.platform_utils import is_wsl
+
+        assert is_wsl() is False
+
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("builtins.open")
+    def test_is_wsl_returns_true_when_microsoft_in_version(self, mock_open, mock_linux):
+        """is_wsl returns True when /proc/version contains 'microsoft'."""
+        from installer.platform_utils import is_wsl
+
+        mock_open.return_value.__enter__.return_value.read.return_value = "Linux version 5.15.0-microsoft-standard"
+        assert is_wsl() is True
+
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("builtins.open")
+    def test_is_wsl_returns_false_on_io_error(self, mock_open, mock_linux):
+        """is_wsl returns False on IOError."""
+        from installer.platform_utils import is_wsl
+
+        mock_open.side_effect = IOError("Cannot read file")
+        assert is_wsl() is False
+
+
+class TestIsInDevcontainer:
+    """Test is_in_devcontainer function."""
+
+    @patch.object(Path, "exists")
+    def test_is_in_devcontainer_returns_true_with_dockerenv(self, mock_exists):
+        """is_in_devcontainer returns True when /.dockerenv exists."""
+        from installer.platform_utils import is_in_devcontainer
+
+        def exists_side_effect(self):
+            return str(self) == "/.dockerenv"
+
+        mock_exists.side_effect = lambda: True
+
+        # We need to patch Path itself
+        with patch("installer.platform_utils.Path") as mock_path:
+            mock_dockerenv = MagicMock()
+            mock_dockerenv.exists.return_value = True
+            mock_containerenv = MagicMock()
+            mock_containerenv.exists.return_value = False
+
+            mock_path.return_value = mock_dockerenv
+
+            def path_side_effect(arg):
+                if arg == "/.dockerenv":
+                    return mock_dockerenv
+                elif arg == "/run/.containerenv":
+                    return mock_containerenv
+                return MagicMock()
+
+            mock_path.side_effect = path_side_effect
+
+            result = is_in_devcontainer()
+            assert result is True
+
+
+class TestGetPackageManager:
+    """Test get_package_manager function branches."""
+
+    @patch("installer.platform_utils.is_macos", return_value=True)
+    @patch("installer.platform_utils.command_exists")
+    def test_get_package_manager_macos_with_brew(self, mock_cmd, mock_macos):
+        """get_package_manager returns 'brew' on macOS with Homebrew."""
+        from installer.platform_utils import get_package_manager
+
+        mock_cmd.return_value = True
+        assert get_package_manager() == "brew"
+
+    @patch("installer.platform_utils.is_macos", return_value=True)
+    @patch("installer.platform_utils.command_exists", return_value=False)
+    def test_get_package_manager_macos_without_brew(self, mock_cmd, mock_macos):
+        """get_package_manager returns None on macOS without Homebrew."""
+        from installer.platform_utils import get_package_manager
+
+        assert get_package_manager() is None
+
+    @patch("installer.platform_utils.is_macos", return_value=False)
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("installer.platform_utils.is_wsl", return_value=False)
+    @patch("installer.platform_utils.command_exists")
+    def test_get_package_manager_linux_apt(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
+        """get_package_manager returns 'apt-get' on Debian-based Linux."""
+        from installer.platform_utils import get_package_manager
+
+        mock_cmd.side_effect = lambda cmd: cmd == "apt-get"
+        assert get_package_manager() == "apt-get"
+
+    @patch("installer.platform_utils.is_macos", return_value=False)
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("installer.platform_utils.is_wsl", return_value=False)
+    @patch("installer.platform_utils.command_exists")
+    def test_get_package_manager_linux_dnf(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
+        """get_package_manager returns 'dnf' on Fedora."""
+        from installer.platform_utils import get_package_manager
+
+        mock_cmd.side_effect = lambda cmd: cmd == "dnf"
+        assert get_package_manager() == "dnf"
+
+    @patch("installer.platform_utils.is_macos", return_value=False)
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("installer.platform_utils.is_wsl", return_value=False)
+    @patch("installer.platform_utils.command_exists")
+    def test_get_package_manager_linux_yum(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
+        """get_package_manager returns 'yum' on older RHEL."""
+        from installer.platform_utils import get_package_manager
+
+        mock_cmd.side_effect = lambda cmd: cmd == "yum"
+        assert get_package_manager() == "yum"
+
+    @patch("installer.platform_utils.is_macos", return_value=False)
+    @patch("installer.platform_utils.is_linux", return_value=True)
+    @patch("installer.platform_utils.is_wsl", return_value=False)
+    @patch("installer.platform_utils.command_exists")
+    def test_get_package_manager_linux_pacman(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
+        """get_package_manager returns 'pacman' on Arch."""
+        from installer.platform_utils import get_package_manager
+
+        mock_cmd.side_effect = lambda cmd: cmd == "pacman"
+        assert get_package_manager() == "pacman"
+
+
+class TestGetShellConfigFiles:
+    """Test get_shell_config_files branches."""
+
+    def test_get_shell_config_files_includes_bash_profile_if_exists(self):
+        """get_shell_config_files includes .bash_profile if it exists."""
+        import tempfile
+
+        from installer.platform_utils import get_shell_config_files
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            bashrc = home / ".bashrc"
+            bash_profile = home / ".bash_profile"
+            bashrc.write_text("# bashrc")
+            bash_profile.write_text("# bash_profile")
+
+            with patch("installer.platform_utils.Path.home", return_value=home):
+                result = get_shell_config_files()
+
+            assert bash_profile in result
+
+    def test_get_shell_config_files_includes_fish_config_if_exists(self):
+        """get_shell_config_files includes config.fish if it exists."""
+        import tempfile
+
+        from installer.platform_utils import get_shell_config_files
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            fish_dir = home / ".config" / "fish"
+            fish_dir.mkdir(parents=True)
+            fish_config = fish_dir / "config.fish"
+            fish_config.write_text("# fish config")
+
+            with patch("installer.platform_utils.Path.home", return_value=home):
+                result = get_shell_config_files()
+
+            assert fish_config in result
+
+    def test_get_shell_config_files_returns_defaults_if_none_exist(self):
+        """get_shell_config_files returns defaults if no configs exist."""
+        import tempfile
+
+        from installer.platform_utils import get_shell_config_files
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            # No shell configs exist
+
+            with patch("installer.platform_utils.Path.home", return_value=home):
+                result = get_shell_config_files()
+
+            # Should return default paths
+            assert len(result) == 3
+            assert any(".bashrc" in str(p) for p in result)
+
+
+class TestAddToPath:
+    """Test add_to_path function."""
+
+    def test_add_to_path_adds_export_to_bashrc(self):
+        """add_to_path adds export line to bashrc."""
+        import tempfile
+
+        from installer.platform_utils import add_to_path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            bashrc = home / ".bashrc"
+            bashrc.write_text("# existing config\n")
+
+            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
+                add_to_path(Path("/custom/bin"))
+
+            content = bashrc.read_text()
+            assert 'export PATH="/custom/bin:$PATH"' in content
+
+    def test_add_to_path_adds_set_to_fish_config(self):
+        """add_to_path adds set -gx line to fish config."""
+        import tempfile
+
+        from installer.platform_utils import add_to_path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            fish_dir = home / ".config" / "fish"
+            fish_dir.mkdir(parents=True)
+            fish_config = fish_dir / "config.fish"
+            fish_config.write_text("# existing config\n")
+
+            with patch("installer.platform_utils.get_shell_config_files", return_value=[fish_config]):
+                add_to_path(Path("/custom/bin"))
+
+            content = fish_config.read_text()
+            assert 'set -gx PATH "/custom/bin" $PATH' in content
+
+    def test_add_to_path_skips_if_already_in_path(self):
+        """add_to_path skips if path already in config."""
+        import tempfile
+
+        from installer.platform_utils import add_to_path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            bashrc = home / ".bashrc"
+            bashrc.write_text('# existing\nexport PATH="/custom/bin:$PATH"\n')
+
+            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
+                add_to_path(Path("/custom/bin"))
+
+            content = bashrc.read_text()
+            # Should not duplicate
+            assert content.count("/custom/bin") == 1
+
+    def test_add_to_path_skips_nonexistent_files(self):
+        """add_to_path skips files that don't exist."""
+        import tempfile
+
+        from installer.platform_utils import add_to_path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            bashrc = home / ".bashrc"  # Does not exist
+
+            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
+                # Should not raise
+                add_to_path(Path("/custom/bin"))
