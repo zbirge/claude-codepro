@@ -629,11 +629,16 @@ class TestShellConfigRunBranches:
             assert str(bashrc) in ctx.config["modified_shell_configs"]
 
     @patch("installer.steps.shell_config.get_shell_config_files")
-    def test_run_handles_write_error(self, mock_get_files):
+    @patch("installer.steps.shell_config._configure_qlty_path")
+    @patch("installer.steps.shell_config.is_in_devcontainer")
+    def test_run_handles_write_error(self, mock_is_devcontainer, mock_qlty_path, mock_get_files):
         """run handles OSError when writing config."""
         from installer.context import InstallContext
         from installer.steps.shell_config import ShellConfigStep
         from installer.ui import Console
+
+        mock_is_devcontainer.return_value = False
+        mock_qlty_path.return_value = False
 
         step = ShellConfigStep()
         with tempfile.TemporaryDirectory() as tmpdir:
