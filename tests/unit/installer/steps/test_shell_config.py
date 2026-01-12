@@ -651,12 +651,7 @@ class TestShellConfigRunBranches:
                 ui=Console(non_interactive=True),
             )
 
-            # Make the file read-only to trigger write error
-            bashrc.chmod(0o444)
-
-            try:
+            # Mock write_text to raise PermissionError (chmod doesn't work as root in CI)
+            with patch.object(Path, "write_text", side_effect=PermissionError("Permission denied")):
                 # Should not raise, just log warning
                 step.run(ctx)
-            finally:
-                # Restore permissions for cleanup
-                bashrc.chmod(0o644)
