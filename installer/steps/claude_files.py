@@ -180,7 +180,6 @@ class ClaudeFilesStep(BaseStep):
                 ("commands", categories["commands"], ctx.project_dir / ".claude" / "commands"),
                 ("hooks", categories["hooks"], ctx.project_dir / ".claude" / "hooks"),
                 ("scripts", categories["scripts"], ctx.project_dir / ".claude" / "scripts"),
-                ("skills", categories["skills"], ctx.project_dir / ".claude" / "skills"),
                 ("standard rules", categories["rules_standard"], ctx.project_dir / ".claude" / "rules" / "standard"),
             ]
 
@@ -193,6 +192,23 @@ class ClaudeFilesStep(BaseStep):
                     except (OSError, IOError) as e:
                         if ui:
                             ui.warning(f"Failed to clear {name} directory: {e}")
+
+            # Clear skills directory contents, preserving custom/ subdirectory
+            skills_dir = ctx.project_dir / ".claude" / "skills"
+            if skills_dir.exists() and categories["skills"]:
+                if ui:
+                    ui.status("Clearing old skills...")
+                for item in skills_dir.iterdir():
+                    if item.name == "custom":
+                        continue  # Preserve custom skills
+                    try:
+                        if item.is_dir():
+                            shutil.rmtree(item)
+                        else:
+                            item.unlink()
+                    except (OSError, IOError) as e:
+                        if ui:
+                            ui.warning(f"Failed to clear skill {item.name}: {e}")
 
         for category, files in categories.items():
             if not files:
@@ -264,7 +280,11 @@ class ClaudeFilesStep(BaseStep):
         skills_dir = ctx.project_dir / ".claude" / "skills"
         if not skills_dir.exists():
             skills_dir.mkdir(parents=True, exist_ok=True)
-            (skills_dir / ".gitkeep").touch()
+
+        skills_custom_dir = ctx.project_dir / ".claude" / "skills" / "custom"
+        if not skills_custom_dir.exists():
+            skills_custom_dir.mkdir(parents=True, exist_ok=True)
+            (skills_custom_dir / ".gitkeep").touch()
 
         if ui:
             if file_count > 0:

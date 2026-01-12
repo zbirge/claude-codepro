@@ -231,6 +231,7 @@ CLAUDE.md
 !.claude/rules/custom/python-rules.md
 !.claude/rules/custom/typescript-rules.md
 tmp/
+context/
 
 # Build artifacts
 .claude/bin/

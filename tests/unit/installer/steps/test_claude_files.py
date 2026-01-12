@@ -676,6 +676,137 @@ class TestDirectoryClearing:
             assert (dest_standard / "new-rule.md").exists()
 
 
+class TestClaudeFilesCustomSkillsPreservation:
+    """Test that custom skills are preserved during installation."""
+
+    def test_custom_skills_preserved_during_reinstall(self):
+        """Custom skills in skills/custom/ are preserved during reinstallation."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with standard skills
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_skills = source_claude / "skills" / "standard-skill"
+            source_skills.mkdir(parents=True)
+            (source_skills / "SKILL.md").write_text("standard skill from repo")
+
+            # Create destination with custom skills AND old standard skills
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_custom_skills = dest_claude / "skills" / "custom" / "my-custom-skill"
+            dest_old_skills = dest_claude / "skills" / "old-standard-skill"
+            dest_custom_skills.mkdir(parents=True)
+            dest_old_skills.mkdir(parents=True)
+            (dest_custom_skills / "SKILL.md").write_text("USER CUSTOM SKILL - PRESERVE ME")
+            (dest_old_skills / "SKILL.md").write_text("old skill to be removed")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Custom skills should be PRESERVED
+            assert (dest_custom_skills / "SKILL.md").exists()
+            assert (dest_custom_skills / "SKILL.md").read_text() == "USER CUSTOM SKILL - PRESERVE ME"
+
+            # Old standard skill should be GONE (cleared)
+            assert not dest_old_skills.exists()
+
+            # New standard skill should be installed
+            assert (dest_claude / "skills" / "standard-skill" / "SKILL.md").exists()
+
+    def test_custom_skills_directory_created_with_gitkeep(self):
+        """skills/custom/ directory is created with .gitkeep if not exists."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with skills (no custom/)
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_skills = source_claude / "skills" / "test-skill"
+            source_skills.mkdir(parents=True)
+            (source_skills / "SKILL.md").write_text("test skill")
+
+            # Create destination without skills/custom/
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_claude.mkdir(parents=True)
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # skills/custom/ should be created with .gitkeep
+            skills_custom_dir = dest_claude / "skills" / "custom"
+            assert skills_custom_dir.exists()
+            assert (skills_custom_dir / ".gitkeep").exists()
+
+    def test_standard_skills_cleared_custom_skills_untouched(self):
+        """Standard skills are cleared while custom skills remain untouched."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with new standard skills
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_skills = source_claude / "skills" / "new-skill"
+            source_skills.mkdir(parents=True)
+            (source_skills / "SKILL.md").write_text("new skill v2")
+
+            # Create destination with custom skills, old standard skills, and loose files
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_custom = dest_claude / "skills" / "custom" / "my-skill"
+            dest_old = dest_claude / "skills" / "old-skill"
+            dest_custom.mkdir(parents=True)
+            dest_old.mkdir(parents=True)
+            (dest_custom / "SKILL.md").write_text("CUSTOM CONTENT")
+            (dest_old / "SKILL.md").write_text("old content")
+            # Also test loose file in skills/
+            (dest_claude / "skills" / "loose-file.txt").write_text("should be removed")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Custom skills preserved
+            assert (dest_custom / "SKILL.md").exists()
+            assert (dest_custom / "SKILL.md").read_text() == "CUSTOM CONTENT"
+
+            # Old standard skill gone
+            assert not dest_old.exists()
+
+            # Loose file gone
+            assert not (dest_claude / "skills" / "loose-file.txt").exists()
+
+            # New skill installed
+            assert (dest_claude / "skills" / "new-skill" / "SKILL.md").exists()
+
+
 class TestClaudeFilesRollback:
     """Test ClaudeFilesStep rollback."""
 

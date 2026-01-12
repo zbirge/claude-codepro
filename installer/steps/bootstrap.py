@@ -42,6 +42,7 @@ class BootstrapStep(BaseStep):
             "hooks",
             "commands",
             "skills",
+            "skills/custom",
         ]
 
         for subdir in subdirs:

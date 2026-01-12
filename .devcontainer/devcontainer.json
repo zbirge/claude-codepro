@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "hostRequirements": {
-    "gpu": "optional" 
+    "gpu": "optional"
   },
   "runArgs": [
     "--name",
@@ -99,7 +99,7 @@
 	},
 	/* https://github.com/devcontainers/features/tree/main/src/python */
 	"ghcr.io/devcontainers/features/python:1": {
-		"version": "3.10"
+		"version": "latest"
 	},
 	/* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
 	"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}

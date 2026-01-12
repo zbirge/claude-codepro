@@ -87,6 +87,28 @@ def add_env_key(key: str, value: str, env_file: Path) -> None:
         f.write(f"{key}={value}\n")
 
 
+def create_claude_config() -> bool:
+    """Create ~/.claude.json with hasCompletedOnboarding flag.
+
+    Returns True if file was created/updated, False on error.
+    """
+    import json
+
+    config_path = Path.home() / ".claude.json"
+    config = {"hasCompletedOnboarding": True}
+
+    try:
+        if config_path.exists():
+            existing = json.loads(config_path.read_text())
+            existing.update(config)
+            config = existing
+
+        config_path.write_text(json.dumps(config, indent=2) + "\n")
+        return True
+    except Exception:
+        return False
+
+
 class EnvironmentStep(BaseStep):
     """Step that sets up the .env file for API keys."""
 
@@ -165,6 +187,36 @@ class EnvironmentStep(BaseStep):
                 ui.success("FIRECRAWL_API_KEY already set, skipping")
 
         add_env_key("FIRECRAWL_API_KEY", firecrawl_api_key, env_file)
+
+        # Claude OAuth Token (optional - for long-lasting sessions)
+        if not key_is_set("CLAUDE_CODE_OAUTH_TOKEN", env_file):
+            if ui:
+                ui.print()
+                ui.rule("Claude Long Lasting Token (Optional)")
+                ui.print()
+                ui.print("  [bold]Used for:[/bold] Persistent OAuth authentication (Max subscription)")
+                ui.print("  [bold]Why:[/bold] Avoids repeated OAuth prompts in container environments")
+                ui.print("  [bold]Get token:[/bold] Run [cyan]claude setup-token[/cyan] outside container")
+                ui.print()
+
+                use_oauth = ui.confirm("Use Claude Long Lasting Token?", default=False)
+
+                if use_oauth:
+                    oauth_token = ui.input("CLAUDE_CODE_OAUTH_TOKEN", default="")
+                    if oauth_token:
+                        add_env_key("CLAUDE_CODE_OAUTH_TOKEN", oauth_token, env_file)
+                        if create_claude_config():
+                            ui.success("Claude OAuth configured with ~/.claude.json")
+                        else:
+                            ui.warning("Token saved but could not create ~/.claude.json")
+                        # Warn about ANTHROPIC_API_KEY conflict
+                        if key_is_set("ANTHROPIC_API_KEY", env_file):
+                            ui.warning("ANTHROPIC_API_KEY is set - it may override OAuth token!")
+                else:
+                    ui.info("Skipping OAuth token setup")
+        else:
+            if ui:
+                ui.success("CLAUDE_CODE_OAUTH_TOKEN already set, skipping")
 
         if ui:
             if append_mode:
