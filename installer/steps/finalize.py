@@ -93,6 +93,11 @@ class FinalizeStep(BaseStep):
                 ("Start Claude CodePro", "Run: ccp"),
                 ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
                 (
+                    "Custom MCP Servers (Optional)",
+                    "Add your MCP servers to mcp_servers.json, then run /setup\n"
+                    "     to generate documentation. Use mcp-cli to interact with them.",
+                ),
+                (
                     "Spec-Driven Mode",
                     '/spec "your task" → For new features with planning and verification',
                 ),

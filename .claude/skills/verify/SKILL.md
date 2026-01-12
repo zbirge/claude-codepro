@@ -11,6 +11,7 @@ description: Run tests and fix issues end-to-end with Claude CodePro
 **Available MCP Tools:**
 - **Context7** - Library documentation lookup (`resolve-library-id`, `query-docs`)
 - **Firecrawl** - Web search and scraping (`firecrawl_search`, `firecrawl_scrape`) for researching issues
+- **mcp-cli** - Custom MCP servers via `mcp-cli <server>/<tool> '<json>'` for servers in `mcp_servers.json`
 
 ## The Process
 

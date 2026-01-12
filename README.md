@@ -37,7 +37,7 @@ Claude CodePro can be installed into any existing project:
 2. Run this command in the terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.1.10/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.2.3/install.sh | bash
 ```
 
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
@@ -75,12 +75,12 @@ curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.1.10/insta
 - **Claude Mem** - Cross-session persistent memory system that automatically ingest context
 - **Vexor** - Local vector store based semantic code search for token-efficient retrieval
 - **Context7 / Firecrawl** - External context retrieval for code and web search / scraping
-- **LSP Servers** - Python and TypeScript CC Language Servers for extended code intelligence
+- **mcp-cli** - Command-line access to custom MCP servers for extended integrations
 
 ### 🛠️ Quality Hooks Automation
 
-- **Python Quality** - Post-edit hook for ruff, mypy, basedpyright linting and type checking (optional)
-- **TypeScript Quality** - Post-edit hook for eslint, tsc, prettier checks (optional)
+- **Python Quality** - Post-edit hook for ruff, mypy, basedpyright and Python LSP server (optional)
+- **TypeScript Quality** - Post-edit hook for eslint, tsc, prettier and TypeScript LSP server (optional)
 - **General Quality** - Post-edit hook using QLTY for all languages for automated formatting and checking
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
 
@@ -223,7 +223,8 @@ This fork is maintained by **zbirge**.
 
 - **[thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)** - CC Persistent Memory system
 - **[sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)** - CC Status line integration
-- **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search
+- **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search capabilities
+- **[philschmid/mcp-cli](https://github.com/philschmid/mcp-cli)** - CC MCP Servers lazy loading
 - **[ManuelKugelmann/BitBot](https://github.com/ManuelKugelmann/BitBot)** - CC Wrapper control inspirations
 - **[upstash/context7](https://github.com/upstash/context7)** - Library code context retrieval
 - **[firecrawl/firecrawl](https://github.com/firecrawl/firecrawl)** - Web search and scraping tool

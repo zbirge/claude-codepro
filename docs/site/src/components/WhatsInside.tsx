@@ -52,8 +52,8 @@ const insideItems: InsideItem[] = [
     items: [
       "Claude Mem - Cross-session persistent memory",
       "Vexor - Local semantic code search",
-      "Context7 - Library documentation lookup",
-      "Firecrawl - Web search and scraping"
+      "Context7 / Firecrawl - Library docs & web scraping",
+      "mcp-cli - Custom MCP server integrations"
     ],
   },
   {

@@ -10,12 +10,46 @@ model: opus
 
 1. **Project Discovery** - Scans directories, identifies technologies and frameworks
 2. **Documentation** - Creates `.claude/rules/custom/project.md` with project context
-3. **MCP Documentation** - Documents external MCP servers if configured
+3. **MCP Documentation** - Documents external MCP servers if configured in `mcp_servers.json`
 4. **Semantic Search** - Initializes Vexor index for code search
 
 ---
 
 ## Execution Sequence
+
+### Phase 0: Custom MCP Servers Check
+
+**Before starting, ask the user about custom MCP servers:**
+
+Use AskUserQuestion:
+```
+Question: "Have you added your custom MCP servers to mcp_servers.json?"
+Header: "MCP Setup"
+Options:
+- "Yes, continue with setup" - I've configured my MCP servers
+- "No, skip MCP documentation" - I don't have custom MCP servers
+- "Wait, let me add them first" - I need to configure mcp_servers.json before proceeding
+```
+
+**Based on response:**
+- **"Yes, continue"** → Proceed to Phase 1, will document MCP servers in Phase 3
+- **"No, skip"** → Proceed to Phase 1, skip Phase 3 entirely
+- **"Wait, let me add"** → Show the example format below and STOP. Tell user to say "ready" when done.
+
+**Example mcp_servers.json format to show:**
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "my-api": {
+      "url": "https://my-mcp-server.com/mcp"
+    }
+  }
+}
+```
 
 ### Phase 1: Project Discovery
 
@@ -106,53 +140,57 @@ model: opus
    Write(file_path=".claude/rules/custom/project.md", content=generated_content)
    ```
 
-### Phase 3: Document External MCP Servers
+### Phase 3: Document External MCP Servers via mcp-cli
 
-**Purpose:** If the user has configured external MCP servers in `.mcp.json`, create documentation to help Claude use them effectively.
+**Skip this phase if user chose "No, skip MCP documentation" in Phase 0.**
 
-1. **Check for `.mcp.json` in project root:**
-   ```bash
-   cat .mcp.json 2>/dev/null || echo "NO_MCP_CONFIG"
-   ```
+**Purpose:** Create documentation for custom MCP servers configured in `mcp_servers.json` to help Claude use them effectively via `mcp-cli`.
 
-2. **If `.mcp.json` exists with `mcpServers`:**
-   - Parse the JSON to get server names
-   - Filter out built-in servers: `firecrawl`, `context7`, `claude-mem`, `ide`, `plugin_*`
-   - If external servers remain, proceed to step 3
-   - If no external servers, skip to Phase 4
-
-3. **Check if mcp-servers.md already exists:**
+1. **Check if mcp-servers.md already exists:**
    - If exists, ask user: "mcp-servers.md already exists. Overwrite? (y/N)"
    - If user says no, skip to Phase 4
 
-4. **For each external MCP server, gather information:**
-   - Use `mcp-cli info <server>/<tool>` to discover available tools
-   - Use `mcp-cli tools <server>` to list all tools for that server
-   - Web search for official documentation if available
+2. **Gather information using mcp-cli:**
+   ```bash
+   # List all servers and tools
+   mcp-cli
 
-5. **Generate `.claude/rules/custom/mcp-servers.md`:**
+   # Get detailed info for each server
+   mcp-cli <server> -d
+   ```
+
+3. **Generate `.claude/rules/custom/mcp-servers.md`:**
 
 ```markdown
-# External MCP Servers
+# External MCP Servers (via mcp-cli)
 
 **Last Updated:** [Current date]
 
-This project has the following external MCP servers configured.
+This project has custom MCP servers configured in `mcp_servers.json`. Use `mcp-cli` to interact with them.
+
+## Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `mcp-cli` | List all servers and tools |
+| `mcp-cli <server>` | Show tools with parameters |
+| `mcp-cli <server>/<tool>` | Get tool JSON schema |
+| `mcp-cli <server>/<tool> '<json>'` | Execute tool |
 
 ## [Server Name]
 
-**Description:** [Brief description]
+**Description:** [Brief description from -d output]
 
 **Available Tools:**
 - `tool_name` - [Description]
 
 **Example:**
 ```bash
-mcp-cli call [server]/[tool] '{"param": "value"}'
+mcp-cli [server]/[tool] '{"param": "value"}'
 ```
 ```
 
-6. **Write the file:**
+4. **Write the file:**
    ```python
    Write(file_path=".claude/rules/custom/mcp-servers.md", content=generated_content)
    ```

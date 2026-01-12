@@ -182,6 +182,7 @@ Questions:
 |------|-------------|---------|
 | **Context7** | Library/framework docs | Use `resolve-library-id` then `query-docs` to look up API usage |
 | **Firecrawl** | Web scraping/content | Use `firecrawl_scrape` for single pages, `firecrawl_search` for research |
+| **mcp-cli** | Custom MCP servers | Use `mcp-cli <server>/<tool> '<json>'` for servers in `mcp_servers.json` |
 
 **Firecrawl MCP Tools (preferred for web content):**
 - `firecrawl_scrape` - Single page content extraction (documentation, articles, code)

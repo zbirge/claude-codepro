@@ -1,0 +1,111 @@
+## MCP-CLI
+
+Access custom MCP servers through the command line. MCP enables interaction with external systems like GitHub, filesystems, databases, and APIs.
+
+**Note:** This is for custom MCP servers configured in `mcp_servers.json`. Claude Code's built-in MCP servers (firecrawl, context7, claude-mem, ide) are accessed directly via their tool names in the conversation.
+
+### Configuration
+
+MCP servers are configured in `mcp_servers.json` at the project root:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "my-api": {
+      "url": "https://my-mcp-server.com/mcp"
+    }
+  }
+}
+```
+
+**Server Types:**
+- **Command-based:** Runs a local command (e.g., npx, node, python)
+- **URL-based:** Connects to a remote HTTP MCP server
+
+### Commands
+
+| Command | Output |
+|---------|--------|
+| `mcp-cli` | List all servers and tool names |
+| `mcp-cli <server>` | Show tools with parameters |
+| `mcp-cli <server>/<tool>` | Get tool JSON schema |
+| `mcp-cli <server>/<tool> '<json>'` | Call tool with arguments |
+| `mcp-cli grep "<glob>"` | Search tools by name |
+
+**Add `-d` to include descriptions** (e.g., `mcp-cli filesystem -d`)
+
+### Workflow
+
+1. **Discover**: `mcp-cli` → see available servers and tools
+2. **Explore**: `mcp-cli <server>` → see tools with parameters
+3. **Inspect**: `mcp-cli <server>/<tool>` → get full JSON input schema
+4. **Execute**: `mcp-cli <server>/<tool> '<json>'` → run with arguments
+
+### Examples
+
+```bash
+# List all servers and tool names
+mcp-cli
+
+# See all tools with parameters
+mcp-cli filesystem
+
+# With descriptions (more verbose)
+mcp-cli filesystem -d
+
+# Get JSON schema for specific tool
+mcp-cli filesystem/read_file
+
+# Call the tool
+mcp-cli filesystem/read_file '{"path": "./README.md"}'
+
+# Search for tools
+mcp-cli grep "*file*"
+
+# JSON output for parsing
+mcp-cli filesystem/read_file '{"path": "./README.md"}' --json
+
+# Complex JSON with quotes (use '-' for stdin input)
+mcp-cli server/tool - <<EOF
+{"content": "Text with 'quotes' inside"}
+EOF
+
+# Or pipe from a file/command
+cat args.json | mcp-cli server/tool -
+
+# Complex Command chaining with xargs and jq
+mcp-cli filesystem/search_files '{"path": "src/", "pattern": "*.ts"}' --json | jq -r '.content[0].text' | head -1 | xargs -I {} sh -c 'mcp-cli filesystem/read_file "{\"path\": \"{}\"}"'
+```
+
+
+### Options
+
+| Flag | Purpose |
+|------|---------|
+| `-j, --json` | JSON output for scripting |
+| `-r, --raw` | Raw text content |
+| `-d` | Include descriptions |
+
+### Exit Codes
+
+- `0`: Success
+- `1`: Client error (bad args, missing config)
+- `2`: Server error (tool failed)
+- `3`: Network error
+
+### When to Use mcp-cli
+
+| Situation | Use |
+|-----------|-----|
+| Built-in MCP servers (firecrawl, context7, claude-mem) | Direct tool calls in conversation |
+| Custom servers in `mcp_servers.json` | `mcp-cli` commands |
+| Discovering available tools | `mcp-cli` or `mcp-cli <server> -d` |
+| Complex JSON arguments with quotes | Use stdin: `mcp-cli server/tool -` |
+
+### Setup
+
+Run `/setup` after adding servers to `mcp_servers.json` to generate custom rules with tool documentation.

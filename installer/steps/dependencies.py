@@ -524,6 +524,14 @@ def install_context7() -> bool:
     return _run_bash_with_retry("claude plugin install context7")
 
 
+def install_mcp_cli() -> bool:
+    """Install mcp-cli via bun for MCP server interaction."""
+    if not command_exists("bun"):
+        return False
+
+    return _run_bash_with_retry("bun install -g https://github.com/philschmid/mcp-cli")
+
+
 def _install_with_spinner(ui: Any, name: str, install_fn: Any, *args: Any) -> bool:
     """Run an installation function with a spinner."""
     if ui:
@@ -580,6 +588,9 @@ class DependenciesStep(BaseStep):
 
         if _install_with_spinner(ui, "Context7 plugin", install_context7):
             installed.append("context7")
+
+        if _install_with_spinner(ui, "mcp-cli", install_mcp_cli):
+            installed.append("mcp_cli")
 
         # Vexor: determine provider mode before spinner (prompt must happen outside spinner)
         gpu_info = has_nvidia_gpu(verbose=True)

@@ -130,7 +130,7 @@ class Console:
         features.append(" — TDD enforcer, linting, type checking, context monitor\n", style="white")
         features.append("  🔌 ", style="yellow")
         features.append("Enhanced Capabilities", style="bold green")
-        features.append(" — Vexor, Context7, Firecrawl, LSP servers", style="white")
+        features.append(" — Vexor, Context7, Firecrawl, mcp-cli, LSP servers", style="white")
 
         panel = Panel(
             features,

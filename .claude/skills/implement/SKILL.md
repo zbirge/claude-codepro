@@ -61,6 +61,7 @@ Update counts:
 |------|-------------|---------|
 | **Context7** | Library API lookup | Use `resolve-library-id` then `query-docs` - "pytest fixtures" |
 | **Firecrawl** | Web content/research | Use `firecrawl_search` for solutions, `firecrawl_scrape` for docs |
+| **mcp-cli** | Custom MCP servers | Use `mcp-cli <server>/<tool> '<json>'` for servers in `mcp_servers.json` |
 
 **Firecrawl MCP Tools (preferred for web content):**
 - `firecrawl_search` - Search web for solutions, debug errors, find examples
