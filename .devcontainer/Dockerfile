@@ -21,6 +21,8 @@ RUN rm -rf /var/lib/apt/lists/* && \
         jq \
         vim \
         gh \
+        glab \
+        dos2unix \
         netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
