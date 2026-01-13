@@ -43,6 +43,8 @@
       "Write",
       "mcp__ide__*",
       "mcp__firecrawl__*",
+      "mcp__github__*",
+      "mcp__gitlab__*",
       "mcp__plugin_claude-mem_mcp-search__*",
       "mcp__plugin_context7_context7__*",
       "Skill(ccp)",

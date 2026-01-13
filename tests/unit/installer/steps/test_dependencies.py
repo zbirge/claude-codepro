@@ -183,11 +183,15 @@ class TestDependencyInstallFunctions:
 class TestClaudeCodeInstall:
     """Test Claude Code installation."""
 
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_removes_native_binaries(self, mock_remove, mock_run, mock_config, mock_firecrawl):
+    def test_install_claude_code_removes_native_binaries(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
         """install_claude_code removes native binaries before npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -197,11 +201,15 @@ class TestClaudeCodeInstall:
 
         mock_remove.assert_called_once()
 
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_always_runs_npm_install(self, mock_remove, mock_run, mock_config, mock_firecrawl):
+    def test_install_claude_code_always_runs_npm_install(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
         """install_claude_code always runs npm install (upgrades if exists)."""
         from installer.steps.dependencies import install_claude_code
 
@@ -214,11 +222,15 @@ class TestClaudeCodeInstall:
         npm_calls = [c for c in mock_run.call_args_list if "npm install" in str(c)]
         assert len(npm_calls) >= 1
 
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_defaults(self, mock_remove, mock_run, mock_config, mock_firecrawl):
+    def test_install_claude_code_configures_defaults(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
         """install_claude_code configures Claude defaults after npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -228,11 +240,15 @@ class TestClaudeCodeInstall:
 
         mock_config.assert_called_once()
 
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_firecrawl_mcp(self, mock_remove, mock_run, mock_config, mock_firecrawl):
+    def test_install_claude_code_configures_firecrawl_mcp(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
         """install_claude_code configures Firecrawl MCP after npm install."""
         from installer.steps.dependencies import install_claude_code
 
@@ -241,6 +257,42 @@ class TestClaudeCodeInstall:
         install_claude_code()
 
         mock_firecrawl.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("subprocess.run")
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_configures_github_mcp(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
+        """install_claude_code configures GitHub MCP after npm install."""
+        from installer.steps.dependencies import install_claude_code
+
+        mock_run.return_value = MagicMock(returncode=0)
+
+        install_claude_code()
+
+        mock_github.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("subprocess.run")
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_configures_gitlab_mcp(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab
+    ):
+        """install_claude_code configures GitLab MCP after npm install."""
+        from installer.steps.dependencies import install_claude_code
+
+        mock_run.return_value = MagicMock(returncode=0)
+
+        install_claude_code()
+
+        mock_gitlab.assert_called_once()
 
     def test_patch_claude_config_creates_file(self):
         """_patch_claude_config creates config file if it doesn't exist."""
@@ -290,6 +342,131 @@ class TestClaudeCodeInstall:
                 config_path = Path(tmpdir) / ".claude.json"
                 config = json.loads(config_path.read_text())
                 assert config["respectGitignore"] is False
+
+
+class TestGitHubMcpConfig:
+    """Test GitHub MCP server configuration."""
+
+    def test_configure_github_mcp_creates_config(self):
+        """_configure_github_mcp creates config with mcpServers if not exists."""
+        import json
+
+        from installer.steps.dependencies import _configure_github_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_github_mcp()
+
+                assert result is True
+                config_path = Path(tmpdir) / ".claude.json"
+                assert config_path.exists()
+                config = json.loads(config_path.read_text())
+                assert "mcpServers" in config
+                assert "github" in config["mcpServers"]
+                assert config["mcpServers"]["github"]["command"] == "npx"
+                assert config["mcpServers"]["github"]["args"] == ["-y", "@modelcontextprotocol/server-github"]
+                assert config["mcpServers"]["github"]["env"]["GITHUB_PERSONAL_ACCESS_TOKEN"] == "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+
+    def test_configure_github_mcp_preserves_existing_mcp_servers(self):
+        """_configure_github_mcp preserves other MCP servers."""
+        import json
+
+        from installer.steps.dependencies import _configure_github_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / ".claude.json"
+            existing_config = {"mcpServers": {"other_server": {"command": "other", "args": ["--flag"]}}}
+            config_path.write_text(json.dumps(existing_config))
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_github_mcp()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                assert "other_server" in config["mcpServers"]
+                assert config["mcpServers"]["other_server"]["command"] == "other"
+                assert "github" in config["mcpServers"]
+
+    def test_configure_github_mcp_skips_if_already_exists(self):
+        """_configure_github_mcp skips if github already configured."""
+        import json
+
+        from installer.steps.dependencies import _configure_github_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / ".claude.json"
+            existing_config = {"mcpServers": {"github": {"command": "custom", "args": ["custom"]}}}
+            config_path.write_text(json.dumps(existing_config))
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_github_mcp()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                # Should preserve custom config, not overwrite
+                assert config["mcpServers"]["github"]["command"] == "custom"
+
+
+class TestGitLabMcpConfig:
+    """Test GitLab MCP server configuration."""
+
+    def test_configure_gitlab_mcp_creates_config(self):
+        """_configure_gitlab_mcp creates config with mcpServers if not exists."""
+        import json
+
+        from installer.steps.dependencies import _configure_gitlab_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_gitlab_mcp()
+
+                assert result is True
+                config_path = Path(tmpdir) / ".claude.json"
+                assert config_path.exists()
+                config = json.loads(config_path.read_text())
+                assert "mcpServers" in config
+                assert "gitlab" in config["mcpServers"]
+                assert config["mcpServers"]["gitlab"]["command"] == "npx"
+                assert config["mcpServers"]["gitlab"]["args"] == ["-y", "@modelcontextprotocol/server-gitlab"]
+                assert config["mcpServers"]["gitlab"]["env"]["GITLAB_PERSONAL_ACCESS_TOKEN"] == "${GITLAB_PERSONAL_ACCESS_TOKEN}"
+
+    def test_configure_gitlab_mcp_preserves_existing_mcp_servers(self):
+        """_configure_gitlab_mcp preserves other MCP servers."""
+        import json
+
+        from installer.steps.dependencies import _configure_gitlab_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / ".claude.json"
+            existing_config = {"mcpServers": {"firecrawl": {"command": "npx", "args": ["firecrawl-mcp"]}}}
+            config_path.write_text(json.dumps(existing_config))
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_gitlab_mcp()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                assert "firecrawl" in config["mcpServers"]
+                assert "gitlab" in config["mcpServers"]
+
+    def test_configure_gitlab_mcp_skips_if_already_exists(self):
+        """_configure_gitlab_mcp skips if gitlab already configured."""
+        import json
+
+        from installer.steps.dependencies import _configure_gitlab_mcp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / ".claude.json"
+            existing_config = {"mcpServers": {"gitlab": {"command": "custom", "args": ["custom"]}}}
+            config_path.write_text(json.dumps(existing_config))
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _configure_gitlab_mcp()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                # Should preserve custom config, not overwrite
+                assert config["mcpServers"]["gitlab"]["command"] == "custom"
 
 
 class TestFirecrawlMcpConfig:

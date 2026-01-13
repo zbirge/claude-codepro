@@ -123,3 +123,85 @@ class TestFinalSuccessPanel:
                     # Should display success box and next steps
                     mock_success_box.assert_called()
                     mock_next_steps.assert_called()
+
+    def test_success_panel_includes_github_mcp_when_configured(self):
+        """run() includes GitHub MCP Server in success panel when configured."""
+        from installer.context import InstallContext
+        from installer.steps.finalize import FinalizeStep
+        from installer.ui import Console
+
+        step = FinalizeStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            (project_dir / ".claude").mkdir()
+
+            console = Console(non_interactive=True)
+            ctx = InstallContext(
+                project_dir=project_dir,
+                ui=console,
+            )
+            ctx.config["github_mcp_configured"] = True
+
+            with patch.object(console, "success_box") as mock_success_box:
+                with patch.object(console, "next_steps"):
+                    step.run(ctx)
+
+                    # Check that success_box was called with GitHub MCP Server in items
+                    call_args = mock_success_box.call_args
+                    items = call_args[0][1] if call_args[0] else call_args[1].get("items", [])
+                    assert "GitHub MCP Server" in items
+
+    def test_success_panel_includes_gitlab_mcp_when_configured(self):
+        """run() includes GitLab MCP Server in success panel when configured."""
+        from installer.context import InstallContext
+        from installer.steps.finalize import FinalizeStep
+        from installer.ui import Console
+
+        step = FinalizeStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            (project_dir / ".claude").mkdir()
+
+            console = Console(non_interactive=True)
+            ctx = InstallContext(
+                project_dir=project_dir,
+                ui=console,
+            )
+            ctx.config["gitlab_mcp_configured"] = True
+
+            with patch.object(console, "success_box") as mock_success_box:
+                with patch.object(console, "next_steps"):
+                    step.run(ctx)
+
+                    # Check that success_box was called with GitLab MCP Server in items
+                    call_args = mock_success_box.call_args
+                    items = call_args[0][1] if call_args[0] else call_args[1].get("items", [])
+                    assert "GitLab MCP Server" in items
+
+    def test_success_panel_excludes_mcp_when_not_configured(self):
+        """run() excludes MCP servers from success panel when not configured."""
+        from installer.context import InstallContext
+        from installer.steps.finalize import FinalizeStep
+        from installer.ui import Console
+
+        step = FinalizeStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            (project_dir / ".claude").mkdir()
+
+            console = Console(non_interactive=True)
+            ctx = InstallContext(
+                project_dir=project_dir,
+                ui=console,
+            )
+            # No MCP configuration
+
+            with patch.object(console, "success_box") as mock_success_box:
+                with patch.object(console, "next_steps"):
+                    step.run(ctx)
+
+                    # Check that success_box was called without MCP servers
+                    call_args = mock_success_box.call_args
+                    items = call_args[0][1] if call_args[0] else call_args[1].get("items", [])
+                    assert "GitHub MCP Server" not in items
+                    assert "GitLab MCP Server" not in items

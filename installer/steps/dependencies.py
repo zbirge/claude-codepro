@@ -181,6 +181,66 @@ def _configure_firecrawl_mcp() -> bool:
         return False
 
 
+def _configure_github_mcp() -> bool:
+    """Add GitHub MCP server to ~/.claude.json if not already present."""
+    import json
+
+    config_path = Path.home() / ".claude.json"
+
+    github_config = {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+        "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"},
+    }
+
+    try:
+        if config_path.exists():
+            config = json.loads(config_path.read_text())
+        else:
+            config = {}
+
+        if "mcpServers" not in config:
+            config["mcpServers"] = {}
+
+        if "github" not in config["mcpServers"]:
+            config["mcpServers"]["github"] = github_config
+            config_path.write_text(json.dumps(config, indent=2) + "\n")
+
+        return True
+    except Exception:
+        return False
+
+
+def _configure_gitlab_mcp() -> bool:
+    """Add GitLab MCP server to ~/.claude.json if not already present."""
+    import json
+
+    config_path = Path.home() / ".claude.json"
+
+    gitlab_config = {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-gitlab"],
+        "env": {"GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_PERSONAL_ACCESS_TOKEN}"},
+    }
+
+    try:
+        if config_path.exists():
+            config = json.loads(config_path.read_text())
+        else:
+            config = {}
+
+        if "mcpServers" not in config:
+            config["mcpServers"] = {}
+
+        if "gitlab" not in config["mcpServers"]:
+            config["mcpServers"]["gitlab"] = gitlab_config
+            config_path.write_text(json.dumps(config, indent=2) + "\n")
+
+        return True
+    except Exception:
+        return False
+
+
 def install_claude_code() -> bool:
     """Install/upgrade Claude Code CLI via npm and configure defaults."""
     _remove_native_claude_binaries()
@@ -190,6 +250,8 @@ def install_claude_code() -> bool:
 
     _configure_claude_defaults()
     _configure_firecrawl_mcp()
+    _configure_github_mcp()
+    _configure_gitlab_mcp()
     return True
 
 

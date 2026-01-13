@@ -994,3 +994,390 @@ class TestCreateClaudeCredentials:
             assert result is True
             content = json.loads(creds_file.read_text())
             assert content["claudeAiOauth"]["accessToken"] == "new-token"
+
+
+class TestDetectGitHosting:
+    """Test detect_git_hosting function."""
+
+    def test_detect_git_hosting_returns_github_for_github_remote(self):
+        """detect_git_hosting returns (True, False) for GitHub remote."""
+        from installer.steps.environment import detect_git_hosting
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout="origin  git@github.com:user/repo.git (fetch)\n",
+                )
+
+                is_github, is_gitlab = detect_git_hosting(project_dir)
+
+                assert is_github is True
+                assert is_gitlab is False
+
+    def test_detect_git_hosting_returns_gitlab_for_gitlab_remote(self):
+        """detect_git_hosting returns (False, True) for GitLab remote."""
+        from installer.steps.environment import detect_git_hosting
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout="origin  git@gitlab.com:user/repo.git (fetch)\n",
+                )
+
+                is_github, is_gitlab = detect_git_hosting(project_dir)
+
+                assert is_github is False
+                assert is_gitlab is True
+
+    def test_detect_git_hosting_returns_both_when_both_present(self):
+        """detect_git_hosting returns (True, True) when both remotes exist."""
+        from installer.steps.environment import detect_git_hosting
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout="origin  git@github.com:user/repo.git (fetch)\ngitlab  git@gitlab.com:user/repo.git (fetch)\n",
+                )
+
+                is_github, is_gitlab = detect_git_hosting(project_dir)
+
+                assert is_github is True
+                assert is_gitlab is True
+
+    def test_detect_git_hosting_returns_false_when_no_remotes(self):
+        """detect_git_hosting returns (False, False) when git fails."""
+        from installer.steps.environment import detect_git_hosting
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=1, stdout="")
+
+                is_github, is_gitlab = detect_git_hosting(project_dir)
+
+                assert is_github is False
+                assert is_gitlab is False
+
+
+class TestGitHubTokenPrompt:
+    """Test GitHub token prompt functions."""
+
+    def test_github_token_key_constant_defined(self):
+        """GITHUB_TOKEN_KEY constant is defined."""
+        from installer.steps.environment import GITHUB_TOKEN_KEY
+
+        assert GITHUB_TOKEN_KEY == "GITHUB_PERSONAL_ACCESS_TOKEN"
+
+    def test_prompt_github_token_returns_token_when_user_provides(self):
+        """_prompt_github_token returns token when user confirms and provides one."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_github_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            mock_ui.confirm.return_value = True
+            mock_ui.password.return_value = "ghp_test_token_123"
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_github_token(ctx)
+
+            assert result == "ghp_test_token_123"
+            mock_ui.confirm.assert_called_once()
+            mock_ui.password.assert_called_once()
+
+    def test_prompt_github_token_returns_none_when_user_declines(self):
+        """_prompt_github_token returns None when user declines."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_github_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            mock_ui.confirm.return_value = False
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_github_token(ctx)
+
+            assert result is None
+            mock_ui.password.assert_not_called()
+
+    def test_prompt_github_token_returns_none_in_non_interactive(self):
+        """_prompt_github_token returns None in non-interactive mode."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_github_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = True
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_github_token(ctx)
+
+            assert result is None
+
+    def test_prompt_github_token_returns_none_when_no_ui(self):
+        """_prompt_github_token returns None when ui is None."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_github_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=None,
+            )
+
+            result = _prompt_github_token(ctx)
+
+            assert result is None
+
+
+class TestGitLabTokenPrompt:
+    """Test GitLab token prompt functions."""
+
+    def test_gitlab_token_key_constant_defined(self):
+        """GITLAB_TOKEN_KEY constant is defined."""
+        from installer.steps.environment import GITLAB_TOKEN_KEY
+
+        assert GITLAB_TOKEN_KEY == "GITLAB_PERSONAL_ACCESS_TOKEN"
+
+    def test_prompt_gitlab_token_returns_token_when_user_provides(self):
+        """_prompt_gitlab_token returns token when user confirms and provides one."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_gitlab_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            mock_ui.confirm.return_value = True
+            mock_ui.password.return_value = "glpat_test_token_123"
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_gitlab_token(ctx)
+
+            assert result == "glpat_test_token_123"
+            mock_ui.confirm.assert_called_once()
+            mock_ui.password.assert_called_once()
+
+    def test_prompt_gitlab_token_returns_none_when_user_declines(self):
+        """_prompt_gitlab_token returns None when user declines."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_gitlab_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            mock_ui.confirm.return_value = False
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_gitlab_token(ctx)
+
+            assert result is None
+
+    def test_prompt_gitlab_token_returns_none_in_non_interactive(self):
+        """_prompt_gitlab_token returns None in non-interactive mode."""
+        from installer.context import InstallContext
+        from installer.steps.environment import _prompt_gitlab_token
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = True
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=mock_ui,
+            )
+
+            result = _prompt_gitlab_token(ctx)
+
+            assert result is None
+
+
+class TestEnvironmentStepMcpTokens:
+    """Test EnvironmentStep GitHub/GitLab token prompts."""
+
+    def test_environment_prompts_for_github_token_when_not_set(self):
+        """EnvironmentStep prompts for GitHub token when not already set."""
+        from installer.context import InstallContext
+        from installer.steps.environment import EnvironmentStep, GITHUB_TOKEN_KEY
+
+        step = EnvironmentStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_text("OPENAI_API_KEY=key\nFIRECRAWL_API_KEY=key\n")
+
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            # When GitHub detected but not GitLab, only OAuth and GitHub prompts appear
+            mock_ui.confirm.side_effect = [False, True]  # OAuth=no, GitHub=yes (no GitLab prompt)
+            mock_ui.password.return_value = "ghp_test123"
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                non_interactive=False,
+                skip_env=False,
+                ui=mock_ui,
+            )
+
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            mock_environ.pop(GITHUB_TOKEN_KEY, None)
+            mock_environ.pop("GITLAB_PERSONAL_ACCESS_TOKEN", None)
+
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=False),
+                patch("installer.steps.environment.Path.home", return_value=mock_home),
+                patch("installer.steps.environment.detect_git_hosting", return_value=(True, False)),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
+                step.run(ctx)
+
+            content = env_file.read_text()
+            assert f"{GITHUB_TOKEN_KEY}=ghp_test123" in content
+
+    def test_environment_prompts_for_gitlab_token_when_not_set(self):
+        """EnvironmentStep prompts for GitLab token when not already set."""
+        from installer.context import InstallContext
+        from installer.steps.environment import EnvironmentStep, GITLAB_TOKEN_KEY
+
+        step = EnvironmentStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_text("OPENAI_API_KEY=key\nFIRECRAWL_API_KEY=key\n")
+
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            # When GitLab detected but not GitHub, only OAuth and GitLab prompts appear
+            mock_ui.confirm.side_effect = [False, True]  # OAuth=no, GitLab=yes (no GitHub prompt)
+            mock_ui.password.return_value = "glpat_test456"
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                non_interactive=False,
+                skip_env=False,
+                ui=mock_ui,
+            )
+
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            mock_environ.pop("GITHUB_PERSONAL_ACCESS_TOKEN", None)
+            mock_environ.pop(GITLAB_TOKEN_KEY, None)
+
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=False),
+                patch("installer.steps.environment.Path.home", return_value=mock_home),
+                patch("installer.steps.environment.detect_git_hosting", return_value=(False, True)),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
+                step.run(ctx)
+
+            content = env_file.read_text()
+            assert f"{GITLAB_TOKEN_KEY}=glpat_test456" in content
+
+    def test_environment_skips_github_when_already_set(self):
+        """EnvironmentStep skips GitHub prompt when token already in .env."""
+        from installer.context import InstallContext
+        from installer.steps.environment import EnvironmentStep, GITHUB_TOKEN_KEY
+
+        step = EnvironmentStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_text(
+                f"OPENAI_API_KEY=key\nFIRECRAWL_API_KEY=key\n{GITHUB_TOKEN_KEY}=existing\nGITLAB_PERSONAL_ACCESS_TOKEN=existing\n"
+            )
+
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                non_interactive=False,
+                skip_env=False,
+                ui=mock_ui,
+            )
+
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=True),
+                patch("installer.steps.environment.detect_git_hosting", return_value=(True, True)),
+            ):
+                step.run(ctx)
+
+            # confirm should not be called for MCP tokens since they already exist
+            # OAuth confirm also not called since credentials exist
+            mock_ui.confirm.assert_not_called()
+
+    def test_environment_tracks_configured_tokens_in_ctx(self):
+        """EnvironmentStep tracks configured MCP tokens in ctx.config."""
+        from installer.context import InstallContext
+        from installer.steps.environment import EnvironmentStep
+
+        step = EnvironmentStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_text("OPENAI_API_KEY=key\nFIRECRAWL_API_KEY=key\n")
+
+            mock_ui = MagicMock()
+            mock_ui.non_interactive = False
+            mock_ui.confirm.side_effect = [False, True, True]  # OAuth=no, GitHub=yes, GitLab=yes
+            mock_ui.password.side_effect = ["ghp_token", "glpat_token"]
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                non_interactive=False,
+                skip_env=False,
+                ui=mock_ui,
+            )
+
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            mock_environ = os.environ.copy()
+            for key in ["CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "GITLAB_PERSONAL_ACCESS_TOKEN"]:
+                mock_environ.pop(key, None)
+
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=False),
+                patch("installer.steps.environment.Path.home", return_value=mock_home),
+                patch("installer.steps.environment.detect_git_hosting", return_value=(False, False)),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
+                step.run(ctx)
+
+            assert ctx.config.get("github_mcp_configured") is True
+            assert ctx.config.get("gitlab_mcp_configured") is True

@@ -21,6 +21,37 @@ OBSOLETE_ENV_KEYS = [
     "GEMINI_API_KEY",
 ]
 
+GITHUB_TOKEN_KEY = "GITHUB_PERSONAL_ACCESS_TOKEN"
+GITLAB_TOKEN_KEY = "GITLAB_PERSONAL_ACCESS_TOKEN"
+
+
+def detect_git_hosting(project_dir: Path) -> tuple[bool, bool]:
+    """Detect if project uses GitHub or GitLab based on git remotes.
+
+    Returns:
+        Tuple of (is_github, is_gitlab) based on remote URLs.
+    """
+    import subprocess
+
+    is_github = False
+    is_gitlab = False
+
+    try:
+        result = subprocess.run(
+            ["git", "remote", "-v"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            remotes = result.stdout.lower()
+            is_github = "github.com" in remotes
+            is_gitlab = "gitlab.com" in remotes or "gitlab." in remotes
+    except (subprocess.SubprocessError, OSError):
+        pass
+
+    return is_github, is_gitlab
+
 
 def remove_env_key(key: str, env_file: Path) -> bool:
     """Remove an environment key from .env file. Returns True if key was removed."""
@@ -191,6 +222,38 @@ def create_claude_credentials(token: str) -> bool:
         return False
 
 
+def _prompt_github_token(ctx: InstallContext) -> str | None:
+    """Prompt user for GitHub Personal Access Token."""
+    ui = ctx.ui
+    if not ui or ui.non_interactive:
+        return None
+
+    if not ui.confirm("Configure GitHub MCP Server?", default=True):
+        return None
+
+    ui.info("GitHub token requires 'repo' and 'read:org' scopes minimum")
+    ui.info("Create at: https://github.com/settings/personal-access-tokens/new")
+
+    token = ui.password("GitHub Personal Access Token")
+    return token if token else None
+
+
+def _prompt_gitlab_token(ctx: InstallContext) -> str | None:
+    """Prompt user for GitLab Personal Access Token."""
+    ui = ctx.ui
+    if not ui or ui.non_interactive:
+        return None
+
+    if not ui.confirm("Configure GitLab MCP Server?", default=True):
+        return None
+
+    ui.info("GitLab token requires 'api' scope minimum")
+    ui.info("Create at: https://gitlab.com/-/user_settings/personal_access_tokens")
+
+    token = ui.password("GitLab Personal Access Token")
+    return token if token else None
+
+
 class EnvironmentStep(BaseStep):
     """Step that sets up the .env file for API keys."""
 
@@ -320,6 +383,43 @@ class EnvironmentStep(BaseStep):
                     ui.success("OAuth credentials already configured, skipping")
                 else:
                     ui.success("CLAUDE_CODE_OAUTH_TOKEN in .env, skipping")
+
+        # MCP Server tokens (GitHub/GitLab) - smart detection based on git remotes
+        is_github, is_gitlab = detect_git_hosting(ctx.project_dir)
+
+        # GitHub MCP token
+        if not key_is_set(GITHUB_TOKEN_KEY, env_file):
+            if is_github or not is_gitlab:  # Prompt if GitHub detected OR if neither detected
+                if ui:
+                    ui.print()
+                    ui.rule("GitHub MCP Server (Optional)")
+                github_token = _prompt_github_token(ctx)
+                if github_token:
+                    add_env_key(GITHUB_TOKEN_KEY, github_token, env_file)
+                    ctx.config["github_mcp_configured"] = True
+                    if ui:
+                        ui.success("GitHub token saved to .env")
+        else:
+            if ui:
+                ui.success(f"{GITHUB_TOKEN_KEY} already set, skipping")
+            ctx.config["github_mcp_configured"] = True
+
+        # GitLab MCP token
+        if not key_is_set(GITLAB_TOKEN_KEY, env_file):
+            if is_gitlab or not is_github:  # Prompt if GitLab detected OR if neither detected
+                if ui:
+                    ui.print()
+                    ui.rule("GitLab MCP Server (Optional)")
+                gitlab_token = _prompt_gitlab_token(ctx)
+                if gitlab_token:
+                    add_env_key(GITLAB_TOKEN_KEY, gitlab_token, env_file)
+                    ctx.config["gitlab_mcp_configured"] = True
+                    if ui:
+                        ui.success("GitLab token saved to .env")
+        else:
+            if ui:
+                ui.success(f"{GITLAB_TOKEN_KEY} already set, skipping")
+            ctx.config["gitlab_mcp_configured"] = True
 
         if ui:
             if append_mode:

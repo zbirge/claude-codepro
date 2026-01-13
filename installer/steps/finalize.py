@@ -79,6 +79,12 @@ class FinalizeStep(BaseStep):
         if ctx.install_typescript:
             installed_items.append("TypeScript quality hooks")
 
+        # MCP Servers
+        if ctx.config.get("github_mcp_configured"):
+            installed_items.append("GitHub MCP Server")
+        if ctx.config.get("gitlab_mcp_configured"):
+            installed_items.append("GitLab MCP Server")
+
         ui.success_box("Installation Complete!", installed_items)
 
         project_slug = ctx.project_dir.name.lower().replace(" ", "-").replace("_", "-")
