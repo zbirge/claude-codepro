@@ -99,7 +99,7 @@
 	},
 	/* https://github.com/devcontainers/features/tree/main/src/python */
 	"ghcr.io/devcontainers/features/python:1": {
-		"version": "latest"
+		"version": "3.11"
 	},
 	/* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
 	"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
