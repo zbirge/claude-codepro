@@ -579,7 +579,14 @@ class TestEnvironmentStep:
                 ui=mock_ui,
             )
 
-            step.run(ctx)
+            # Mock credentials_exist and ensure CLAUDE_CODE_OAUTH_TOKEN not in env
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=False),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
+                step.run(ctx)
 
             # Should have called confirm for OAuth
             mock_ui.confirm.assert_called_once()
@@ -587,7 +594,7 @@ class TestEnvironmentStep:
             assert "Long Lasting Token" in call_args[0][0]
 
     def test_environment_skips_oauth_when_already_set(self):
-        """EnvironmentStep skips OAuth prompt when token exists in .env."""
+        """EnvironmentStep skips OAuth prompt when credentials already exist."""
         from installer.context import InstallContext
         from installer.steps.environment import EnvironmentStep
 
@@ -605,16 +612,20 @@ class TestEnvironmentStep:
                 ui=mock_ui,
             )
 
-            step.run(ctx)
+            # Mock credentials_exist to return True (credentials already configured)
+            with patch("installer.steps.environment.credentials_exist", return_value=True):
+                step.run(ctx)
 
-            # Should NOT have called confirm for OAuth (token already exists)
+            # Should NOT have called confirm for OAuth (credentials already exist)
             mock_ui.confirm.assert_not_called()
-            # Should have shown success message about already set
+            # Should have shown success message about already configured
             success_calls = [str(c) for c in mock_ui.success.call_args_list]
-            assert any("CLAUDE_CODE_OAUTH_TOKEN" in str(c) for c in success_calls)
+            assert any("already configured" in str(c) for c in success_calls)
 
     def test_environment_saves_oauth_token_when_user_confirms(self):
-        """EnvironmentStep saves token and creates config when user says yes."""
+        """EnvironmentStep saves token to .env and creates credentials file."""
+        import json
+
         from installer.context import InstallContext
         from installer.steps.environment import EnvironmentStep
 
@@ -637,7 +648,13 @@ class TestEnvironmentStep:
             mock_home = Path(tmpdir) / "home"
             mock_home.mkdir()
 
-            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+            # Ensure CLAUDE_CODE_OAUTH_TOKEN not in env so prompt is shown
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            with (
+                patch("installer.steps.environment.Path.home", return_value=mock_home),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
                 step.run(ctx)
 
             # Token should be saved to .env
@@ -647,6 +664,13 @@ class TestEnvironmentStep:
             # Claude config should be created
             config_file = mock_home / ".claude.json"
             assert config_file.exists()
+
+            # Credentials file should be created with correct structure
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            assert creds_file.exists()
+            creds_content = json.loads(creds_file.read_text())
+            assert creds_content["claudeAiOauth"]["accessToken"] == "test_oauth_token_123"
+            assert creds_content["claudeAiOauth"]["refreshToken"] == "test_oauth_token_123"
 
     def test_environment_skips_oauth_save_when_user_declines(self):
         """EnvironmentStep skips token save when user says no."""
@@ -668,7 +692,14 @@ class TestEnvironmentStep:
                 ui=mock_ui,
             )
 
-            step.run(ctx)
+            # Ensure CLAUDE_CODE_OAUTH_TOKEN not in env so prompt is shown
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            with (
+                patch("installer.steps.environment.credentials_exist", return_value=False),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
+                step.run(ctx)
 
             # Token should NOT be in .env
             content = env_file.read_text()
@@ -704,9 +735,262 @@ class TestEnvironmentStep:
             mock_home = Path(tmpdir) / "home"
             mock_home.mkdir()
 
-            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+            # Ensure CLAUDE_CODE_OAUTH_TOKEN not in env so prompt is shown
+            mock_environ = os.environ.copy()
+            mock_environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            with (
+                patch("installer.steps.environment.Path.home", return_value=mock_home),
+                patch.dict("os.environ", mock_environ, clear=True),
+            ):
                 step.run(ctx)
 
             # Should have warned about ANTHROPIC_API_KEY conflict
             warning_calls = [str(c) for c in mock_ui.warning.call_args_list]
             assert any("ANTHROPIC_API_KEY" in str(c) for c in warning_calls)
+
+    def test_environment_auto_restores_credentials_from_env(self):
+        """EnvironmentStep auto-restores credentials when token in .env but creds file missing."""
+        import json
+
+        from installer.context import InstallContext
+        from installer.steps.environment import EnvironmentStep
+
+        step = EnvironmentStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            # Token exists in .env (persisted from previous install)
+            env_file.write_text(
+                "OPENAI_API_KEY=key\nFIRECRAWL_API_KEY=key\nCLAUDE_CODE_OAUTH_TOKEN=restored_token_123\n"
+            )
+
+            mock_ui = MagicMock()
+
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                non_interactive=False,
+                skip_env=False,
+                ui=mock_ui,
+            )
+
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                step.run(ctx)
+
+            # Should NOT have prompted for OAuth (token exists in .env)
+            mock_ui.confirm.assert_not_called()
+
+            # Credentials file should have been auto-restored
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            assert creds_file.exists()
+            creds_content = json.loads(creds_file.read_text())
+            assert creds_content["claudeAiOauth"]["accessToken"] == "restored_token_123"
+
+            # Should have shown restore success message
+            success_calls = [str(c) for c in mock_ui.success.call_args_list]
+            assert any("restored" in str(c).lower() for c in success_calls)
+
+
+class TestCredentialsExist:
+    """Test credentials_exist function."""
+
+    def test_credentials_exist_returns_false_when_file_missing(self):
+        """credentials_exist returns False when credentials file doesn't exist."""
+        from installer.steps.environment import credentials_exist
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = credentials_exist()
+
+            assert result is False
+
+    def test_credentials_exist_returns_false_for_invalid_json(self):
+        """credentials_exist returns False when file contains invalid JSON."""
+        from installer.steps.environment import credentials_exist
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            claude_dir = mock_home / ".claude"
+            claude_dir.mkdir(parents=True)
+            creds_file = claude_dir / ".credentials.json"
+            creds_file.write_text("not valid json {{{")
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = credentials_exist()
+
+            assert result is False
+
+    def test_credentials_exist_returns_false_when_missing_oauth_key(self):
+        """credentials_exist returns False when claudeAiOauth key is missing."""
+        from installer.steps.environment import credentials_exist
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            claude_dir = mock_home / ".claude"
+            claude_dir.mkdir(parents=True)
+            creds_file = claude_dir / ".credentials.json"
+            creds_file.write_text('{"someOtherKey": "value"}')
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = credentials_exist()
+
+            assert result is False
+
+    def test_credentials_exist_returns_false_when_access_token_empty(self):
+        """credentials_exist returns False when accessToken is empty."""
+        from installer.steps.environment import credentials_exist
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            claude_dir = mock_home / ".claude"
+            claude_dir.mkdir(parents=True)
+            creds_file = claude_dir / ".credentials.json"
+            creds_file.write_text('{"claudeAiOauth": {"accessToken": ""}}')
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = credentials_exist()
+
+            assert result is False
+
+    def test_credentials_exist_returns_true_for_valid_credentials(self):
+        """credentials_exist returns True when valid credentials exist."""
+        from installer.steps.environment import credentials_exist
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            claude_dir = mock_home / ".claude"
+            claude_dir.mkdir(parents=True)
+            creds_file = claude_dir / ".credentials.json"
+            creds_file.write_text('{"claudeAiOauth": {"accessToken": "sk-ant-test-token"}}')
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = credentials_exist()
+
+            assert result is True
+
+
+class TestCreateClaudeCredentials:
+    """Test create_claude_credentials function."""
+
+    def test_create_claude_credentials_creates_directory_and_file(self):
+        """create_claude_credentials creates ~/.claude directory and credentials file."""
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = create_claude_credentials("test-token-123")
+
+            assert result is True
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            assert creds_file.exists()
+
+    def test_create_claude_credentials_writes_correct_structure(self):
+        """create_claude_credentials writes correct JSON structure."""
+        import json
+
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                create_claude_credentials("my-oauth-token")
+
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            content = json.loads(creds_file.read_text())
+
+            assert "claudeAiOauth" in content
+            oauth = content["claudeAiOauth"]
+            assert oauth["accessToken"] == "my-oauth-token"
+            assert oauth["refreshToken"] == "my-oauth-token"
+            assert "expiresAt" in oauth
+            assert oauth["scopes"] == ["user:inference", "user:profile", "user:sessions:claude_code"]
+            assert oauth["subscriptionType"] == "max"
+            assert oauth["rateLimitTier"] == "default_claude_max_20x"
+
+    def test_create_claude_credentials_sets_expiry_365_days(self):
+        """create_claude_credentials sets expiry to 365 days from now."""
+        import json
+        import time
+
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            before_time = int(time.time() * 1000)
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                create_claude_credentials("token")
+            after_time = int(time.time() * 1000)
+
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            content = json.loads(creds_file.read_text())
+            expires_at = content["claudeAiOauth"]["expiresAt"]
+
+            # Should be ~365 days from now (within 1 second tolerance)
+            days_365_ms = 365 * 24 * 60 * 60 * 1000
+            assert expires_at >= before_time + days_365_ms
+            assert expires_at <= after_time + days_365_ms
+
+    def test_create_claude_credentials_sets_file_permissions(self):
+        """create_claude_credentials sets restrictive file permissions."""
+        import stat
+
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                create_claude_credentials("token")
+
+            creds_file = mock_home / ".claude" / ".credentials.json"
+            mode = creds_file.stat().st_mode & 0o777
+            # File should be readable/writable only by owner (0o600)
+            assert mode == 0o600
+
+    def test_create_claude_credentials_returns_false_on_error(self):
+        """create_claude_credentials returns False when it cannot write."""
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            mock_home.mkdir()
+            # Create a file where directory should be (will cause error)
+            blocking_file = mock_home / ".claude"
+            blocking_file.write_text("not a directory")
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = create_claude_credentials("token")
+
+            assert result is False
+
+    def test_create_claude_credentials_overwrites_existing(self):
+        """create_claude_credentials overwrites existing credentials file."""
+        import json
+
+        from installer.steps.environment import create_claude_credentials
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_home = Path(tmpdir) / "home"
+            claude_dir = mock_home / ".claude"
+            claude_dir.mkdir(parents=True)
+            creds_file = claude_dir / ".credentials.json"
+            creds_file.write_text('{"claudeAiOauth": {"accessToken": "old-token"}}')
+
+            with patch("installer.steps.environment.Path.home", return_value=mock_home):
+                result = create_claude_credentials("new-token")
+
+            assert result is True
+            content = json.loads(creds_file.read_text())
+            assert content["claudeAiOauth"]["accessToken"] == "new-token"
