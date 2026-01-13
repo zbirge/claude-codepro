@@ -78,7 +78,9 @@ jobs:
         run: |
           UPSTREAM="https://github.com/maxritter/claude-codepro.git"
           git remote add upstream "$UPSTREAM" || true
-          git fetch upstream --tags
+          # Fetch upstream tags - ignore errors for conflicting tags
+          # (fork may have same tag names pointing to different commits)
+          git fetch upstream --tags || true
           echo "Latest versions:"
           git tag -l 'v*' | sort -V | tail -5
 
