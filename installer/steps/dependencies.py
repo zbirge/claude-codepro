@@ -241,18 +241,38 @@ def _configure_gitlab_mcp() -> bool:
         return False
 
 
-def install_claude_code() -> bool:
-    """Install/upgrade Claude Code CLI via npm and configure defaults."""
+def _get_forced_claude_version(project_dir: Path) -> str | None:
+    """Check settings.local.json for FORCE_CLAUDE_VERSION in env section."""
+    import json
+
+    settings_path = project_dir / ".claude" / "settings.local.json"
+    if settings_path.exists():
+        try:
+            settings = json.loads(settings_path.read_text())
+            return settings.get("env", {}).get("FORCE_CLAUDE_VERSION")
+        except (json.JSONDecodeError, OSError):
+            pass
+    return None
+
+
+def install_claude_code(project_dir: Path) -> tuple[bool, str]:
+    """Install/upgrade Claude Code CLI via npm and configure defaults.
+
+    Returns (success, version_installed).
+    """
     _remove_native_claude_binaries()
 
-    if not _run_bash_with_retry("npm install -g @anthropic-ai/claude-code@latest"):
-        return False
+    forced_version = _get_forced_claude_version(project_dir)
+    version = forced_version if forced_version else "latest"
+
+    if not _run_bash_with_retry(f"npm install -g @anthropic-ai/claude-code@{version}"):
+        return False, version
 
     _configure_claude_defaults()
     _configure_firecrawl_mcp()
     _configure_github_mcp()
     _configure_gitlab_mcp()
-    return True
+    return True, version
 
 
 def install_qlty(project_dir: Path) -> tuple[bool, bool]:
@@ -430,7 +450,6 @@ def _configure_vexor_defaults(
         else:
             config = {}
 
-        # Common settings for all modes
         config.update(
             {
                 "batch_size": 64,
@@ -442,7 +461,6 @@ def _configure_vexor_defaults(
             }
         )
 
-        # Mode-specific settings
         if provider_mode == "cuda":
             config.update(
                 {
@@ -451,7 +469,6 @@ def _configure_vexor_defaults(
                     "model": "intfloat/multilingual-e5-small",
                 }
             )
-            # Remove api_key if switching from openai mode
             config.pop("api_key", None)
         elif provider_mode == "openai":
             config.update(
@@ -463,7 +480,7 @@ def _configure_vexor_defaults(
             )
             if api_key:
                 config["api_key"] = api_key
-        else:  # cpu
+        else:
             config.update(
                 {
                     "provider": "local",
@@ -471,7 +488,6 @@ def _configure_vexor_defaults(
                     "model": "intfloat/multilingual-e5-small",
                 }
             )
-            # Remove api_key if switching from openai mode
             config.pop("api_key", None)
 
         config_path.write_text(json.dumps(config, indent=2) + "\n")
@@ -497,7 +513,6 @@ def install_vexor(
         provider_mode: One of "cuda", "cpu", or "openai". If None, auto-detects based on GPU.
         api_key: OpenAI API key (used if provider_mode is "openai")
     """
-    # Auto-detect provider mode if not specified
     if provider_mode is None:
         gpu_available = has_nvidia_gpu()
         provider_mode = "cuda" if gpu_available else "cpu"
@@ -509,12 +524,11 @@ def install_vexor(
         return True
 
     try:
-        # Select package based on provider mode
         if provider_mode == "cuda":
             package = "vexor[local-cuda]"
         elif provider_mode == "openai":
             package = "vexor"
-        else:  # cpu
+        else:
             package = "vexor[local]"
 
         subprocess.run(
@@ -594,6 +608,62 @@ def install_mcp_cli() -> bool:
     return _run_bash_with_retry("bun install -g https://github.com/philschmid/mcp-cli")
 
 
+def _is_agent_browser_ready() -> bool:
+    """Check if agent-browser is installed and Chromium is available."""
+    if not command_exists("agent-browser"):
+        return False
+
+    cache_dir = Path.home() / ".cache" / "ms-playwright"
+    if not cache_dir.exists():
+        return False
+
+    for chromium_dir in cache_dir.glob("chromium-*"):
+        chrome_binary = chromium_dir / "chrome-linux" / "chrome"
+        if chrome_binary.exists():
+            return True
+
+    return False
+
+
+def install_agent_browser(ui: Any = None) -> bool:
+    """Install agent-browser CLI for headless browser automation.
+
+    Shows verbose output during installation since it takes 1-2 minutes.
+    Skips verbose output if already installed.
+    """
+    if _is_agent_browser_ready():
+        return True
+
+    if not _run_bash_with_retry("npm install -g agent-browser"):
+        return False
+
+    if _is_agent_browser_ready():
+        return True
+
+    if ui:
+        ui.print("  [dim]Downloading Chromium browser (this may take 1-2 minutes)...[/dim]")
+
+    try:
+        process = subprocess.Popen(
+            ["bash", "-c", "echo 'y' | agent-browser install --with-deps"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        if process.stdout:
+            for line in process.stdout:
+                line = _strip_ansi(line.rstrip())
+                if line and ui:
+                    if any(kw in line.lower() for kw in ["download", "install", "extract", "chromium", "%", "mb"]):
+                        ui.print(f"  {line}")
+
+        process.wait()
+        return process.returncode == 0
+    except Exception:
+        return False
+
+
 def _install_with_spinner(ui: Any, name: str, install_fn: Any, *args: Any) -> bool:
     """Run an installation function with a spinner."""
     if ui:
@@ -625,7 +695,6 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "Node.js", install_nodejs):
             installed.append("nodejs")
 
-        # Always install uv - needed for Vexor regardless of Python support
         if _install_with_spinner(ui, "uv", install_uv):
             installed.append("uv")
 
@@ -633,10 +702,22 @@ class DependenciesStep(BaseStep):
             if _install_with_spinner(ui, "Python tools", install_python_tools):
                 installed.append("python_tools")
 
-        if _install_with_spinner(ui, "Claude Code", install_claude_code):
-            installed.append("claude_code")
-            if ui:
+        if ui:
+            with ui.spinner("Installing Claude Code..."):
+                success, version = install_claude_code(ctx.project_dir)
+            if success:
+                installed.append("claude_code")
+                if version != "latest":
+                    ui.success(f"Claude Code installed (pinned to v{version})")
+                else:
+                    ui.success("Claude Code installed (latest)")
                 ui.success("Claude Code config defaults applied")
+            else:
+                ui.warning("Could not install Claude Code - please install manually")
+        else:
+            success, _ = install_claude_code(ctx.project_dir)
+            if success:
+                installed.append("claude_code")
 
         if ctx.install_typescript:
             if _install_with_spinner(ui, "TypeScript LSP", install_typescript_lsp):
@@ -655,7 +736,24 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "mcp-cli", install_mcp_cli):
             installed.append("mcp_cli")
 
-        # Vexor: determine provider mode before spinner (prompt must happen outside spinner)
+        if ctx.install_agent_browser:
+            if ui:
+                ui.status("Installing agent-browser...")
+            if install_agent_browser(ui):
+                installed.append("agent_browser")
+                if ui:
+                    ui.success("agent-browser installed")
+            else:
+                if ui:
+                    ui.warning("Could not install agent-browser - please install manually")
+        else:
+            if not ctx.local_mode:
+                agent_browser_rule = ctx.project_dir / ".claude" / "rules" / "standard" / "agent-browser.md"
+                if agent_browser_rule.exists():
+                    agent_browser_rule.unlink()
+                    if ui:
+                        ui.info("Removed agent-browser.md (agent-browser not installed)")
+
         gpu_info = has_nvidia_gpu(verbose=True)
         gpu_available = gpu_info["detected"] if isinstance(gpu_info, dict) else gpu_info
         if gpu_available:
@@ -665,7 +763,6 @@ class DependenciesStep(BaseStep):
                 method = gpu_info.get("method", "unknown") if isinstance(gpu_info, dict) else "unknown"
                 ui.status(f"NVIDIA GPU detected via {method}")
         else:
-            # Inform user CUDA is unavailable
             if ui:
                 ui.info("CUDA/GPU not available. Using CPU for local embeddings.")
             api_key = _get_openai_api_key()
@@ -676,7 +773,6 @@ class DependenciesStep(BaseStep):
                 )
                 provider_mode = "openai" if use_openai else "cpu"
             else:
-                # Non-interactive: use OpenAI if key exists
                 provider_mode = "openai" if api_key else "cpu"
 
         if _install_with_spinner(

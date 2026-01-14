@@ -1,9 +1,10 @@
-"""TypeScript file checker hook - runs eslint and tsc on most recent TypeScript file."""
+"""TypeScript file checker hook - runs eslint and tsc on edited TypeScript file."""
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,20 @@ BLUE = "\033[0;34m"
 NC = "\033[0m"
 
 TS_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts"}
+
+PRESERVE_COMMENT_PATTERNS = re.compile(
+    r"//\s*@ts-|"
+    r"//\s*eslint-|"
+    r"//\s*prettier-|"
+    r"//\s*TODO|"
+    r"//\s*FIXME|"
+    r"//\s*XXX|"
+    r"//\s*NOTE|"
+    r"//\s*@type|"
+    r"//\s*@param|"
+    r"//\s*@returns",
+    re.IGNORECASE,
+)
 
 DEBUG = os.environ.get("HOOK_DEBUG", "").lower() == "true"
 
@@ -47,58 +62,21 @@ def find_git_root() -> Path | None:
     return None
 
 
-def find_most_recent_file(root: Path) -> Path | None:
-    """Find most recently modified file (excluding cache/build dirs)."""
-    debug_log(f"Searching for most recent file in: {root}")
-
-    exclude_patterns = [
-        "node_modules",
-        ".next",
-        "dist",
-        "build",
-        ".git",
-        ".cache",
-        "coverage",
-        ".turbo",
-        ".vercel",
-        "__pycache__",
-        ".venv",
-    ]
-    debug_log(f"Excluding patterns: {', '.join(exclude_patterns)}")
-
-    most_recent_file = None
-    most_recent_time = 0.0
-    files_checked = 0
-
+def get_edited_file_from_stdin() -> Path | None:
+    """Get the edited file path from PostToolUse hook stdin."""
     try:
-        for file_path in root.rglob("*"):
-            if not file_path.is_file():
-                continue
+        import select
 
-            if any(pattern in file_path.parts for pattern in exclude_patterns):
-                continue
-
-            files_checked += 1
-            try:
-                mtime = file_path.stat().st_mtime
-                if mtime > most_recent_time:
-                    most_recent_time = mtime
-                    most_recent_file = file_path
-                    debug_log(f"New most recent: {file_path.relative_to(root)} (mtime: {mtime})")
-            except (OSError, PermissionError) as e:
-                debug_log(f"Error accessing {file_path}: {e}")
-                continue
-
+        if select.select([sys.stdin], [], [], 0)[0]:
+            data = json.load(sys.stdin)
+            tool_input = data.get("tool_input", {})
+            file_path = tool_input.get("file_path")
+            if file_path:
+                debug_log(f"Got file from stdin: {file_path}")
+                return Path(file_path)
     except Exception as e:
-        debug_log(f"Error during file search: {e}")
-
-    debug_log(f"Checked {files_checked} files")
-    if most_recent_file:
-        debug_log(f"Most recent file: {most_recent_file}")
-    else:
-        debug_log("No files found")
-
-    return most_recent_file
+        debug_log(f"Error reading stdin: {e}")
+    return None
 
 
 def find_project_root(file_path: Path) -> Path | None:
@@ -144,8 +122,73 @@ def find_tool(tool_name: str, project_root: Path | None) -> str | None:
     return global_bin
 
 
+def strip_inline_comments(file_path: Path) -> bool:
+    """Remove inline // comments from TypeScript/JavaScript file.
+
+    Removes:
+    - End-of-line comments: `code  // comment` → `code`
+    - Full-line comments: `// comment` → (line removed)
+
+    Preserves:
+    - @ts- directives, eslint/prettier directives
+    - TODO, FIXME, XXX, NOTE markers
+    - JSDoc-style @type, @param, @returns
+    - URLs containing //
+
+    Returns True if file was modified.
+    """
+    try:
+        content = file_path.read_text()
+        lines = content.splitlines(keepends=True)
+    except Exception:
+        return False
+
+    new_lines = []
+    modified = False
+
+    for line in lines:
+        if "//" not in line:
+            new_lines.append(line)
+            continue
+
+        if '"//' in line or "'//" in line or "`//" in line:
+            new_lines.append(line)
+            continue
+
+        if "://" in line:
+            new_lines.append(line)
+            continue
+
+        match = re.search(r"//.*$", line)
+        if not match:
+            new_lines.append(line)
+            continue
+
+        comment = match.group(0)
+
+        if PRESERVE_COMMENT_PATTERNS.search(comment):
+            new_lines.append(line)
+            continue
+
+        before_comment = line[: match.start()].rstrip()
+
+        if before_comment:
+            new_lines.append(before_comment + "\n")
+            modified = True
+        else:
+            modified = True
+
+    if modified:
+        new_content = "".join(new_lines)
+        file_path.write_text(new_content)
+        return True
+
+    return False
+
+
 def auto_format(file_path: Path, project_root: Path | None) -> None:
     """Auto-format file with prettier before checks."""
+    strip_inline_comments(file_path)
     debug_log("Attempting auto-format with prettier...")
 
     prettier_bin = find_tool("prettier", project_root)
@@ -355,23 +398,27 @@ def main() -> int:
     else:
         debug_log("No git root found, staying in current directory")
 
-    most_recent = find_most_recent_file(Path.cwd())
-    if not most_recent:
-        debug_log("No files found, exiting")
+    target_file = get_edited_file_from_stdin()
+    if not target_file or not target_file.exists():
+        debug_log("No file from stdin, exiting")
         return 0
 
-    debug_log(f"Most recent file: {most_recent}")
-    debug_log(f"File extension: {most_recent.suffix}")
+    debug_log(f"Target file: {target_file}")
+    debug_log(f"File extension: {target_file.suffix}")
 
-    if most_recent.suffix not in TS_EXTENSIONS:
-        debug_log(f"File extension {most_recent.suffix} not in {TS_EXTENSIONS}, skipping")
+    if target_file.suffix not in TS_EXTENSIONS:
+        debug_log(f"File extension {target_file.suffix} not in {TS_EXTENSIONS}, skipping")
         return 0
 
-    project_root = find_project_root(most_recent)
+    if "test" in target_file.name or "spec" in target_file.name:
+        debug_log("Test/spec file, skipping")
+        return 0
+
+    project_root = find_project_root(target_file)
     debug_log(f"Project root: {project_root}")
 
     has_eslint = find_tool("eslint", project_root) is not None
-    has_tsc = find_tool("tsc", project_root) is not None and most_recent.suffix in {".ts", ".tsx", ".mts"}
+    has_tsc = find_tool("tsc", project_root) is not None and target_file.suffix in {".ts", ".tsx", ".mts"}
 
     debug_log(f"Tools available - ESLint: {has_eslint}, TSC: {has_tsc}")
 
@@ -379,14 +426,14 @@ def main() -> int:
         debug_log("No linting tools available, exiting")
         return 0
 
-    auto_format(most_recent, project_root)
+    auto_format(target_file, project_root)
 
     results = {}
     has_issues = False
 
     if has_eslint:
         debug_log("Starting ESLint check...")
-        eslint_issues, eslint_output = run_eslint_check(most_recent, project_root)
+        eslint_issues, eslint_output = run_eslint_check(target_file, project_root)
         if eslint_issues:
             debug_log("ESLint found issues")
             has_issues = True
@@ -396,7 +443,7 @@ def main() -> int:
 
     if has_tsc:
         debug_log("Starting TypeScript check...")
-        tsc_issues, tsc_output = run_tsc_check(most_recent, project_root)
+        tsc_issues, tsc_output = run_tsc_check(target_file, project_root)
         if tsc_issues:
             debug_log("TypeScript found issues")
             has_issues = True
@@ -408,7 +455,7 @@ def main() -> int:
         debug_log("Issues found, displaying results")
         print("", file=sys.stderr)
         print(
-            f"{RED}🛑 TypeScript Issues found in: {most_recent.relative_to(Path.cwd())}{NC}",
+            f"{RED}🛑 TypeScript Issues found in: {target_file.relative_to(Path.cwd())}{NC}",
             file=sys.stderr,
         )
 

@@ -37,7 +37,7 @@ Claude CodePro can be installed into any existing project:
 2. Run this command in the terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.4.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/install.sh | bash
 ```
 
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
@@ -76,6 +76,7 @@ curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.4.0/instal
 - **Vexor** - Local vector store based semantic code search for token-efficient retrieval
 - **Context7 / Firecrawl** - External context retrieval for code and web search / scraping
 - **mcp-cli** - Command-line access to custom MCP servers for extended integrations
+- **agent-browser** - Headless browser automation and testing within the Dev Container
 
 ### 🛠️ Quality Hooks Automation
 
@@ -225,6 +226,7 @@ This fork is maintained by **zbirge**.
 - **[sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)** - CC Status line integration
 - **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search capabilities
 - **[philschmid/mcp-cli](https://github.com/philschmid/mcp-cli)** - CC MCP Servers lazy loading
+- **[vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)** - Headless browser automation CLI
 - **[ManuelKugelmann/BitBot](https://github.com/ManuelKugelmann/BitBot)** - CC Wrapper control inspirations
 - **[upstash/context7](https://github.com/upstash/context7)** - Library code context retrieval
 - **[firecrawl/firecrawl](https://github.com/firecrawl/firecrawl)** - Web search and scraping tool

@@ -26,6 +26,20 @@ def clear_terminal() -> None:
     os.system("clear" if os.name != "nt" else "cls")
 
 
+def get_forced_claude_version() -> str | None:
+    """Check settings.local.json for FORCE_CLAUDE_VERSION in env section."""
+    import json
+
+    settings_path = Path.cwd() / ".claude" / "settings.local.json"
+    if settings_path.exists():
+        try:
+            settings = json.loads(settings_path.read_text())
+            return settings.get("env", {}).get("FORCE_CLAUDE_VERSION")
+        except (json.JSONDecodeError, OSError):
+            pass
+    return None
+
+
 def print_banner() -> None:
     """Print the Claude CodePro wrapper banner."""
     print()
@@ -339,32 +353,56 @@ class ClaudeWrapper:
 
         clear_terminal()
         print_banner()
-        print("  ⏳ Checking for updates...\n")
-        try:
-            result = subprocess.run(
-                ["claude", "update"],
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-            if result.returncode == 0:
-                self.logger.info("Claude Code updated successfully")
-                if result.stdout.strip():
-                    print(f"  ✓  {result.stdout.strip()}\n")
+
+        forced_version = get_forced_claude_version()
+        if forced_version:
+            print(f"  ⏳ Installing pinned Claude Code v{forced_version}...\n")
+            try:
+                result = subprocess.run(
+                    ["npm", "install", "-g", f"@anthropic-ai/claude-code@{forced_version}"],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if result.returncode == 0:
+                    self.logger.info(f"Claude Code pinned to v{forced_version}")
+                    print(f"  ✓  Claude Code pinned to v{forced_version}\n")
                 else:
-                    print("  ✓  Claude Code is up to date\n")
-            else:
-                self.logger.warning(f"Claude update returned {result.returncode}: {result.stderr}")
-                print("  ✓  Update check complete\n")
-        except subprocess.TimeoutExpired:
-            self.logger.warning("Claude update timed out after 60s")
-            print("  ⚠  Update timed out, continuing...\n")
-        except FileNotFoundError:
-            self.logger.error("Claude command not found")
-            print("  ✗  Claude command not found\n")
-        except Exception as e:
-            self.logger.error(f"Failed to update Claude: {e}")
-            print(f"  ⚠  Update check failed: {e}\n")
+                    self.logger.warning(f"npm install returned {result.returncode}: {result.stderr}")
+                    print(f"  ⚠  Could not pin version, using current installation\n")
+            except subprocess.TimeoutExpired:
+                self.logger.warning("npm install timed out after 120s")
+                print("  ⚠  Install timed out, continuing...\n")
+            except Exception as e:
+                self.logger.error(f"Failed to install pinned version: {e}")
+                print(f"  ⚠  Install failed: {e}\n")
+        else:
+            print("  ⏳ Checking for updates...\n")
+            try:
+                result = subprocess.run(
+                    ["claude", "update"],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                if result.returncode == 0:
+                    self.logger.info("Claude Code updated successfully")
+                    if result.stdout.strip():
+                        print(f"  ✓  {result.stdout.strip()}\n")
+                    else:
+                        print("  ✓  Claude Code is up to date\n")
+                else:
+                    self.logger.warning(f"Claude update returned {result.returncode}: {result.stderr}")
+                    print("  ✓  Update check complete\n")
+            except subprocess.TimeoutExpired:
+                self.logger.warning("Claude update timed out after 60s")
+                print("  ⚠  Update timed out, continuing...\n")
+            except FileNotFoundError:
+                self.logger.error("Claude command not found")
+                print("  ✗  Claude command not found\n")
+            except Exception as e:
+                self.logger.error(f"Failed to update Claude: {e}")
+                print(f"  ⚠  Update check failed: {e}\n")
 
         print("  ⏳ Loading Claude Code...\n")
         time.sleep(3.0)

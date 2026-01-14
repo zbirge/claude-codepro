@@ -140,11 +140,13 @@ Options:
    Write(file_path=".claude/rules/custom/project.md", content=generated_content)
    ```
 
-### Phase 3: Document External MCP Servers via mcp-cli
+### Phase 3: Document Custom MCP Servers via mcp-cli
 
 **Skip this phase if user chose "No, skip MCP documentation" in Phase 0.**
 
 **Purpose:** Create documentation for custom MCP servers configured in `mcp_servers.json` to help Claude use them effectively via `mcp-cli`.
+
+**IMPORTANT:** Only document servers from `mcp_servers.json`. Do NOT document built-in MCP servers (firecrawl, context7, claude-mem, ide) - these are already covered in the standard rules (`.claude/rules/standard/`) and should not be redefined here.
 
 1. **Check if mcp-servers.md already exists:**
    - If exists, ask user: "mcp-servers.md already exists. Overwrite? (y/N)"

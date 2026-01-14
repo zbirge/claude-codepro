@@ -452,7 +452,7 @@ class TestClaudeFilesStep:
             (source_hooks / "file_checker_ts.py").write_text("# typescript hook")
             (source_hooks / "other_hook.sh").write_text("# other hook")
             (source_rules / "typescript-rules.md").write_text("# typescript rules")
-            (source_rules / "other-rules.md").write_text("# other rules")
+            (source_rules / "python-rules.md").write_text("# python rules")
             # Add settings file (required by the step)
             (source_claude / "settings.local.json").write_text('{"hooks": {}}')
 
@@ -478,7 +478,8 @@ class TestClaudeFilesStep:
             assert not (dest_dir / ".claude" / "rules" / "custom" / "typescript-rules.md").exists()
             # Other files should be copied
             assert (dest_dir / ".claude" / "hooks" / "other_hook.sh").exists()
-            assert (dest_dir / ".claude" / "rules" / "custom" / "other-rules.md").exists()
+            # Python rules should be copied (it's in the allowed list)
+            assert (dest_dir / ".claude" / "rules" / "custom" / "python-rules.md").exists()
 
 
 class TestClaudeFilesCustomRulesPreservation:

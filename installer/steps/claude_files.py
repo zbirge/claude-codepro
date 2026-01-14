@@ -118,8 +118,6 @@ class ClaudeFilesStep(BaseStep):
             "other": [],
         }
 
-        settings_path: str | None = None
-
         for file_path in claude_files:
             if not file_path:
                 continue
@@ -130,9 +128,21 @@ class ClaudeFilesStep(BaseStep):
             if file_path.endswith(".pyc"):
                 continue
 
-            if Path(file_path).name == SETTINGS_FILE:
-                settings_path = file_path
+            if "/config/" in file_path:
                 continue
+            if "/bin/" in file_path:
+                continue
+            if "/claude-code-chat-images/" in file_path:
+                continue
+            if file_path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
+                continue
+            if Path(file_path).name == ".gitignore":
+                continue
+
+            if "/rules/custom/" in file_path:
+                allowed_custom = ["python-rules.md", "typescript-rules.md"]
+                if Path(file_path).name not in allowed_custom:
+                    continue
 
             if not ctx.install_python:
                 if "file_checker_python.py" in file_path:
@@ -218,50 +228,49 @@ class ClaudeFilesStep(BaseStep):
                 with ui.spinner(f"Installing {category_names[category]}..."):
                     for file_path in files:
                         dest_file = ctx.project_dir / file_path
-                        if download_file(file_path, dest_file, config):
+                        if Path(file_path).name == SETTINGS_FILE:
+                            success = self._install_settings(
+                                file_path,
+                                dest_file,
+                                config,
+                                ctx.install_python,
+                                ctx.install_typescript,
+                                ctx.project_dir,
+                            )
+                            if success:
+                                file_count += 1
+                                installed_files.append(str(dest_file))
+                            else:
+                                failed_files.append(file_path)
+                        elif download_file(file_path, dest_file, config):
                             file_count += 1
                             installed_files.append(str(dest_file))
                         else:
                             failed_files.append(file_path)
-                ui.success(f"Installed {len(files)} {category_names[category]}")
+                ui.success(f"Installed {len(files)} {category_names[category]}:")
+                for file_path in files:
+                    if category == "skills":
+                        file_name = Path(file_path).parent.name
+                    else:
+                        file_name = Path(file_path).stem
+                    ui.print(f"    [dim]✓ {file_name}[/dim]")
             else:
                 for file_path in files:
                     dest_file = ctx.project_dir / file_path
-                    if download_file(file_path, dest_file, config):
+                    if Path(file_path).name == SETTINGS_FILE:
+                        success = self._install_settings(
+                            file_path, dest_file, config, ctx.install_python, ctx.install_typescript, ctx.project_dir
+                        )
+                        if success:
+                            file_count += 1
+                            installed_files.append(str(dest_file))
+                        else:
+                            failed_files.append(file_path)
+                    elif download_file(file_path, dest_file, config):
                         file_count += 1
                         installed_files.append(str(dest_file))
                     else:
                         failed_files.append(file_path)
-
-        settings_dest = ctx.project_dir / ".claude" / "settings.local.json"
-
-        if settings_path:
-            if ui:
-                with ui.spinner("Installing settings..."):
-                    success = self._install_settings(
-                        settings_path,
-                        settings_dest,
-                        config,
-                        ctx.install_python,
-                        ctx.install_typescript,
-                        ctx.project_dir,
-                    )
-                    if success:
-                        file_count += 1
-                        installed_files.append(str(settings_dest))
-                        ui.success("Installed settings.local.json")
-                    else:
-                        failed_files.append(settings_path)
-                        ui.warning("Failed to install settings.local.json")
-            else:
-                success = self._install_settings(
-                    settings_path, settings_dest, config, ctx.install_python, ctx.install_typescript, ctx.project_dir
-                )
-                if success:
-                    file_count += 1
-                    installed_files.append(str(settings_dest))
-                else:
-                    failed_files.append(settings_path)
 
         ctx.config["installed_files"] = installed_files
 

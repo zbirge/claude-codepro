@@ -15,6 +15,7 @@
         "redhat.vscode-xml",
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",
-        "editorconfig.editorconfig"
+        "editorconfig.editorconfig",
+        "dkodr.claudeboard"
     ]
 }

@@ -208,6 +208,7 @@ cython_debug/
 #   you could uncomment the following to ignore the entire vscode folder
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 
 # Ruff stuff:
 .ruff_cache/
@@ -230,6 +231,7 @@ CLAUDE.md
 .claude/rules/custom/*
 !.claude/rules/custom/python-rules.md
 !.claude/rules/custom/typescript-rules.md
+.claude/config/
 tmp/
 context/
 

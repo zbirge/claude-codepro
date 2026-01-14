@@ -28,7 +28,8 @@
         "pkief.material-icon-theme",
         "redhat.vscode-xml",
         "redhat.vscode-yaml",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "dkodr.claudeboard"
       ]
     }
   },
@@ -49,6 +50,11 @@
       "installOhMyZshConfig": true,
       "upgradePackages": true,
       "configureZshAsDefaultShell": true
+    },
+    /* https://github.com/devcontainers/features/tree/main/src/python - Using 3.11 for CUDA/vexor compatibility */
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": false
     },
     /* https://github.com/devcontainers/features/tree/main/src/node */
     "ghcr.io/devcontainers/features/node:1": {
@@ -80,8 +86,8 @@
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
-    /* https://github.com/meaningful-ooo/devcontainer-features/tree/main/src/homebrew */
-    "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {},
+    /* https://github.com/devcontainers/features/tree/main/src/github-cli */
+    "ghcr.io/devcontainers/features/github-cli:1": {},
     /* https://github.com/devcontainers/features/tree/main/src/go */
     "ghcr.io/devcontainers/features/go:1": {},
     /* https://github.com/michidk/devcontainers-features/tree/main/src/bun */
@@ -90,21 +96,17 @@
     "ghcr.io/braun-daniel/devcontainer-features/spaceship:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/fzf */
     "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {},
-	/* https://github.com/devcontainers/features/tree/main/src/nvidia-cuda */
-	"ghcr.io/devcontainers/features/nvidia-cuda:2": {
-		"installCudnnDev": true,
-		"installToolkit": true,
-		"cudaVersion": "12.5",
-		"cudnnVersion": "automatic"
-	},
-	/* https://github.com/devcontainers/features/tree/main/src/python */
-	"ghcr.io/devcontainers/features/python:1": {
-		"version": "3.11"
-	},
-	/* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
-	"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
+    /* https://github.com/devcontainers/features/tree/main/src/nvidia-cuda */
+    "ghcr.io/devcontainers/features/nvidia-cuda:2": {
+      "installCudnnDev": true,
+      "installToolkit": true,
+      "cudaVersion": "12.5",
+      "cudnnVersion": "automatic"
+    },
+    /* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
+    "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.4.0/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }

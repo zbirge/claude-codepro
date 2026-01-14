@@ -73,13 +73,15 @@ class FinalizeStep(BaseStep):
             ]
         )
 
+        if ctx.config.get("installed_extensions"):
+            installed_items.append(f"VS Code Extensions ({ctx.config['installed_extensions']})")
+
         if ctx.install_python:
             installed_items.append("Python development tools")
 
         if ctx.install_typescript:
             installed_items.append("TypeScript quality hooks")
 
-        # MCP Servers
         if ctx.config.get("github_mcp_configured"):
             installed_items.append("GitHub MCP Server")
         if ctx.config.get("gitlab_mcp_configured"):
@@ -93,7 +95,8 @@ class FinalizeStep(BaseStep):
             [
                 (
                     "Connect to dev container",
-                    f"Open your favorite terminal (iTerm, Terminal, etc.) and run:\n"
+                    f"Option A: Use VS Code's integrated terminal (required for image pasting)\n"
+                    f"     Option B: Use your favorite terminal (iTerm, Warp, etc.) and run:\n"
                     f'     docker exec -it $(docker ps --filter "name={project_slug}" -q) zsh',
                 ),
                 ("Start Claude CodePro", "Run: ccp"),
@@ -104,9 +107,19 @@ class FinalizeStep(BaseStep):
                     "     (Extensions may not auto-install in fresh containers)",
                 ),
                 (
+                    "Image Pasting (Optional)",
+                    "Install dkodr.claudeboard extension via the Marketplace\n"
+                    "     Only works in VS Code's integrated terminal",
+                ),
+                (
                     "Custom MCP Servers (Optional)",
                     "Add your MCP servers to mcp_servers.json, then run /setup\n"
                     "     to generate documentation. Use mcp-cli to interact with them.",
+                ),
+                (
+                    "Claude MEM Dashboard (Optional)",
+                    "View stored memories and observations at http://localhost:37777\n"
+                    "     (Check VS Code Ports tab if 37777 is unavailable - may be 37778)",
                 ),
                 (
                     "Spec-Driven Mode",

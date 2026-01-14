@@ -12,6 +12,7 @@ from typing import Optional
 import typer
 
 from installer import __build__
+from installer.config import load_config, save_config
 from installer.context import InstallContext
 from installer.errors import FatalInstallError
 from installer.steps.base import BaseStep
@@ -23,6 +24,7 @@ from installer.steps.environment import EnvironmentStep
 from installer.steps.finalize import FinalizeStep
 from installer.steps.git_setup import GitSetupStep
 from installer.steps.shell_config import ShellConfigStep
+from installer.steps.vscode_extensions import VSCodeExtensionsStep
 from installer.ui import Console
 
 app = typer.Typer(
@@ -42,6 +44,7 @@ def get_all_steps() -> list[BaseStep]:
         DependenciesStep(),
         EnvironmentStep(),
         ShellConfigStep(),
+        VSCodeExtensionsStep(),
         FinalizeStep(),
     ]
 
@@ -107,8 +110,94 @@ def install(
 
     effective_local_repo_dir = local_repo_dir if local_repo_dir else (Path.cwd() if local else None)
 
-    # In local mode, skip all interactive prompts and use defaults
-    skip_prompts = non_interactive or local
+    skip_prompts = non_interactive
+    project_dir = Path.cwd()
+    saved_config = load_config(project_dir)
+
+    if not skip_prompts and not saved_config.get("license_acknowledged"):
+        console.print()
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print("  [bold]📜 License Agreement[/bold]")
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print()
+        console.print("  Claude CodePro is [bold green]FREE[/bold green] for:")
+        console.print("    • Individuals (personal projects, learning)")
+        console.print("    • Freelancers (client work, consulting)")
+        console.print("    • Open Source Projects (AGPL-3.0 compatible)")
+        console.print()
+        console.print("  [bold yellow]Commercial License REQUIRED[/bold yellow] for:")
+        console.print("    • Companies with closed-source/proprietary software")
+        console.print("    • Internal tools at companies not willing to open-source")
+        console.print("    • SaaS products using Claude CodePro")
+        console.print()
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print("  [bold]💡 Why Support Claude CodePro?[/bold]")
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print()
+        console.print("  Your license supports continuous development of:")
+        console.print("    ✨ Pre-configured professional development environment")
+        console.print("    ✨ Endless Mode for unlimited context sessions")
+        console.print("    ✨ TDD enforcement, quality hooks, and LSP integration")
+        console.print("    ✨ Semantic search, persistent memory, and MCP servers")
+        console.print("    ✨ Regular updates with latest Claude Code best practices")
+        console.print()
+        console.print("  [dim]Save your team countless hours of setup, configuration,[/dim]")
+        console.print("  [dim]and keeping up with the rapidly evolving AI tooling landscape.[/dim]")
+        console.print()
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print()
+
+        license_choices = [
+            "Free tier (individual/freelancer/open-source)",
+            "Commercial - I want to evaluate first",
+            "Commercial - I need a license",
+        ]
+        choice = console.select("How will you use Claude CodePro?", license_choices)
+
+        if choice == license_choices[2]:
+            console.print()
+            console.print("  [bold]To obtain a commercial license, please contact:[/bold]")
+            console.print()
+            console.print("  [bold cyan]✉️  mail@maxritter.net[/bold cyan]")
+            console.print()
+            console.print("  [dim]Include your company name and expected number of users.[/dim]")
+            console.print()
+            raise typer.Exit(0)
+
+        use_type = "free" if choice == license_choices[0] else "commercial_eval"
+
+        if use_type == "commercial_eval":
+            console.print()
+            console.print("  [bold green]✓ Evaluation mode enabled[/bold green]")
+            console.print()
+            console.print("  You may proceed with installation to evaluate Claude CodePro.")
+            console.print("  [bold yellow]Please acquire a license before production use.[/bold yellow]")
+            console.print()
+            console.print("  [bold]Contact:[/bold] [cyan]mail@maxritter.net[/cyan]")
+            console.print()
+
+        console.print("  [bold]Please type the following to confirm:[/bold]")
+        console.print()
+        console.print('  [cyan]"I acknowledge the Claude CodePro license terms"[/cyan]')
+        console.print()
+
+        confirmation = console.input("Your confirmation").strip().lower()
+        expected = "i acknowledge the claude codepro license terms"
+
+        if confirmation != expected:
+            console.print()
+            console.error("Confirmation text did not match. Installation cancelled.")
+            console.print("  [dim]Please type the exact phrase shown above.[/dim]")
+            raise typer.Exit(1)
+
+        console.print()
+        console.success("License terms acknowledged. Thank you!")
+        console.print()
+
+        if use_type == "free":
+            saved_config["license_acknowledged"] = True
+            saved_config["license_type"] = use_type
+            save_config(project_dir, saved_config)
 
     claude_dir = Path.cwd() / ".claude"
     if claude_dir.exists() and not skip_prompts:
@@ -139,7 +228,6 @@ def install(
                     path = Path(directory) / f
                     if path.is_fifo() or path.is_socket() or path.is_block_device() or path.is_char_device():
                         ignored.append(f)
-                    # Also skip tmp directory which contains runtime files
                     if f == "tmp":
                         ignored.append(f)
                 return ignored
@@ -149,22 +237,50 @@ def install(
 
     install_python = not skip_python
     if not skip_python and not skip_prompts:
-        console.print()
-        console.print("  [bold]Do you want to install advanced Python features?[/bold]")
-        console.print("  This includes: uv, ruff, mypy, basedpyright, and Python quality hooks")
-        install_python = console.confirm("Install Python support?", default=True)
+        if "install_python" in saved_config:
+            install_python = saved_config["install_python"]
+            console.print()
+            console.print(f"  [dim]Using saved preference: Python support = {install_python}[/dim]")
+        else:
+            console.print()
+            console.print("  [bold]Do you want to install advanced Python features?[/bold]")
+            console.print("  This includes: uv, ruff, mypy, basedpyright, and Python quality hooks")
+            install_python = console.confirm("Install Python support?", default=True)
 
     install_typescript = not skip_typescript
     if not skip_typescript and not skip_prompts:
-        console.print()
-        console.print("  [bold]Do you want to install TypeScript features?[/bold]")
-        console.print("  This includes: TypeScript quality hooks (eslint, tsc, prettier)")
-        install_typescript = console.confirm("Install TypeScript support?", default=True)
+        if "install_typescript" in saved_config:
+            install_typescript = saved_config["install_typescript"]
+            console.print(f"  [dim]Using saved preference: TypeScript support = {install_typescript}[/dim]")
+        else:
+            console.print()
+            console.print("  [bold]Do you want to install TypeScript features?[/bold]")
+            console.print("  This includes: TypeScript quality hooks (eslint, tsc, prettier)")
+            install_typescript = console.confirm("Install TypeScript support?", default=True)
+
+    install_agent_browser = True
+    if not skip_prompts:
+        if "install_agent_browser" in saved_config:
+            install_agent_browser = saved_config["install_agent_browser"]
+            console.print(f"  [dim]Using saved preference: Agent browser = {install_agent_browser}[/dim]")
+        else:
+            console.print()
+            console.print("  [bold]Do you want to install agent-browser?[/bold]")
+            console.print("  This includes: Headless Chromium browser for web automation and testing")
+            console.print("  [dim]Note: Installation takes 1-2 minutes[/dim]")
+            install_agent_browser = console.confirm("Install agent-browser?", default=True)
+
+    if not skip_prompts:
+        saved_config["install_python"] = install_python
+        saved_config["install_typescript"] = install_typescript
+        saved_config["install_agent_browser"] = install_agent_browser
+        save_config(project_dir, saved_config)
 
     ctx = InstallContext(
-        project_dir=Path.cwd(),
+        project_dir=project_dir,
         install_python=install_python,
         install_typescript=install_typescript,
+        install_agent_browser=install_agent_browser,
         non_interactive=non_interactive,
         skip_env=skip_env,
         local_mode=local,

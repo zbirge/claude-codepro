@@ -1,7 +1,8 @@
-"""QLTY file checker hook - checks most recently modified file for linting issues."""
+"""QLTY file checker hook - checks edited file for linting issues."""
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -28,41 +29,20 @@ def find_git_root() -> Path | None:
     return None
 
 
-def find_most_recent_file(root: Path) -> Path | None:
-    """Find most recently modified file (excluding cache/build dirs)."""
-    exclude_patterns = [
-        ".ruff_cache",
-        "__pycache__",
-        "node_modules",
-        ".venv",
-        "dist",
-        "build",
-        ".git",
-    ]
-
-    most_recent_file = None
-    most_recent_time = 0.0
-
+def get_edited_file_from_stdin() -> Path | None:
+    """Get the edited file path from PostToolUse hook stdin."""
     try:
-        for file_path in root.rglob("*"):
-            if not file_path.is_file():
-                continue
+        import select
 
-            if any(pattern in file_path.parts for pattern in exclude_patterns):
-                continue
-
-            try:
-                mtime = file_path.stat().st_mtime
-                if mtime > most_recent_time:
-                    most_recent_time = mtime
-                    most_recent_file = file_path
-            except (OSError, PermissionError):
-                continue
-
+        if select.select([sys.stdin], [], [], 0)[0]:
+            data = json.load(sys.stdin)
+            tool_input = data.get("tool_input", {})
+            file_path = tool_input.get("file_path")
+            if file_path:
+                return Path(file_path)
     except Exception:
         pass
-
-    return most_recent_file
+    return None
 
 
 def find_qlty_bin() -> str | None:
@@ -89,11 +69,14 @@ def main() -> int:
     if git_root:
         os.chdir(git_root)
 
-    most_recent = find_most_recent_file(Path.cwd())
-    if not most_recent:
+    target_file = get_edited_file_from_stdin()
+    if not target_file or not target_file.exists():
         return 0
 
-    if most_recent.suffix == ".py":
+    if target_file.suffix == ".py":
+        return 0
+
+    if "test" in target_file.name or "spec" in target_file.name:
         return 0
 
     qlty_bin = find_qlty_bin()
@@ -102,7 +85,7 @@ def main() -> int:
 
     try:
         result = subprocess.run(
-            [qlty_bin, "check", "--no-formatters", str(most_recent)],
+            [qlty_bin, "check", "--no-formatters", str(target_file)],
             capture_output=True,
             text=True,
             check=False,
@@ -126,7 +109,7 @@ def main() -> int:
 
     print("", file=sys.stderr)
     print(
-        f"{RED}🛑 QLTY Issues found in: {most_recent.relative_to(Path.cwd())}{NC}",
+        f"{RED}🛑 QLTY Issues found in: {target_file.relative_to(Path.cwd())}{NC}",
         file=sys.stderr,
     )
     print(f"{RED}Issues: {remaining_issues}{NC}", file=sys.stderr)
