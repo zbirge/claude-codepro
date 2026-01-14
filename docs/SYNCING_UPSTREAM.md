@@ -135,6 +135,16 @@ This fork maintains the following customizations that should be preserved during
 - **OAuth Token Support** for Claude Code authentication
 - **Superpowers Skills** (`.claude/skills/`)
 
+## Fork-Specific CI/CD Differences
+
+This fork has the following CI/CD differences from upstream:
+
+| Workflow | Difference | Reason |
+|----------|------------|--------|
+| `release.yml` | Removed `deploy-website` job | Fork does not use Netlify hosting |
+
+**During syncs:** If upstream modifies the release workflow, verify the `deploy-website` job (Netlify deployment) is not re-added. If it is, remove it again.
+
 ## Version Numbering Strategy
 
 This fork uses version numbers ahead of upstream to avoid confusion:

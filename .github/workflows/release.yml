@@ -200,13 +200,3 @@ jobs:
         run: |
           gh release upload "v${{ steps.version.outputs.version }}" \
             installer/dist/ccp-installer-linux-arm64 --clobber
-
-  deploy-website:
-    name: Trigger Netlify Deploy
-    runs-on: ubuntu-latest
-    needs: release
-    if: needs.release.outputs.released == 'true'
-    steps:
-      - name: Trigger Netlify build
-        run: |
-          curl -X POST -d {} "${{ secrets.NETLIFY_BUILD_HOOK }}"
