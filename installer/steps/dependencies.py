@@ -10,9 +10,11 @@ from typing import TYPE_CHECKING, Any
 
 from installer.platform_utils import command_exists, has_nvidia_gpu
 from installer.steps.base import BaseStep
+from installer.steps.environment import detect_git_hosting
 
 if TYPE_CHECKING:
     from installer.context import InstallContext
+    from installer.ui import Console
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -295,6 +297,57 @@ def _configure_gitlab_mcp() -> bool:
         return False
 
 
+def _prompt_mcp_server_choice(ui: Console | None) -> str:
+    """Prompt user to choose MCP server when hosting cannot be detected.
+
+    Returns:
+        'github', 'gitlab', or 'both'. Defaults to 'github' if non-interactive.
+    """
+    if ui is None or ui.non_interactive:
+        return "github"
+
+    ui.info("Could not detect git hosting from remotes.")
+    choice = ui.select(
+        "Which MCP server would you like to install?",
+        ["GitHub (recommended)", "GitLab", "Both"],
+    )
+
+    if "GitLab" in choice:
+        return "gitlab"
+    elif "Both" in choice:
+        return "both"
+    return "github"
+
+
+def _configure_mcp_servers(project_dir: Path, ui: Console | None = None) -> None:
+    """Configure GitHub and/or GitLab MCP servers based on git hosting detection.
+
+    Logic:
+    - GitHub remote detected → configure GitHub MCP only
+    - GitLab remote detected → configure GitLab MCP only
+    - Both detected → configure both
+    - Neither detected → prompt user (default: GitHub)
+    """
+    is_github, is_gitlab = detect_git_hosting(project_dir)
+
+    if is_github and is_gitlab:
+        _configure_github_mcp()
+        _configure_gitlab_mcp()
+    elif is_github:
+        _configure_github_mcp()
+    elif is_gitlab:
+        _configure_gitlab_mcp()
+    else:
+        choice = _prompt_mcp_server_choice(ui)
+        if choice == "github":
+            _configure_github_mcp()
+        elif choice == "gitlab":
+            _configure_gitlab_mcp()
+        else:
+            _configure_github_mcp()
+            _configure_gitlab_mcp()
+
+
 def _get_forced_claude_version(project_dir: Path) -> str | None:
     """Check settings.local.json for FORCE_CLAUDE_VERSION in env section."""
     import json
@@ -309,7 +362,7 @@ def _get_forced_claude_version(project_dir: Path) -> str | None:
     return None
 
 
-def install_claude_code(project_dir: Path) -> tuple[bool, str]:
+def install_claude_code(project_dir: Path, ui: Console | None = None) -> tuple[bool, str]:
     """Install/upgrade Claude Code CLI via npm and configure defaults.
 
     Returns (success, version_installed).
@@ -324,8 +377,7 @@ def install_claude_code(project_dir: Path) -> tuple[bool, str]:
 
     _configure_claude_defaults()
     _configure_firecrawl_mcp()
-    _configure_github_mcp()
-    _configure_gitlab_mcp()
+    _configure_mcp_servers(project_dir, ui)
     return True, version
 
 
@@ -780,7 +832,7 @@ class DependenciesStep(BaseStep):
 
         if ui:
             with ui.spinner("Installing Claude Code..."):
-                success, version = install_claude_code(ctx.project_dir)
+                success, version = install_claude_code(ctx.project_dir, ui)
             if success:
                 installed.append("claude_code")
                 if version != "latest":
@@ -791,7 +843,7 @@ class DependenciesStep(BaseStep):
             else:
                 ui.warning("Could not install Claude Code - please install manually")
         else:
-            success, _ = install_claude_code(ctx.project_dir)
+            success, _ = install_claude_code(ctx.project_dir, None)
             if success:
                 installed.append("claude_code")
 

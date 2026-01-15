@@ -184,14 +184,13 @@ class TestClaudeCodeInstall:
     """Test Claude Code installation."""
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_removes_native_binaries(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
     ):
         """install_claude_code removes native binaries before npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -204,14 +203,13 @@ class TestClaudeCodeInstall:
         mock_remove.assert_called_once()
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_always_runs_npm_install(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
     ):
         """install_claude_code always runs npm install (upgrades if exists)."""
         from installer.steps.dependencies import install_claude_code
@@ -228,14 +226,13 @@ class TestClaudeCodeInstall:
         assert len(npm_calls) >= 1
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_configures_defaults(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
     ):
         """install_claude_code configures Claude defaults after npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -248,14 +245,13 @@ class TestClaudeCodeInstall:
         mock_config.assert_called_once()
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_configures_firecrawl_mcp(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
     ):
         """install_claude_code configures Firecrawl MCP after npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -268,44 +264,27 @@ class TestClaudeCodeInstall:
         mock_firecrawl.assert_called_once()
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_github_mcp(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
+    def test_install_claude_code_calls_configure_mcp_servers(
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
     ):
-        """install_claude_code configures GitHub MCP after npm install."""
+        """install_claude_code calls _configure_mcp_servers with project_dir and ui."""
         from installer.steps.dependencies import install_claude_code
 
         mock_run.return_value = MagicMock(returncode=0)
+        mock_ui = MagicMock()
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            install_claude_code(Path(tmpdir))
+            install_claude_code(Path(tmpdir), mock_ui)
 
-        mock_github.assert_called_once()
-
-    @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
-    @patch("installer.steps.dependencies._configure_claude_defaults")
-    @patch("subprocess.run")
-    @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_configures_gitlab_mcp(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_github, mock_gitlab, mock_version
-    ):
-        """install_claude_code configures GitLab MCP after npm install."""
-        from installer.steps.dependencies import install_claude_code
-
-        mock_run.return_value = MagicMock(returncode=0)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            install_claude_code(Path(tmpdir))
-
-        mock_gitlab.assert_called_once()
+        mock_mcp_servers.assert_called_once()
+        call_args = mock_mcp_servers.call_args
+        assert call_args[0][0] == Path(tmpdir)  # project_dir
+        assert call_args[0][1] == mock_ui  # ui
 
     def test_patch_claude_config_creates_file(self):
         """_patch_claude_config creates config file if it doesn't exist."""
@@ -1070,3 +1049,177 @@ class TestVexorOnnxruntimeConflictFix:
         result = _fix_vexor_onnxruntime_conflict()
 
         assert result is False
+
+
+class TestPromptMcpServerChoice:
+    """Test _prompt_mcp_server_choice function."""
+
+    def test_returns_github_when_ui_is_none(self):
+        """_prompt_mcp_server_choice returns 'github' when UI is None."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+
+        result = _prompt_mcp_server_choice(None)
+
+        assert result == "github"
+
+    def test_returns_github_when_non_interactive(self):
+        """_prompt_mcp_server_choice returns 'github' in non-interactive mode."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+        from installer.ui import Console
+
+        ui = Console(non_interactive=True)
+        result = _prompt_mcp_server_choice(ui)
+
+        assert result == "github"
+
+    def test_returns_github_when_github_selected(self):
+        """_prompt_mcp_server_choice returns 'github' when user selects GitHub."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+
+        mock_ui = MagicMock()
+        mock_ui.non_interactive = False
+        mock_ui.select.return_value = "GitHub (recommended)"
+
+        result = _prompt_mcp_server_choice(mock_ui)
+
+        assert result == "github"
+        mock_ui.select.assert_called_once()
+
+    def test_returns_gitlab_when_gitlab_selected(self):
+        """_prompt_mcp_server_choice returns 'gitlab' when user selects GitLab."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+
+        mock_ui = MagicMock()
+        mock_ui.non_interactive = False
+        mock_ui.select.return_value = "GitLab"
+
+        result = _prompt_mcp_server_choice(mock_ui)
+
+        assert result == "gitlab"
+
+    def test_returns_both_when_both_selected(self):
+        """_prompt_mcp_server_choice returns 'both' when user selects Both."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+
+        mock_ui = MagicMock()
+        mock_ui.non_interactive = False
+        mock_ui.select.return_value = "Both"
+
+        result = _prompt_mcp_server_choice(mock_ui)
+
+        assert result == "both"
+
+    def test_shows_info_message_before_prompt(self):
+        """_prompt_mcp_server_choice shows info message about detection failure."""
+        from installer.steps.dependencies import _prompt_mcp_server_choice
+
+        mock_ui = MagicMock()
+        mock_ui.non_interactive = False
+        mock_ui.select.return_value = "GitHub (recommended)"
+
+        _prompt_mcp_server_choice(mock_ui)
+
+        mock_ui.info.assert_called_once()
+        assert "detect" in mock_ui.info.call_args[0][0].lower()
+
+
+class TestConfigureMcpServers:
+    """Test _configure_mcp_servers function."""
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_github_only_when_github_detected(self, mock_detect, mock_github, mock_gitlab):
+        """_configure_mcp_servers configures only GitHub when GitHub remote detected."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (True, False)  # is_github=True, is_gitlab=False
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir))
+
+        mock_github.assert_called_once()
+        mock_gitlab.assert_not_called()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_gitlab_only_when_gitlab_detected(self, mock_detect, mock_github, mock_gitlab):
+        """_configure_mcp_servers configures only GitLab when GitLab remote detected."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (False, True)  # is_github=False, is_gitlab=True
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir))
+
+        mock_github.assert_not_called()
+        mock_gitlab.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_both_when_both_detected(self, mock_detect, mock_github, mock_gitlab):
+        """_configure_mcp_servers configures both when both remotes detected."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (True, True)  # Both detected
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir))
+
+        mock_github.assert_called_once()
+        mock_gitlab.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_prompts_user_when_neither_detected(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
+        """_configure_mcp_servers prompts user when no remotes detected."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (False, False)  # Neither detected
+        mock_prompt.return_value = "github"
+        mock_ui = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir), mock_ui)
+
+        mock_prompt.assert_called_once_with(mock_ui)
+        mock_github.assert_called_once()
+        mock_gitlab.assert_not_called()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_configures_gitlab_when_user_chooses_gitlab(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
+        """_configure_mcp_servers configures GitLab when user chooses gitlab."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (False, False)
+        mock_prompt.return_value = "gitlab"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir), None)
+
+        mock_github.assert_not_called()
+        mock_gitlab.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_gitlab_mcp")
+    @patch("installer.steps.dependencies._configure_github_mcp")
+    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
+    @patch("installer.steps.dependencies.detect_git_hosting")
+    def test_configures_both_when_user_chooses_both(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
+        """_configure_mcp_servers configures both when user chooses both."""
+        from installer.steps.dependencies import _configure_mcp_servers
+
+        mock_detect.return_value = (False, False)
+        mock_prompt.return_value = "both"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _configure_mcp_servers(Path(tmpdir), None)
+
+        mock_github.assert_called_once()
+        mock_gitlab.assert_called_once()
