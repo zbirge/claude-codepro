@@ -7,10 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import platformdirs
 
-
-def has_nvidia_gpu(verbose: bool = False) -> bool | dict:
+def has_nvidia_gpu(verbose: bool = False) -> bool | dict[str, object]:
     """Check if NVIDIA GPU is available via nvidia-smi or /dev/nvidia* fallback.
 
     Args:
@@ -19,14 +17,13 @@ def has_nvidia_gpu(verbose: bool = False) -> bool | dict:
     Returns:
         bool if verbose=False, dict with detection details if verbose=True.
     """
-    result_info: dict = {
+    result_info: dict[str, object] = {
         "detected": False,
         "method": None,
         "error": None,
         "nvidia_smi_output": None,
     }
 
-    # Method 1: nvidia-smi command
     try:
         proc = subprocess.run(
             ["nvidia-smi"],
@@ -52,7 +49,6 @@ def has_nvidia_gpu(verbose: bool = False) -> bool | dict:
     except subprocess.SubprocessError as e:
         result_info["error"] = f"SubprocessError running nvidia-smi: {e}"
 
-    # Method 2: Check for /dev/nvidia* devices (fallback)
     try:
         nvidia_devices = list(Path("/dev").glob("nvidia*"))
         if nvidia_devices:
@@ -105,33 +101,6 @@ def command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
-def get_package_manager() -> str | None:
-    """Detect the system package manager."""
-    if is_macos():
-        if command_exists("brew"):
-            return "brew"
-    elif is_linux() or is_wsl():
-        if command_exists("apt-get"):
-            return "apt-get"
-        elif command_exists("dnf"):
-            return "dnf"
-        elif command_exists("yum"):
-            return "yum"
-        elif command_exists("pacman"):
-            return "pacman"
-    return None
-
-
-def get_config_dir() -> Path:
-    """Get the user configuration directory using platformdirs."""
-    return Path(platformdirs.user_config_dir("claude-codepro"))
-
-
-def get_data_dir() -> Path:
-    """Get the user data directory using platformdirs."""
-    return Path(platformdirs.user_data_dir("claude-codepro"))
-
-
 def get_shell_config_files() -> list[Path]:
     """Get list of shell configuration files for the current user."""
     home = Path.home()
@@ -156,39 +125,3 @@ def get_shell_config_files() -> list[Path]:
         configs = [bashrc, zshrc, fish_config]
 
     return configs
-
-
-def get_platform_suffix() -> str:
-    """Get platform suffix for binary names (e.g., 'linux-x86_64', 'darwin-arm64')."""
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-
-    if machine in ("amd64", "x86_64"):
-        machine = "x86_64"
-    elif machine in ("arm64", "aarch64"):
-        machine = "arm64"
-
-    return f"{system}-{machine}"
-
-
-def add_to_path(path: Path) -> None:
-    """Add directory to PATH in shell configs."""
-    export_line = f'export PATH="{path}:$PATH"'
-    fish_line = f'set -gx PATH "{path}" $PATH'
-
-    for config_file in get_shell_config_files():
-        if not config_file.exists():
-            continue
-
-        content = config_file.read_text()
-
-        if str(path) in content:
-            continue
-
-        if "fish" in config_file.name:
-            line_to_add = fish_line
-        else:
-            line_to_add = export_line
-
-        with open(config_file, "a") as f:
-            f.write(f"\n{line_to_add}\n")

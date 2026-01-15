@@ -58,7 +58,7 @@ const WorkflowSteps = () => {
   const [stepsRef, stepsInView] = useInView<HTMLDivElement>();
 
   return (
-    <section id="workflow" className="py-20 lg:py-28 px-4 sm:px-6">
+    <section id="workflow" className="py-12 lg:py-16 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div
           ref={headerRef}

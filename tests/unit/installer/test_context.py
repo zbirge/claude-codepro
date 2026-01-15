@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 
 class TestInstallContext:
     """Test InstallContext dataclass."""
@@ -22,7 +20,7 @@ class TestInstallContext:
         from installer.context import InstallContext
 
         ctx = InstallContext(project_dir=Path("/tmp/test"))
-        assert ctx.install_python is True
+        assert ctx.enable_python is True
         assert ctx.non_interactive is False
         assert ctx.local_mode is False
         assert ctx.local_repo_dir is None
@@ -45,24 +43,6 @@ class TestInstallContext:
         ctx.mark_completed("bootstrap")
         ctx.mark_completed("bootstrap")
         assert ctx.completed_steps.count("bootstrap") == 1
-
-    def test_is_completed_returns_correct_value(self):
-        """is_completed checks if step is done."""
-        from installer.context import InstallContext
-
-        ctx = InstallContext(project_dir=Path("/tmp/test"))
-        assert ctx.is_completed("bootstrap") is False
-        ctx.mark_completed("bootstrap")
-        assert ctx.is_completed("bootstrap") is True
-
-    def test_needs_rollback_when_steps_completed(self):
-        """needs_rollback returns True when steps completed."""
-        from installer.context import InstallContext
-
-        ctx = InstallContext(project_dir=Path("/tmp/test"))
-        assert ctx.needs_rollback() is False
-        ctx.mark_completed("bootstrap")
-        assert ctx.needs_rollback() is True
 
 
 class TestErrorHierarchy:

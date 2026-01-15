@@ -12,7 +12,7 @@ from typing import Optional
 import typer
 
 from installer import __build__
-from installer.config import load_config, save_config
+from installer.config import acknowledge_license, is_license_acknowledged, load_config, save_config
 from installer.context import InstallContext
 from installer.errors import FatalInstallError
 from installer.steps.base import BaseStep
@@ -101,6 +101,7 @@ def install(
     local_repo_dir: Optional[Path] = typer.Option(None, "--local-repo-dir", help="Local repository directory"),
     skip_python: bool = typer.Option(False, "--skip-python", help="Skip Python support installation"),
     skip_typescript: bool = typer.Option(False, "--skip-typescript", help="Skip TypeScript support installation"),
+    local_system: bool = typer.Option(False, "--local-system", help="Local installation (not in container)"),
 ) -> None:
     """Install Claude CodePro."""
     console = Console(non_interactive=non_interactive)
@@ -114,7 +115,7 @@ def install(
     project_dir = Path.cwd()
     saved_config = load_config(project_dir)
 
-    if not skip_prompts and not saved_config.get("license_acknowledged"):
+    if not skip_prompts and not is_license_acknowledged():
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print("  [bold]📜 License Agreement[/bold]")
@@ -194,10 +195,7 @@ def install(
         console.success("License terms acknowledged. Thank you!")
         console.print()
 
-        if use_type == "free":
-            saved_config["license_acknowledged"] = True
-            saved_config["license_type"] = use_type
-            save_config(project_dir, saved_config)
+        acknowledge_license(use_type)
 
     claude_dir = Path.cwd() / ".claude"
     if claude_dir.exists() and not skip_prompts:
@@ -235,56 +233,109 @@ def install(
             shutil.copytree(claude_dir, backup_dir, ignore=ignore_special_files)
             console.success(f"Backup created: {backup_dir}")
 
-    install_python = not skip_python
+    enable_python = not skip_python
     if not skip_python and not skip_prompts:
-        if "install_python" in saved_config:
-            install_python = saved_config["install_python"]
+        if "enable_python" in saved_config:
+            enable_python = saved_config["enable_python"]
             console.print()
-            console.print(f"  [dim]Using saved preference: Python support = {install_python}[/dim]")
+            console.print(f"  [dim]Using saved preference: Python support = {enable_python}[/dim]")
         else:
             console.print()
             console.print("  [bold]Do you want to install advanced Python features?[/bold]")
-            console.print("  This includes: uv, ruff, mypy, basedpyright, and Python quality hooks")
-            install_python = console.confirm("Install Python support?", default=True)
+            console.print("  This includes: uv, ruff, basedpyright, and Python quality hooks")
+            enable_python = console.confirm("Install Python support?", default=True)
 
-    install_typescript = not skip_typescript
+    enable_typescript = not skip_typescript
     if not skip_typescript and not skip_prompts:
-        if "install_typescript" in saved_config:
-            install_typescript = saved_config["install_typescript"]
-            console.print(f"  [dim]Using saved preference: TypeScript support = {install_typescript}[/dim]")
+        if "enable_typescript" in saved_config:
+            enable_typescript = saved_config["enable_typescript"]
+            console.print(f"  [dim]Using saved preference: TypeScript support = {enable_typescript}[/dim]")
         else:
             console.print()
             console.print("  [bold]Do you want to install TypeScript features?[/bold]")
             console.print("  This includes: TypeScript quality hooks (eslint, tsc, prettier)")
-            install_typescript = console.confirm("Install TypeScript support?", default=True)
+            enable_typescript = console.confirm("Install TypeScript support?", default=True)
 
-    install_agent_browser = True
+    enable_agent_browser = True
     if not skip_prompts:
-        if "install_agent_browser" in saved_config:
-            install_agent_browser = saved_config["install_agent_browser"]
-            console.print(f"  [dim]Using saved preference: Agent browser = {install_agent_browser}[/dim]")
+        if "enable_agent_browser" in saved_config:
+            enable_agent_browser = saved_config["enable_agent_browser"]
+            console.print(f"  [dim]Using saved preference: Agent browser = {enable_agent_browser}[/dim]")
         else:
             console.print()
             console.print("  [bold]Do you want to install agent-browser?[/bold]")
             console.print("  This includes: Headless Chromium browser for web automation and testing")
             console.print("  [dim]Note: Installation takes 1-2 minutes[/dim]")
-            install_agent_browser = console.confirm("Install agent-browser?", default=True)
+            enable_agent_browser = console.confirm("Install agent-browser?", default=True)
+
+    from installer.steps.environment import add_env_key, key_is_set
+
+    env_file = project_dir / ".env"
+
+    enable_openai_embeddings = True
+    if not skip_prompts:
+        if "enable_openai_embeddings" in saved_config:
+            enable_openai_embeddings = saved_config["enable_openai_embeddings"]
+            console.print(f"  [dim]Using saved preference: OpenAI embeddings = {enable_openai_embeddings}[/dim]")
+        else:
+            console.print()
+            console.print("  [bold]Do you want to enable OpenAI embeddings for Vexor?[/bold]")
+            console.print("  This includes: Fast, high-quality semantic code search")
+            console.print("  [dim]Requires API key from platform.openai.com[/dim]")
+            enable_openai_embeddings = console.confirm("Enable OpenAI embeddings?", default=True)
+            if not enable_openai_embeddings:
+                console.info("Will use local embeddings (model downloaded during setup)")
+
+        if enable_openai_embeddings and not key_is_set("OPENAI_API_KEY", env_file):
+            console.print()
+            console.print("  [bold]Create at:[/bold] [cyan]https://platform.openai.com/api-keys[/cyan]")
+            openai_key = console.input("OPENAI_API_KEY", default="")
+            if openai_key:
+                add_env_key("OPENAI_API_KEY", openai_key, env_file)
+                console.success("OpenAI API key saved")
+
+    enable_firecrawl = True
+    if not skip_prompts:
+        if "enable_firecrawl" in saved_config:
+            enable_firecrawl = saved_config["enable_firecrawl"]
+            console.print(f"  [dim]Using saved preference: Firecrawl = {enable_firecrawl}[/dim]")
+        else:
+            console.print()
+            console.print("  [bold]Do you want to enable Firecrawl web scraping?[/bold]")
+            console.print("  This includes: Web scraping, search, and content extraction")
+            console.print("  [dim]Requires API key from firecrawl.dev (free tier available)[/dim]")
+            enable_firecrawl = console.confirm("Enable Firecrawl?", default=True)
+            if not enable_firecrawl:
+                console.info("Firecrawl disabled - web scraping features will not be available")
+
+        if enable_firecrawl and not key_is_set("FIRECRAWL_API_KEY", env_file):
+            console.print()
+            console.print("  [bold]Create at:[/bold] [cyan]https://www.firecrawl.dev/app/api-keys[/cyan] (free tier)")
+            firecrawl_key = console.input("FIRECRAWL_API_KEY", default="")
+            if firecrawl_key:
+                add_env_key("FIRECRAWL_API_KEY", firecrawl_key, env_file)
+                console.success("Firecrawl API key saved")
 
     if not skip_prompts:
-        saved_config["install_python"] = install_python
-        saved_config["install_typescript"] = install_typescript
-        saved_config["install_agent_browser"] = install_agent_browser
+        saved_config["enable_python"] = enable_python
+        saved_config["enable_typescript"] = enable_typescript
+        saved_config["enable_agent_browser"] = enable_agent_browser
+        saved_config["enable_openai_embeddings"] = enable_openai_embeddings
+        saved_config["enable_firecrawl"] = enable_firecrawl
         save_config(project_dir, saved_config)
 
     ctx = InstallContext(
         project_dir=project_dir,
-        install_python=install_python,
-        install_typescript=install_typescript,
-        install_agent_browser=install_agent_browser,
+        enable_python=enable_python,
+        enable_typescript=enable_typescript,
+        enable_agent_browser=enable_agent_browser,
         non_interactive=non_interactive,
         skip_env=skip_env,
         local_mode=local,
         local_repo_dir=effective_local_repo_dir,
+        is_local_install=local_system,
+        enable_openai_embeddings=enable_openai_embeddings,
+        enable_firecrawl=enable_firecrawl,
         ui=console,
     )
 

@@ -26,7 +26,6 @@ CONTAINER_EXTENSIONS = [
     "github.github-vscode-theme",
     "lumirelle.shell-format-rev",
     "ms-python.debugpy",
-    "ms-python.mypy-type-checker",
     "ms-python.python",
     "detachhead.basedpyright",
     "pkief.material-icon-theme",

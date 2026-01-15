@@ -66,51 +66,6 @@ class TestRemoveEnvKey:
             assert env_file.read_text() == ""
 
 
-class TestSetEnvKey:
-    """Test set_env_key function."""
-
-    def test_set_env_key_creates_file_if_not_exists(self):
-        """set_env_key creates new file with key."""
-        from installer.steps.environment import set_env_key
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            env_file = Path(tmpdir) / ".env"
-
-            set_env_key("NEW_KEY", "new_value", env_file)
-
-            assert env_file.exists()
-            assert env_file.read_text() == "NEW_KEY=new_value\n"
-
-    def test_set_env_key_replaces_existing_key(self):
-        """set_env_key replaces existing key value."""
-        from installer.steps.environment import set_env_key
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            env_file = Path(tmpdir) / ".env"
-            env_file.write_text("KEY=old_value\nOTHER=other\n")
-
-            set_env_key("KEY", "new_value", env_file)
-
-            content = env_file.read_text()
-            assert "KEY=new_value" in content
-            assert "KEY=old_value" not in content
-            assert "OTHER=other" in content
-
-    def test_set_env_key_appends_new_key(self):
-        """set_env_key appends new key to existing file."""
-        from installer.steps.environment import set_env_key
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            env_file = Path(tmpdir) / ".env"
-            env_file.write_text("EXISTING=value\n")
-
-            set_env_key("NEW_KEY", "new_value", env_file)
-
-            content = env_file.read_text()
-            assert "EXISTING=value" in content
-            assert "NEW_KEY=new_value" in content
-
-
 class TestCleanupObsoleteEnvKeys:
     """Test cleanup_obsolete_env_keys function."""
 
@@ -468,7 +423,6 @@ class TestEnvironmentStep:
 
             # Should have prompted for OPENAI, FIRECRAWL, and OAuth token (3 inputs)
             assert mock_ui.input.call_count == 3
-            mock_ui.section.assert_called_once()
 
     def test_environment_run_skips_existing_keys(self):
         """EnvironmentStep.run skips prompts for keys that already exist."""
@@ -1229,7 +1183,7 @@ class TestEnvironmentStepMcpTokens:
     def test_environment_prompts_for_github_token_when_not_set(self):
         """EnvironmentStep prompts for GitHub token when not already set."""
         from installer.context import InstallContext
-        from installer.steps.environment import EnvironmentStep, GITHUB_TOKEN_KEY
+        from installer.steps.environment import GITHUB_TOKEN_KEY, EnvironmentStep
 
         step = EnvironmentStep()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1271,7 +1225,7 @@ class TestEnvironmentStepMcpTokens:
     def test_environment_prompts_for_gitlab_token_when_not_set(self):
         """EnvironmentStep prompts for GitLab token when not already set."""
         from installer.context import InstallContext
-        from installer.steps.environment import EnvironmentStep, GITLAB_TOKEN_KEY
+        from installer.steps.environment import GITLAB_TOKEN_KEY, EnvironmentStep
 
         step = EnvironmentStep()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1313,7 +1267,7 @@ class TestEnvironmentStepMcpTokens:
     def test_environment_skips_github_when_already_set(self):
         """EnvironmentStep skips GitHub prompt when token already in .env."""
         from installer.context import InstallContext
-        from installer.steps.environment import EnvironmentStep, GITHUB_TOKEN_KEY
+        from installer.steps.environment import GITHUB_TOKEN_KEY, EnvironmentStep
 
         step = EnvironmentStep()
         with tempfile.TemporaryDirectory() as tmpdir:

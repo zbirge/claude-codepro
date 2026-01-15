@@ -403,6 +403,13 @@ def main() -> int:
         debug_log("No file from stdin, exiting")
         return 0
 
+    if git_root:
+        try:
+            target_file.resolve().relative_to(git_root)
+        except ValueError:
+            debug_log("File outside git root, skipping")
+            return 0
+
     debug_log(f"Target file: {target_file}")
     debug_log(f"File extension: {target_file.suffix}")
 

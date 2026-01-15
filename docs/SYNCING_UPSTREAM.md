@@ -72,10 +72,11 @@ When conflicts occur, Git will list the conflicting files. For each file:
 
 | File Type | Strategy |
 |-----------|----------|
-| Version files (`__init__.py`, `install.sh`) | Use new version (e.g., 4.5.0) |
+| Version files (`__init__.py`, `install.sh`) | Use new version (e.g., 4.6.0) |
 | Config files (`.claude/settings.local.json`) | Keep fork customizations, add upstream features |
 | Installer steps | Keep fork features (GitHub/GitLab MCP), add upstream features |
 | Documentation | Merge content, update version references |
+| `.vscode/settings.json` | Keep fork version (use `git checkout --ours`) |
 
 ### 6. Update Version Numbers
 
@@ -134,6 +135,10 @@ This fork maintains the following customizations that should be preserved during
 - **GitLab MCP Server Integration** (`installer/steps/dependencies.py`)
 - **OAuth Token Support** for Claude Code authentication
 - **Superpowers Skills** (`.claude/skills/`)
+- **VS Code Settings** (`.vscode/settings.json`)
+  - `"workbench.iconTheme": "material-icon-theme"` - Material icons theme
+  - `"workbench.colorTheme": "GitHub Dark Dimmed"` - GitHub dark theme
+  - Removed upstream settings: `outline.collapseItems`, `workbench.activityBar.location`, `workbench.sideBar.location`, `workbench.panel.defaultLocation`
 
 ## Fork-Specific CI/CD Differences
 
@@ -152,8 +157,9 @@ This fork uses version numbers ahead of upstream to avoid confusion:
 | Upstream Version | Fork Version |
 |------------------|--------------|
 | 4.3.4 | 4.5.0 |
-| 4.4.x | 4.6.x |
+| 4.4.6 | 4.6.0 |
 | 4.5.x | 4.7.x |
+| 4.6.x | 4.8.x |
 
 When syncing, bump the fork version to stay ahead of the upstream version being merged.
 
@@ -182,4 +188,5 @@ If `test_get_all_steps_returns_list` fails:
 
 | Date | Upstream Version | Fork Version | Notes |
 |------|------------------|--------------|-------|
+| 2026-01-15 | 4.4.6 | 4.6.0 | Added macOS builds, preserved GitHub/GitLab MCP |
 | 2026-01-14 | 4.3.4 | 4.5.0 | Initial documented sync |

@@ -13,7 +13,7 @@ class TestProcessSettings:
     """Test the process_settings function."""
 
     def test_process_settings_preserves_python_hook_when_enabled(self):
-        """process_settings keeps Python hook when install_python=True."""
+        """process_settings keeps Python hook when enable_python=True."""
         from installer.steps.claude_files import process_settings
 
         # Use absolute path like real source file
@@ -35,7 +35,7 @@ class TestProcessSettings:
             }
         }
 
-        result = process_settings(json.dumps(settings), install_python=True, install_typescript=True)
+        result = process_settings(json.dumps(settings), enable_python=True, enable_typescript=True)
         parsed = json.loads(result)
 
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
@@ -44,7 +44,7 @@ class TestProcessSettings:
         assert len(hooks) == 2
 
     def test_process_settings_removes_python_hook_when_disabled(self):
-        """process_settings removes Python hook when install_python=False."""
+        """process_settings removes Python hook when enable_python=False."""
         from installer.steps.claude_files import process_settings
 
         # Use absolute path like real source file
@@ -66,7 +66,7 @@ class TestProcessSettings:
             }
         }
 
-        result = process_settings(json.dumps(settings), install_python=False, install_typescript=True)
+        result = process_settings(json.dumps(settings), enable_python=False, enable_typescript=True)
         parsed = json.loads(result)
 
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
@@ -81,7 +81,7 @@ class TestProcessSettings:
 
         settings = {"model": "opus", "env": {"key": "value"}}
 
-        result = process_settings(json.dumps(settings), install_python=False, install_typescript=False)
+        result = process_settings(json.dumps(settings), enable_python=False, enable_typescript=False)
         parsed = json.loads(result)
 
         assert parsed["model"] == "opus"
@@ -107,7 +107,7 @@ class TestProcessSettings:
             },
         }
 
-        result = process_settings(json.dumps(settings), install_python=False, install_typescript=True)
+        result = process_settings(json.dumps(settings), enable_python=False, enable_typescript=True)
         parsed = json.loads(result)
 
         assert parsed["model"] == "opus"
@@ -130,13 +130,13 @@ class TestProcessSettings:
 
         for settings in malformed_cases:
             # Should not raise an exception
-            result = process_settings(json.dumps(settings), install_python=False, install_typescript=False)
+            result = process_settings(json.dumps(settings), enable_python=False, enable_typescript=False)
             # Should return valid JSON
             parsed = json.loads(result)
             assert parsed is not None
 
     def test_process_settings_removes_typescript_hook_when_disabled(self):
-        """process_settings removes TypeScript hook when install_typescript=False."""
+        """process_settings removes TypeScript hook when enable_typescript=False."""
         from installer.steps.claude_files import process_settings
 
         # Use absolute path like real source file
@@ -158,7 +158,7 @@ class TestProcessSettings:
             }
         }
 
-        result = process_settings(json.dumps(settings), install_python=True, install_typescript=False)
+        result = process_settings(json.dumps(settings), enable_python=True, enable_typescript=False)
         parsed = json.loads(result)
 
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
@@ -192,7 +192,7 @@ class TestProcessSettings:
             }
         }
 
-        result = process_settings(json.dumps(settings), install_python=False, install_typescript=False)
+        result = process_settings(json.dumps(settings), enable_python=False, enable_typescript=False)
         parsed = json.loads(result)
 
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
@@ -295,7 +295,7 @@ class TestClaudeFilesStep:
             assert (dest_dir / ".claude" / "settings.local.json").exists()
 
     def test_claude_files_installs_python_settings_when_enabled(self):
-        """ClaudeFilesStep preserves Python hooks when install_python=True."""
+        """ClaudeFilesStep preserves Python hooks when enable_python=True."""
         import json
 
         from installer.context import InstallContext
@@ -328,7 +328,7 @@ class TestClaudeFilesStep:
 
             ctx = InstallContext(
                 project_dir=dest_dir,
-                install_python=True,
+                enable_python=True,
                 ui=Console(non_interactive=True),
                 local_mode=True,
                 local_repo_dir=Path(tmpdir) / "source",
@@ -346,7 +346,7 @@ class TestClaudeFilesStep:
             assert any("file_checker_python.py" in cmd for cmd in commands)
 
     def test_claude_files_removes_python_hooks_when_python_disabled(self):
-        """ClaudeFilesStep removes Python hooks when install_python=False."""
+        """ClaudeFilesStep removes Python hooks when enable_python=False."""
         import json
 
         from installer.context import InstallContext
@@ -379,7 +379,7 @@ class TestClaudeFilesStep:
 
             ctx = InstallContext(
                 project_dir=dest_dir,
-                install_python=False,
+                enable_python=False,
                 ui=Console(non_interactive=True),
                 local_mode=True,
                 local_repo_dir=Path(tmpdir) / "source",
@@ -399,7 +399,7 @@ class TestClaudeFilesStep:
             assert any("file_checker_qlty.py" in cmd for cmd in commands)
 
     def test_claude_files_skips_python_when_disabled(self):
-        """ClaudeFilesStep skips Python files when install_python=False."""
+        """ClaudeFilesStep skips Python files when enable_python=False."""
         from installer.context import InstallContext
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
@@ -422,7 +422,7 @@ class TestClaudeFilesStep:
 
             ctx = InstallContext(
                 project_dir=dest_dir,
-                install_python=False,
+                enable_python=False,
                 ui=Console(non_interactive=True),
                 local_mode=True,
                 local_repo_dir=Path(tmpdir) / "source",
@@ -436,7 +436,7 @@ class TestClaudeFilesStep:
             assert (dest_dir / ".claude" / "hooks" / "other_hook.sh").exists()
 
     def test_claude_files_skips_typescript_when_disabled(self):
-        """ClaudeFilesStep skips TypeScript files when install_typescript=False."""
+        """ClaudeFilesStep skips TypeScript files when enable_typescript=False."""
         from installer.context import InstallContext
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
@@ -446,13 +446,14 @@ class TestClaudeFilesStep:
             # Create source with TypeScript files
             source_claude = Path(tmpdir) / "source" / ".claude"
             source_hooks = source_claude / "hooks"
-            source_rules = source_claude / "rules" / "custom"
+            source_rules_standard = source_claude / "rules" / "standard"
             source_hooks.mkdir(parents=True)
-            source_rules.mkdir(parents=True)
+            source_rules_standard.mkdir(parents=True)
             (source_hooks / "file_checker_ts.py").write_text("# typescript hook")
             (source_hooks / "other_hook.sh").write_text("# other hook")
-            (source_rules / "typescript-rules.md").write_text("# typescript rules")
-            (source_rules / "python-rules.md").write_text("# python rules")
+            # Python/TypeScript rules are now in standard/ folder
+            (source_rules_standard / "typescript-rules.md").write_text("# typescript rules")
+            (source_rules_standard / "python-rules.md").write_text("# python rules")
             # Add settings file (required by the step)
             (source_claude / "settings.local.json").write_text('{"hooks": {}}')
 
@@ -460,11 +461,11 @@ class TestClaudeFilesStep:
             dest_dir.mkdir()
             (dest_dir / ".claude").mkdir()
             (dest_dir / ".claude" / "hooks").mkdir()
-            (dest_dir / ".claude" / "rules" / "custom").mkdir(parents=True)
+            (dest_dir / ".claude" / "rules" / "standard").mkdir(parents=True)
 
             ctx = InstallContext(
                 project_dir=dest_dir,
-                install_typescript=False,
+                enable_typescript=False,
                 ui=Console(non_interactive=True),
                 local_mode=True,
                 local_repo_dir=Path(tmpdir) / "source",
@@ -474,35 +475,32 @@ class TestClaudeFilesStep:
 
             # TypeScript hook should NOT be copied
             assert not (dest_dir / ".claude" / "hooks" / "file_checker_ts.py").exists()
-            # TypeScript rules should NOT be copied
-            assert not (dest_dir / ".claude" / "rules" / "custom" / "typescript-rules.md").exists()
+            # TypeScript rules should NOT be copied (now in standard/)
+            assert not (dest_dir / ".claude" / "rules" / "standard" / "typescript-rules.md").exists()
             # Other files should be copied
             assert (dest_dir / ".claude" / "hooks" / "other_hook.sh").exists()
-            # Python rules should be copied (it's in the allowed list)
-            assert (dest_dir / ".claude" / "rules" / "custom" / "python-rules.md").exists()
+            # Python rules should be copied (now in standard/)
+            assert (dest_dir / ".claude" / "rules" / "standard" / "python-rules.md").exists()
 
 
 class TestClaudeFilesCustomRulesPreservation:
     """Test that custom rules from repo are installed and user files preserved."""
 
     def test_custom_rules_installed_and_user_files_preserved(self):
-        """ClaudeFilesStep installs repo custom rules and preserves user files."""
+        """ClaudeFilesStep installs repo standard rules and preserves user custom files."""
         from installer.context import InstallContext
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
 
         step = ClaudeFilesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create source with custom rules (simulating repo)
+            # Create source with rules (simulating repo)
             source_claude = Path(tmpdir) / "source" / ".claude"
-            source_rules_custom = source_claude / "rules" / "custom"
             source_rules_standard = source_claude / "rules" / "standard"
-            source_rules_custom.mkdir(parents=True)
             source_rules_standard.mkdir(parents=True)
 
-            # Repo has custom rules (these SHOULD be copied now)
-            (source_rules_custom / "python-rules.md").write_text("python rules from repo")
-            # Repo has standard rules (these SHOULD be copied)
+            # Repo has standard rules (including python-rules.md, now in standard/)
+            (source_rules_standard / "python-rules.md").write_text("python rules from repo")
             (source_rules_standard / "standard-rule.md").write_text("standard rule")
 
             # Destination already has user's custom rules (not in repo)
@@ -525,9 +523,9 @@ class TestClaudeFilesCustomRulesPreservation:
             assert (dest_rules_custom / "my-project-rules.md").exists()
             assert (dest_rules_custom / "my-project-rules.md").read_text() == "USER PROJECT RULES - PRESERVED"
 
-            # Repo's custom rule SHOULD be copied
-            assert (dest_rules_custom / "python-rules.md").exists()
-            assert (dest_rules_custom / "python-rules.md").read_text() == "python rules from repo"
+            # Repo's python rules SHOULD be copied to standard/
+            assert (dest_claude / "rules" / "standard" / "python-rules.md").exists()
+            assert (dest_claude / "rules" / "standard" / "python-rules.md").read_text() == "python rules from repo"
 
             # Standard rules SHOULD be copied
             assert (dest_claude / "rules" / "standard" / "standard-rule.md").exists()

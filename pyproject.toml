@@ -27,12 +27,17 @@ ccp-installer = "installer.cli:app"
 dev = [
     "basedpyright>=1.32.1",
     "ruff>=0.12.3",
+    "vexor>=0.22.0",
     "pytest>=8.3.3",
     "pytest-cov>=7.0.0",
     "vulture>=2.14",
     "tox>=4.28.4",
     "build>=1.3.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["installer*"]
+exclude = ["context*", "tests*", "docs*", "misc*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["installer", "."]
@@ -106,9 +111,6 @@ ignore = [
 exclude = [".venv/**", "target/**", "**/.tox/**", "**/build/**"]
 min_confidence = 80
 paths = ["installer"]
-
-[tool.mypy]
-ignore_missing_imports = true
 
 [tool.basedpyright]
 include = ["installer"]

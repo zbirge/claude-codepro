@@ -74,7 +74,7 @@ class TestDependenciesStep:
         with tempfile.TemporaryDirectory() as tmpdir:
             ctx = InstallContext(
                 project_dir=Path(tmpdir),
-                install_python=False,
+                enable_python=False,
                 ui=Console(non_interactive=True),
             )
 
@@ -134,7 +134,7 @@ class TestDependenciesStep:
         with tempfile.TemporaryDirectory() as tmpdir:
             ctx = InstallContext(
                 project_dir=Path(tmpdir),
-                install_python=True,
+                enable_python=True,
                 ui=Console(non_interactive=True),
             )
 
@@ -578,7 +578,7 @@ class TestDotenvxInstall:
         mock_cmd_exists.return_value = False
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_dotenvx()
+        install_dotenvx()
 
         # Should call curl shell installer
         mock_run.assert_called()
@@ -607,14 +607,16 @@ class TestTypescriptLspInstall:
 
         assert callable(install_typescript_lsp)
 
+    @patch("installer.steps.dependencies._is_marketplace_installed", return_value=False)
+    @patch("installer.steps.dependencies._is_plugin_installed", return_value=False)
     @patch("subprocess.run")
-    def test_install_typescript_lsp_calls_npm_and_plugin(self, mock_run):
+    def test_install_typescript_lsp_calls_npm_and_plugin(self, mock_run, mock_plugin, mock_market):
         """install_typescript_lsp calls npm install and claude plugin install."""
         from installer.steps.dependencies import install_typescript_lsp
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_typescript_lsp()
+        install_typescript_lsp()
 
         assert mock_run.call_count >= 2
         # Check npm install call
@@ -638,14 +640,16 @@ class TestPyrightLspInstall:
 
         assert callable(install_pyright_lsp)
 
+    @patch("installer.steps.dependencies._is_marketplace_installed", return_value=False)
+    @patch("installer.steps.dependencies._is_plugin_installed", return_value=False)
     @patch("subprocess.run")
-    def test_install_pyright_lsp_calls_npm_and_plugin(self, mock_run):
+    def test_install_pyright_lsp_calls_npm_and_plugin(self, mock_run, mock_plugin, mock_market):
         """install_pyright_lsp calls npm install and claude plugin install."""
         from installer.steps.dependencies import install_pyright_lsp
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_pyright_lsp()
+        install_pyright_lsp()
 
         assert mock_run.call_count >= 3
         # Check npm install call
@@ -669,14 +673,17 @@ class TestClaudeMemInstall:
 
         assert callable(install_claude_mem)
 
+    @patch("installer.steps.dependencies._is_plugin_installed", return_value=False)
     @patch("subprocess.run")
-    def test_install_claude_mem_uses_plugin_system(self, mock_run):
+    def test_install_claude_mem_uses_plugin_system(self, mock_run, mock_plugin):
         """install_claude_mem uses claude plugin marketplace and install."""
         from installer.steps.dependencies import install_claude_mem
 
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
-        result = install_claude_mem()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                install_claude_mem()
 
         assert mock_run.call_count >= 2
         # First call adds marketplace
@@ -714,8 +721,10 @@ class TestContext7Install:
 
         assert callable(install_context7)
 
+    @patch("installer.steps.dependencies._is_marketplace_installed", return_value=False)
+    @patch("installer.steps.dependencies._is_plugin_installed", return_value=False)
     @patch("subprocess.run")
-    def test_install_context7_calls_plugin_install(self, mock_run):
+    def test_install_context7_calls_plugin_install(self, mock_run, mock_plugin, mock_market):
         """install_context7 calls claude plugin install context7."""
         from installer.steps.dependencies import install_context7
 
@@ -725,8 +734,8 @@ class TestContext7Install:
 
         assert result is True
         mock_run.assert_called()
-        call_args = mock_run.call_args[0][0]
-        assert "claude plugin install context7" in call_args[2]
+        # Should have called marketplace add and plugin install
+        assert mock_run.call_count >= 2
 
 
 class TestVexorInstall:

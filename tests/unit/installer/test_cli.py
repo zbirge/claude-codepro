@@ -392,8 +392,8 @@ class TestInstallCommand:
         from installer.cli import app
 
         runner = CliRunner()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            result = runner.invoke(app, ["install", "--local", "--non-interactive"], catch_exceptions=False)
+        with tempfile.TemporaryDirectory():
+            runner.invoke(app, ["install", "--local", "--non-interactive"], catch_exceptions=False)
 
         # Should not fail (exit code is from run_installation)
         mock_run_install.assert_called_once()
@@ -406,7 +406,7 @@ class TestInstallCommand:
         from installer.cli import app
 
         runner = CliRunner()
-        result = runner.invoke(app, ["install", "--non-interactive"])
+        runner.invoke(app, ["install", "--non-interactive"])
 
         mock_run_install.assert_called_once()
 
@@ -418,14 +418,14 @@ class TestInstallCommand:
         from installer.cli import app
 
         runner = CliRunner()
-        result = runner.invoke(
+        runner.invoke(
             app, ["install", "--local", "--non-interactive", "--skip-python", "--skip-typescript", "--skip-env"]
         )
 
         mock_run_install.assert_called_once()
         ctx = mock_run_install.call_args[0][0]
-        assert ctx.install_python is False
-        assert ctx.install_typescript is False
+        assert ctx.enable_python is False
+        assert ctx.enable_typescript is False
         assert ctx.skip_env is True
 
     @patch("installer.cli.run_installation")
@@ -458,16 +458,16 @@ class TestInstallCommand:
         assert result.exit_code == 130
 
     @patch("installer.cli.run_installation")
+    @patch("installer.cli.is_license_acknowledged", return_value=True)
     @patch("installer.cli.load_config")
     @patch("installer.cli.save_config")
-    def test_install_creates_backup_when_confirmed(self, mock_save_config, mock_load_config, mock_run_install):
+    def test_install_creates_backup_when_confirmed(
+        self, _mock_save_config, _mock_load_config, _mock_license, mock_run_install
+    ):
         """install creates backup when user confirms."""
         from typer.testing import CliRunner
 
         from installer.cli import app
-
-        # Skip license prompt by returning license_acknowledged=True
-        mock_load_config.return_value = {"license_acknowledged": True}
 
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -479,7 +479,7 @@ class TestInstallCommand:
 
             with patch("installer.cli.Path.cwd", return_value=Path(tmpdir)):
                 # Simulate user confirming backup (y) and Python (y), TypeScript (y), agent-browser (y)
-                result = runner.invoke(
+                runner.invoke(
                     app, ["install"], input="y\ny\ny\ny\n", catch_exceptions=False
                 )
 
@@ -488,16 +488,16 @@ class TestInstallCommand:
             assert len(backups) == 1
 
     @patch("installer.cli.run_installation")
+    @patch("installer.cli.is_license_acknowledged", return_value=True)
     @patch("installer.cli.load_config")
     @patch("installer.cli.save_config")
-    def test_install_skips_backup_when_declined(self, mock_save_config, mock_load_config, mock_run_install):
+    def test_install_skips_backup_when_declined(
+        self, _mock_save_config, _mock_load_config, _mock_license, mock_run_install
+    ):
         """install skips backup when user declines."""
         from typer.testing import CliRunner
 
         from installer.cli import app
-
-        # Skip license prompt by returning license_acknowledged=True
-        mock_load_config.return_value = {"license_acknowledged": True}
 
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -508,7 +508,7 @@ class TestInstallCommand:
 
             with patch("installer.cli.Path.cwd", return_value=Path(tmpdir)):
                 # Simulate user declining backup (n) and selecting Python (y), TypeScript (y), agent-browser (y)
-                result = runner.invoke(
+                runner.invoke(
                     app, ["install"], input="n\ny\ny\ny\n", catch_exceptions=False
                 )
 
@@ -517,28 +517,31 @@ class TestInstallCommand:
             assert len(backups) == 0
 
     @patch("installer.cli.run_installation")
+    @patch("installer.cli.is_license_acknowledged", return_value=True)
     @patch("installer.cli.load_config")
     @patch("installer.cli.save_config")
-    def test_install_prompts_for_python_support(self, mock_save_config, mock_load_config, mock_run_install):
+    def test_install_prompts_for_python_support(
+        self, mock_save_config, mock_load_config, mock_license, mock_run_install
+    ):
         """install prompts for Python support when not in local mode."""
         from typer.testing import CliRunner
 
         from installer.cli import app
 
-        # Skip license prompt by returning license_acknowledged=True
-        mock_load_config.return_value = {"license_acknowledged": True}
+        # Return empty config - license is already acknowledged via mock
+        mock_load_config.return_value = {}
 
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("installer.cli.Path.cwd", return_value=Path(tmpdir)):
                 # No .claude directory, so no backup prompt
                 # Just Python (y), TypeScript (n), agent-browser (y)
-                result = runner.invoke(app, ["install"], input="y\nn\ny\n", catch_exceptions=False)
+                runner.invoke(app, ["install"], input="y\nn\ny\n", catch_exceptions=False)
 
         mock_run_install.assert_called_once()
         ctx = mock_run_install.call_args[0][0]
-        assert ctx.install_python is True
-        assert ctx.install_typescript is False
+        assert ctx.enable_python is True
+        assert ctx.enable_typescript is False
 
     @patch("installer.cli.run_installation")
     def test_install_with_local_repo_dir(self, mock_run_install):
@@ -549,7 +552,7 @@ class TestInstallCommand:
 
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = runner.invoke(
+            runner.invoke(
                 app, ["install", "--local", "--non-interactive", "--local-repo-dir", tmpdir], catch_exceptions=False
             )
 
@@ -607,7 +610,6 @@ class TestFindWrapperScript:
         """find_wrapper_script returns None when wrapper not found anywhere."""
         import installer.cli as cli_module
 
-        original_file = cli_module.__file__
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with tempfile.TemporaryDirectory() as module_base:

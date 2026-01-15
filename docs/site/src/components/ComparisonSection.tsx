@@ -6,7 +6,7 @@ const ComparisonSection = () => {
   const [cardsRef, cardsInView] = useInView<HTMLDivElement>();
 
   return (
-    <section className="py-20 lg:py-28 px-4 sm:px-6 relative">
+    <section className="py-12 lg:py-16 px-4 sm:px-6 relative">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div

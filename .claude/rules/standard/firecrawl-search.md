@@ -6,7 +6,7 @@
 |------|----------|----------|
 | Web search | `firecrawl_search` | WebSearch |
 | Fetch web page | `firecrawl_scrape` | WebFetch |
-| Library docs | Context7 (see `library-docs.md`) | WebSearch/WebFetch |
+| Library docs | Context7 (see `context7-docs.md`) | WebSearch/WebFetch |
 
 ### Firecrawl - Web Scraping
 

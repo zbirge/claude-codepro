@@ -22,7 +22,6 @@
         "github.github-vscode-theme",
         "lumirelle.shell-format-rev",
         "ms-python.debugpy",
-        "ms-python.mypy-type-checker",
         "ms-python.python",
         "detachhead.basedpyright",
         "pkief.material-icon-theme",
@@ -74,22 +73,12 @@
       "version": "latest",
       "shellautocompletion": true
     },
-    /* https://github.com/devcontainers-extra/features/tree/main/src/ruff */
-    "ghcr.io/devcontainers-extra/features/ruff:1": {
-      "version": "latest"
-    },
-    /* https://github.com/devcontainers-extra/features/tree/main/src/mypy */
-    "ghcr.io/devcontainers-extra/features/mypy:2": {
-      "version": "latest"
-    },
     /* https://github.com/devcontainers/features/tree/main/src/git */
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
     /* https://github.com/devcontainers/features/tree/main/src/github-cli */
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    /* https://github.com/devcontainers/features/tree/main/src/go */
-    "ghcr.io/devcontainers/features/go:1": {},
     /* https://github.com/michidk/devcontainers-features/tree/main/src/bun */
     "ghcr.io/michidk/devcontainers-features/bun:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/spaceship */
@@ -106,7 +95,7 @@
     /* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
     "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.6.0/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }

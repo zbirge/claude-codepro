@@ -181,17 +181,9 @@ Questions:
 | Tool | When to Use | Example |
 |------|-------------|---------|
 | **Context7** | Library/framework docs | `resolve-library-id(query="your question", libraryName="lib")` then `query-docs(libraryId, query)` |
-| **Firecrawl** | Web scraping/content | Use `firecrawl_scrape` for single pages, `firecrawl_search` for research |
 | **mcp-cli** | Custom MCP servers | Use `mcp-cli <server>/<tool> '<json>'` for servers in `mcp_servers.json` |
 
-**Context7 requires descriptive queries for both tools - see `library-docs.md` for full docs.**
-
-**Firecrawl MCP Tools (preferred for web content):**
-- `firecrawl_scrape` - Single page content extraction (documentation, articles, code)
-- `firecrawl_search` - Web search with scraped results (research, finding solutions)
-- `firecrawl_map` - Discover all URLs on a website (site structure analysis)
-- `firecrawl_crawl` - Crawl entire website (comprehensive extraction)
-- `firecrawl_extract` - Structured data extraction with schema
+**Context7 requires descriptive queries for both tools - see `context7-docs.md` for full docs.**
 
 **Before exploring, verify Vexor is available:**
 ```bash
@@ -208,14 +200,13 @@ First search will trigger automatic indexing. Use `vexor search "query" --mode c
 
 **⚠️ CRITICAL: NO SUB-AGENTS DURING PLANNING**
 - **DO NOT use the Task tool with any subagent_type** during planning
-- Perform ALL exploration yourself using direct tool calls (Read, Grep, Glob, Context7, Firecrawl)
+- Perform ALL exploration yourself using direct tool calls (Read, Grep, Glob, Context7)
 - Sub-agents lose context and make planning inconsistent
 - You must maintain full context throughout the planning process
 
 **For each area:**
 - Use `vexor search "query" --mode code` for semantic searches like "authentication middleware" or "database connection handling"
 - Use Context7 when you need library/framework API details: `resolve-library-id(query="your question", libraryName="lib")` then `query-docs(libraryId, query)` - descriptive queries enable server-side reranking
-- Use Firecrawl (`firecrawl_search`, `firecrawl_scrape`) for web research, fetching documentation, or extracting code examples
 - Use `Read`, `Grep`, `Glob` tools directly for file exploration
 - Document hypotheses (not conclusions)
 - Note full file paths for relevant code

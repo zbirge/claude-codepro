@@ -43,6 +43,60 @@ def _run_bash_with_retry(command: str, cwd: Path | None = None) -> bool:
     return False
 
 
+def _is_plugin_installed(plugin_name: str, marketplace: str | None = None) -> bool:
+    """Check if a Claude plugin is already installed.
+
+    Args:
+        plugin_name: The plugin name (e.g., "claude-mem", "typescript-lsp")
+        marketplace: Optional marketplace name (e.g., "thedotmack", "claude-plugins-official")
+
+    Returns:
+        True if the plugin is installed, False otherwise.
+    """
+    import json
+
+    installed_path = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+    if not installed_path.exists():
+        return False
+
+    try:
+        data = json.loads(installed_path.read_text())
+        plugins = data.get("plugins", {})
+
+        if marketplace:
+            key = f"{plugin_name}@{marketplace}"
+            return key in plugins and len(plugins[key]) > 0
+
+        for key in plugins:
+            if key.startswith(f"{plugin_name}@") and len(plugins[key]) > 0:
+                return True
+        return False
+    except (json.JSONDecodeError, OSError):
+        return False
+
+
+def _is_marketplace_installed(marketplace_name: str) -> bool:
+    """Check if a Claude marketplace is already installed.
+
+    Args:
+        marketplace_name: The marketplace name (e.g., "claude-plugins-official", "thedotmack")
+
+    Returns:
+        True if the marketplace is installed, False otherwise.
+    """
+    import json
+
+    marketplaces_path = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+    if not marketplaces_path.exists():
+        return False
+
+    try:
+        data = json.loads(marketplaces_path.read_text())
+        return marketplace_name in data
+    except (json.JSONDecodeError, OSError):
+        return False
+
+
 def _get_nvm_source_cmd() -> str:
     """Get the command to source NVM for nvm-specific commands.
 
@@ -84,7 +138,7 @@ def install_uv() -> bool:
 
 def install_python_tools() -> bool:
     """Install Python development tools."""
-    tools = ["ruff", "mypy", "basedpyright"]
+    tools = ["ruff", "basedpyright"]
 
     try:
         for tool in tools:
@@ -330,6 +384,9 @@ def install_dotenvx() -> bool:
 
 def _ensure_official_marketplace() -> bool:
     """Ensure official Claude plugins marketplace is installed."""
+    if _is_marketplace_installed("claude-plugins-official"):
+        return True
+
     try:
         result = subprocess.run(
             ["bash", "-c", "claude plugin marketplace add anthropics/claude-plugins-official"],
@@ -347,6 +404,9 @@ def install_typescript_lsp() -> bool:
     if not _run_bash_with_retry("npm install -g typescript-language-server typescript"):
         return False
 
+    if _is_plugin_installed("typescript-lsp", "claude-plugins-official"):
+        return True
+
     if not _ensure_official_marketplace():
         return False
 
@@ -357,6 +417,9 @@ def install_pyright_lsp() -> bool:
     """Install pyright language server and plugin via npm and claude plugin."""
     if not _run_bash_with_retry("npm install -g pyright"):
         return False
+
+    if _is_plugin_installed("pyright-lsp", "claude-plugins-official"):
+        return True
 
     if not _ensure_official_marketplace():
         return False
@@ -550,7 +613,7 @@ def _ensure_maxritter_marketplace() -> bool:
     """Ensure claude-mem marketplace points to maxritter repo.
 
     Checks known_marketplaces.json for thedotmack entry. If it exists
-    but doesn't contain 'maxritter' in the URL, removes and re-adds it.
+    with maxritter URL, returns True. If it exists with wrong URL, removes it.
     """
     import json
 
@@ -562,6 +625,9 @@ def _ensure_maxritter_marketplace() -> bool:
             thedotmack = data.get("thedotmack", {})
             source = thedotmack.get("source", {})
             url = source.get("url", "")
+
+            if thedotmack and "maxritter" in url:
+                return True
 
             if thedotmack and "maxritter" not in url:
                 subprocess.run(
@@ -585,6 +651,10 @@ def _ensure_maxritter_marketplace() -> bool:
 
 def install_claude_mem() -> bool:
     """Install claude-mem plugin via claude plugin marketplace."""
+    if _is_plugin_installed("claude-mem", "thedotmack"):
+        _configure_claude_mem_defaults()
+        return True
+
     if not _ensure_maxritter_marketplace():
         return False
 
@@ -597,6 +667,12 @@ def install_claude_mem() -> bool:
 
 def install_context7() -> bool:
     """Install context7 plugin via claude plugin."""
+    if _is_plugin_installed("context7", "claude-plugins-official"):
+        return True
+
+    if not _ensure_official_marketplace():
+        return False
+
     return _run_bash_with_retry("claude plugin install context7")
 
 
@@ -698,7 +774,7 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "uv", install_uv):
             installed.append("uv")
 
-        if ctx.install_python:
+        if ctx.enable_python:
             if _install_with_spinner(ui, "Python tools", install_python_tools):
                 installed.append("python_tools")
 
@@ -719,11 +795,11 @@ class DependenciesStep(BaseStep):
             if success:
                 installed.append("claude_code")
 
-        if ctx.install_typescript:
+        if ctx.enable_typescript:
             if _install_with_spinner(ui, "TypeScript LSP", install_typescript_lsp):
                 installed.append("typescript_lsp")
 
-        if ctx.install_python:
+        if ctx.enable_python:
             if _install_with_spinner(ui, "Pyright LSP", install_pyright_lsp):
                 installed.append("pyright_lsp")
 
@@ -736,7 +812,7 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "mcp-cli", install_mcp_cli):
             installed.append("mcp_cli")
 
-        if ctx.install_agent_browser:
+        if ctx.enable_agent_browser:
             if ui:
                 ui.status("Installing agent-browser...")
             if install_agent_browser(ui):
@@ -746,13 +822,6 @@ class DependenciesStep(BaseStep):
             else:
                 if ui:
                     ui.warning("Could not install agent-browser - please install manually")
-        else:
-            if not ctx.local_mode:
-                agent_browser_rule = ctx.project_dir / ".claude" / "rules" / "standard" / "agent-browser.md"
-                if agent_browser_rule.exists():
-                    agent_browser_rule.unlink()
-                    if ui:
-                        ui.info("Removed agent-browser.md (agent-browser not installed)")
 
         gpu_info = has_nvidia_gpu(verbose=True)
         gpu_available = gpu_info["detected"] if isinstance(gpu_info, dict) else gpu_info

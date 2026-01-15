@@ -20,9 +20,9 @@ const insideItems: InsideItem[] = [
     icon: Terminal,
     title: "Two Development Modes",
     items: [
-      "Spec-Driven: /spec for new features with planning",
-      "Quick Mode: Just chat for bug fixes and small changes",
-      "Both modes get unlimited context via Endless Mode",
+      "Spec-Driven: /spec for features with planning",
+      "Quick Mode: For bug fixes and small changes",
+      "Both get unlimited context via Endless Mode",
       "Choose structured planning or fast iteration",
     ],
   },
@@ -50,9 +50,9 @@ const insideItems: InsideItem[] = [
     icon: Plug2,
     title: "Enhanced Context",
     items: [
-      "Claude Mem - Cross-session persistent memory",
+      "Claude Mem - Cross-session memory",
       "Vexor - Local semantic code search",
-      "Context7 / Firecrawl - Library docs & web scraping",
+      "Context7 / Firecrawl - Library docs & web",
       "agent-browser - Headless browser automation",
     ],
   },
@@ -62,7 +62,7 @@ const insideItems: InsideItem[] = [
     items: [
       "Qlty - Post-edit formatting and linting",
       "TDD Enforcer - Pre-edit test requirement",
-      "Context Monitor - Warns when context getting full",
+      "Context Monitor - Automated context hook",
       "LSP Servers - Python (Pyright) & TypeScript",
     ],
   },
@@ -96,7 +96,7 @@ const WhatsInside = () => {
   const [gridRef, gridInView] = useInView<HTMLDivElement>();
 
   return (
-    <section id="features" className="py-20 lg:py-28 px-4 sm:px-6 bg-card/30 relative">
+    <section id="features" className="py-12 lg:py-16 px-4 sm:px-6 relative">
       <div className="max-w-6xl mx-auto">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div

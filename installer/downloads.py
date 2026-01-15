@@ -21,16 +21,6 @@ class DownloadConfig:
     local_repo_dir: Path | None = None
 
 
-def verify_network(timeout: float = 5.0) -> bool:
-    """Quick connectivity check."""
-    try:
-        with httpx.Client(timeout=timeout) as client:
-            response = client.get("https://api.github.com")
-            return response.status_code == 200
-    except (httpx.HTTPError, httpx.TimeoutException):
-        return False
-
-
 def download_file(
     repo_path: str,
     dest_path: Path,
@@ -138,16 +128,3 @@ def download_directory(
             progress_callback(i + 1, total)
 
     return count
-
-
-def download_with_retry(
-    repo_path: str,
-    dest_path: Path,
-    config: DownloadConfig,
-    max_retries: int = 3,
-) -> bool:
-    """Download a file with retry logic for transient failures."""
-    for _ in range(max_retries):
-        if download_file(repo_path, dest_path, config):
-            return True
-    return False

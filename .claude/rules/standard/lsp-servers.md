@@ -1,8 +1,21 @@
-## LSP Servers - Code Intelligence
+## LSP Servers - Code Intelligence (USE PROACTIVELY!)
 
-**Rule:** Use LSP operations proactively for accurate code understanding.
+**⚠️ CRITICAL: Use LSP tools BEFORE grep/search for code understanding. LSP provides compiler-accurate results that grep cannot match.**
 
 **Available:** Python (Pyright), TypeScript
+
+### MANDATORY LSP Usage
+
+**You MUST use LSP in these situations:**
+
+| Situation | LSP Operation | Why NOT grep |
+|-----------|---------------|--------------|
+| Finding unused functions | `findReferences` | Grep misses dynamic calls, LSP knows all usages |
+| Checking who calls a function | `findReferences` or `incomingCalls` | Grep finds text matches, not actual calls |
+| Understanding function signature | `hover` | Grep can't infer types |
+| Listing all functions in file | `documentSymbol` | More accurate than regex patterns |
+| Before deleting/renaming | `findReferences` | Ensures you don't break callers |
+| Tracing call chains | `incomingCalls`/`outgoingCalls` | Grep cannot follow call graphs |
 
 ### Operations
 
@@ -21,18 +34,29 @@
 
 All operations require: `filePath`, `line` (1-based), `character` (1-based)
 
-### When to Use LSP
+### Common Workflows
 
-**Prefer LSP over grep/search for:**
-- Understanding function signatures and types
-- Tracing call chains and dependencies
-- Finding all references before refactoring
-- Navigating to definitions instead of searching
+**Finding unused code:**
+```
+1. LSP(documentSymbol, "file.py", 1, 1)     # List all functions
+2. For each function:
+   LSP(findReferences, "file.py", line, col) # Check if used
+3. If only 1 reference (the definition) → UNUSED
+```
 
-**Use before:**
-- Modifying functions (check callers with `findReferences`)
-- Refactoring (understand hierarchy with `incomingCalls`/`outgoingCalls`)
-- Reading unfamiliar code (`hover` for types, `documentSymbol` for structure)
+**Safe refactoring:**
+```
+1. LSP(findReferences, "file.py", line, col) # Find all usages
+2. Review each usage location
+3. Make changes knowing full impact
+```
+
+**Understanding unfamiliar code:**
+```
+1. LSP(documentSymbol, "file.py", 1, 1)      # Get structure overview
+2. LSP(hover, "file.py", line, col)          # Get types and docs
+3. LSP(outgoingCalls, "file.py", line, col)  # See what it calls
+```
 
 ### Examples
 
@@ -48,6 +72,17 @@ LSP(outgoingCalls, "installer/cli.py", 31, 5)
 
 # List all functions in a file
 LSP(documentSymbol, "installer/ui.py", 1, 1)
+
+# Find who calls this function
+LSP(incomingCalls, "installer/cli.py", 31, 5)
 ```
 
-**LSP provides compiler-accurate results. Use it.**
+### When Grep is OK
+
+Only use grep/Glob when:
+- Searching for string literals or comments
+- Finding files by name pattern
+- Looking for TODO/FIXME markers
+- Searching across non-code files (markdown, config)
+
+**For actual code understanding: LSP FIRST, grep as fallback.**

@@ -67,18 +67,6 @@ def remove_env_key(key: str, env_file: Path) -> bool:
     return False
 
 
-def set_env_key(key: str, value: str, env_file: Path) -> None:
-    """Set an environment key in .env file, replacing if it exists."""
-    if not env_file.exists():
-        env_file.write_text(f"{key}={value}\n")
-        return
-
-    lines = env_file.read_text().splitlines()
-    new_lines = [line for line in lines if not line.strip().startswith(f"{key}=")]
-    new_lines.append(f"{key}={value}")
-    env_file.write_text("\n".join(new_lines) + "\n")
-
-
 def cleanup_obsolete_env_keys(env_file: Path) -> list[str]:
     """Remove obsolete environment keys from .env file. Returns list of removed keys."""
     removed = []
@@ -193,7 +181,6 @@ def create_claude_credentials(token: str) -> bool:
     claude_dir = Path.home() / ".claude"
     creds_path = claude_dir / ".credentials.json"
 
-    # Calculate expiry: 365 days from now in milliseconds
     expires_at = int(time.time() * 1000) + (365 * 24 * 60 * 60 * 1000)
 
     credentials = {
@@ -208,13 +195,10 @@ def create_claude_credentials(token: str) -> bool:
     }
 
     try:
-        # Create directory with restrictive permissions
         claude_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
 
-        # Write credentials file
         creds_path.write_text(json.dumps(credentials, indent=2) + "\n")
 
-        # Set restrictive file permissions (read/write only by owner)
         creds_path.chmod(0o600)
 
         return True
@@ -255,33 +239,28 @@ def _prompt_gitlab_token(ctx: InstallContext) -> str | None:
 
 
 class EnvironmentStep(BaseStep):
-    """Step that sets up the .env file for API keys."""
+    """Step that cleans up .env file (API keys are collected earlier in CLI)."""
 
     name = "environment"
 
     def check(self, ctx: InstallContext) -> bool:
-        """Always returns False - environment step should always run to check for missing keys."""
+        """Always returns False - environment step should always run for cleanup."""
         return False
 
     def run(self, ctx: InstallContext) -> None:
-        """Set up .env file with API keys."""
+        """Clean up .env file - remove obsolete keys."""
         ui = ctx.ui
         env_file = ctx.project_dir / ".env"
 
         if ctx.skip_env or ctx.non_interactive:
-            if ui:
-                ui.status("Skipping .env setup")
             return
 
-        if ui:
-            ui.section("API Keys Setup")
-
-        append_mode = env_file.exists()
-
-        if append_mode:
+        if env_file.exists():
             removed_keys = cleanup_obsolete_env_keys(env_file)
             if removed_keys and ui:
-                ui.print(f"  [dim]Removed obsolete keys: {', '.join(removed_keys)}[/dim]")
+                ui.print(f"  [dim]Cleaned up obsolete keys: {', '.join(removed_keys)}[/dim]")
+
+        append_mode = env_file.exists()
 
         if append_mode:
             if ui:
@@ -333,13 +312,10 @@ class EnvironmentStep(BaseStep):
 
         add_env_key("FIRECRAWL_API_KEY", firecrawl_api_key, env_file)
 
-        # Claude OAuth Token (optional - for long-lasting sessions)
-        # Check both .env file AND credentials file
         token_in_env = key_is_set("CLAUDE_CODE_OAUTH_TOKEN", env_file)
         token_in_creds = credentials_exist()
 
         if token_in_env and not token_in_creds:
-            # Auto-restore: token in .env but credentials file missing (devcontainer rebuilt)
             existing_token = get_env_value("CLAUDE_CODE_OAUTH_TOKEN", env_file)
             if existing_token and ui:
                 ui.status("Restoring OAuth credentials from .env...")
@@ -364,15 +340,12 @@ class EnvironmentStep(BaseStep):
                 if use_oauth:
                     oauth_token = ui.input("CLAUDE_CODE_OAUTH_TOKEN", default="")
                     if oauth_token:
-                        # Store in .env for persistence across devcontainer rebuilds
                         add_env_key("CLAUDE_CODE_OAUTH_TOKEN", oauth_token, env_file)
-                        # Write credentials file for Claude Code to use
                         if create_claude_credentials(oauth_token):
                             create_claude_config()
                             ui.success("OAuth credentials saved to .env and ~/.claude/.credentials.json")
                         else:
                             ui.warning("Token saved to .env but could not create credentials file")
-                        # Warn about ANTHROPIC_API_KEY conflict
                         if key_is_set("ANTHROPIC_API_KEY", env_file):
                             ui.warning("ANTHROPIC_API_KEY is set - it may override OAuth token!")
                 else:
@@ -384,12 +357,10 @@ class EnvironmentStep(BaseStep):
                 else:
                     ui.success("CLAUDE_CODE_OAUTH_TOKEN in .env, skipping")
 
-        # MCP Server tokens (GitHub/GitLab) - smart detection based on git remotes
         is_github, is_gitlab = detect_git_hosting(ctx.project_dir)
 
-        # GitHub MCP token
         if not key_is_set(GITHUB_TOKEN_KEY, env_file):
-            if is_github or not is_gitlab:  # Prompt if GitHub detected OR if neither detected
+            if is_github or not is_gitlab:
                 if ui:
                     ui.print()
                     ui.rule("GitHub MCP Server (Optional)")
@@ -404,9 +375,8 @@ class EnvironmentStep(BaseStep):
                 ui.success(f"{GITHUB_TOKEN_KEY} already set, skipping")
             ctx.config["github_mcp_configured"] = True
 
-        # GitLab MCP token
         if not key_is_set(GITLAB_TOKEN_KEY, env_file):
-            if is_gitlab or not is_github:  # Prompt if GitLab detected OR if neither detected
+            if is_gitlab or not is_github:
                 if ui:
                     ui.print()
                     ui.rule("GitLab MCP Server (Optional)")

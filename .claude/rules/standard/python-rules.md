@@ -16,7 +16,6 @@ uv pip show package-name
 # Running Python
 uv run python script.py
 uv run pytest
-uv run mypy src
 ```
 
 **Why uv:** Project standard, faster resolution, better lock files, consistency across team.
@@ -25,18 +24,38 @@ uv run mypy src
 
 ### Testing & Quality
 
+**⚠️ CRITICAL: Always use minimal output flags to avoid context bloat.**
+
 ```bash
-# Tests
-uv run pytest                                       # All tests
-uv run pytest -m unit                               # Unit only
-uv run pytest -m integration                        # Integration only
-uv run pytest --cov=src --cov-fail-under=80        # With coverage (80% minimum)
+# Tests - USE MINIMAL OUTPUT
+uv run pytest -q                                    # Quiet mode (preferred)
+uv run pytest -q -m unit                            # Unit only, quiet
+uv run pytest -q -m integration                     # Integration only, quiet
+uv run pytest -q --tb=short                         # Short tracebacks on failure
+uv run pytest -q --cov=src --cov-fail-under=80     # Coverage with quiet mode
+
+# AVOID these verbose flags unless actively debugging:
+# -v, --verbose, -vv, -s, --capture=no
 
 # Code quality
 ruff format .                                       # Format code
 ruff check . --fix                                  # Fix linting
-mypy src --strict                                   # Type checking
-basedpyright src                                    # Alternative type checker
+basedpyright src                                    # Type checker
+```
+
+**Why minimal output?** Verbose test output consumes context tokens rapidly. Use `-q` (quiet) by default. Only add `-v` or `-s` when you need to debug a specific failing test.
+
+**Diagnostics & Linting - also minimize output:**
+```bash
+# Prefer concise output formats
+ruff check . --output-format=concise    # Shorter than default
+basedpyright src 2>&1 | head -50        # Limit type checker output if many errors
+
+# When many errors exist, fix incrementally:
+# 1. Run tool, note first few errors
+# 2. Fix those specific errors
+# 3. Re-run to see next batch
+# DON'T dump 100+ errors into context at once
 ```
 
 ### Code Style Essentials
@@ -74,7 +93,7 @@ Before completing Python work:
 - [ ] Tests pass: `uv run pytest`
 - [ ] Code formatted: `ruff format .`
 - [ ] Linting clean: `ruff check .`
-- [ ] Type checking: `mypy src --strict` or `basedpyright src`
+- [ ] Type checking: `basedpyright src`
 - [ ] Coverage ≥ 80%
 - [ ] No unused imports (check with `getDiagnostics`)
 
@@ -87,5 +106,5 @@ Before completing Python work:
 | Coverage          | `uv run pytest --cov=src`     |
 | Format            | `ruff format .`               |
 | Lint              | `ruff check . --fix`          |
-| Type check        | `mypy src --strict`           |
+| Type check        | `basedpyright src`           |
 | Run script        | `uv run python script.py`     |

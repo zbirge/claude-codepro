@@ -15,13 +15,16 @@ class InstallContext:
     """Context object that flows through all installation steps."""
 
     project_dir: Path
-    install_python: bool = True
-    install_typescript: bool = True
-    install_agent_browser: bool = True
+    enable_python: bool = True
+    enable_typescript: bool = True
+    enable_agent_browser: bool = True
+    enable_openai_embeddings: bool = True
+    enable_firecrawl: bool = True
     non_interactive: bool = False
     skip_env: bool = False
     local_mode: bool = False
     local_repo_dir: Path | None = None
+    is_local_install: bool = False
     completed_steps: list[str] = field(default_factory=list)
     config: dict[str, Any] = field(default_factory=dict)
     ui: Console | None = None
@@ -30,11 +33,3 @@ class InstallContext:
         """Mark a step as completed."""
         if step_name not in self.completed_steps:
             self.completed_steps.append(step_name)
-
-    def is_completed(self, step_name: str) -> bool:
-        """Check if a step is completed."""
-        return step_name in self.completed_steps
-
-    def needs_rollback(self) -> bool:
-        """Check if rollback is needed (i.e., some steps completed)."""
-        return len(self.completed_steps) > 0

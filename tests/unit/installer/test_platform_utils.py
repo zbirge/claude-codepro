@@ -79,35 +79,6 @@ class TestCommandExists:
         assert command_exists("definitely_not_a_real_command_12345") is False
 
 
-class TestPackageManager:
-    """Test package manager detection."""
-
-    def test_get_package_manager_returns_string_or_none(self):
-        """get_package_manager returns string or None."""
-        from installer.platform_utils import get_package_manager
-
-        result = get_package_manager()
-        assert result is None or isinstance(result, str)
-
-
-class TestPlatformDirs:
-    """Test platformdirs integration."""
-
-    def test_get_config_dir_returns_path(self):
-        """get_config_dir returns a Path."""
-        from installer.platform_utils import get_config_dir
-
-        result = get_config_dir()
-        assert isinstance(result, Path)
-
-    def test_get_data_dir_returns_path(self):
-        """get_data_dir returns a Path."""
-        from installer.platform_utils import get_data_dir
-
-        result = get_data_dir()
-        assert isinstance(result, Path)
-
-
 class TestShellConfig:
     """Test shell configuration utilities."""
 
@@ -131,34 +102,42 @@ class TestShellConfig:
         assert any(name in path_names for name in common_configs)
 
 
-class TestPlatformSuffix:
-    """Test platform suffix generation."""
+class TestIsInDevcontainer:
+    """Test devcontainer detection."""
 
-    def test_get_platform_suffix_returns_string(self):
-        """get_platform_suffix returns a string."""
-        from installer.platform_utils import get_platform_suffix
+    def test_is_in_devcontainer_returns_bool(self):
+        """is_in_devcontainer returns boolean."""
+        from installer.platform_utils import is_in_devcontainer
 
-        result = get_platform_suffix()
-        assert isinstance(result, str)
-        assert "-" in result  # e.g., "linux-x86_64"
+        result = is_in_devcontainer()
+        assert isinstance(result, bool)
 
-    @patch("platform.system", return_value="Linux")
-    @patch("platform.machine", return_value="x86_64")
-    def test_get_platform_suffix_linux_x86_64(self, mock_machine, mock_system):
-        """get_platform_suffix returns correct format for Linux x86_64."""
-        from installer.platform_utils import get_platform_suffix
+    @patch.object(Path, "exists")
+    def test_is_in_devcontainer_returns_true_with_dockerenv(self, mock_exists):
+        """is_in_devcontainer returns True when /.dockerenv exists."""
+        from installer.platform_utils import is_in_devcontainer
 
-        result = get_platform_suffix()
-        assert result == "linux-x86_64"
+        mock_exists.side_effect = lambda: True
 
-    @patch("platform.system", return_value="Darwin")
-    @patch("platform.machine", return_value="arm64")
-    def test_get_platform_suffix_darwin_arm64(self, mock_machine, mock_system):
-        """get_platform_suffix returns correct format for macOS arm64."""
-        from installer.platform_utils import get_platform_suffix
+        with patch("installer.platform_utils.Path") as mock_path:
+            mock_dockerenv = MagicMock()
+            mock_dockerenv.exists.return_value = True
+            mock_containerenv = MagicMock()
+            mock_containerenv.exists.return_value = False
 
-        result = get_platform_suffix()
-        assert result == "darwin-arm64"
+            mock_path.return_value = mock_dockerenv
+
+            def path_side_effect(arg):
+                if arg == "/.dockerenv":
+                    return mock_dockerenv
+                elif arg == "/run/.containerenv":
+                    return mock_containerenv
+                return MagicMock()
+
+            mock_path.side_effect = path_side_effect
+
+            result = is_in_devcontainer()
+            assert result is True
 
 
 class TestHasNvidiaGpu:
@@ -283,106 +262,6 @@ class TestIsWsl:
         assert is_wsl() is False
 
 
-class TestIsInDevcontainer:
-    """Test is_in_devcontainer function."""
-
-    @patch.object(Path, "exists")
-    def test_is_in_devcontainer_returns_true_with_dockerenv(self, mock_exists):
-        """is_in_devcontainer returns True when /.dockerenv exists."""
-        from installer.platform_utils import is_in_devcontainer
-
-        def exists_side_effect(self):
-            return str(self) == "/.dockerenv"
-
-        mock_exists.side_effect = lambda: True
-
-        # We need to patch Path itself
-        with patch("installer.platform_utils.Path") as mock_path:
-            mock_dockerenv = MagicMock()
-            mock_dockerenv.exists.return_value = True
-            mock_containerenv = MagicMock()
-            mock_containerenv.exists.return_value = False
-
-            mock_path.return_value = mock_dockerenv
-
-            def path_side_effect(arg):
-                if arg == "/.dockerenv":
-                    return mock_dockerenv
-                elif arg == "/run/.containerenv":
-                    return mock_containerenv
-                return MagicMock()
-
-            mock_path.side_effect = path_side_effect
-
-            result = is_in_devcontainer()
-            assert result is True
-
-
-class TestGetPackageManager:
-    """Test get_package_manager function branches."""
-
-    @patch("installer.platform_utils.is_macos", return_value=True)
-    @patch("installer.platform_utils.command_exists")
-    def test_get_package_manager_macos_with_brew(self, mock_cmd, mock_macos):
-        """get_package_manager returns 'brew' on macOS with Homebrew."""
-        from installer.platform_utils import get_package_manager
-
-        mock_cmd.return_value = True
-        assert get_package_manager() == "brew"
-
-    @patch("installer.platform_utils.is_macos", return_value=True)
-    @patch("installer.platform_utils.command_exists", return_value=False)
-    def test_get_package_manager_macos_without_brew(self, mock_cmd, mock_macos):
-        """get_package_manager returns None on macOS without Homebrew."""
-        from installer.platform_utils import get_package_manager
-
-        assert get_package_manager() is None
-
-    @patch("installer.platform_utils.is_macos", return_value=False)
-    @patch("installer.platform_utils.is_linux", return_value=True)
-    @patch("installer.platform_utils.is_wsl", return_value=False)
-    @patch("installer.platform_utils.command_exists")
-    def test_get_package_manager_linux_apt(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
-        """get_package_manager returns 'apt-get' on Debian-based Linux."""
-        from installer.platform_utils import get_package_manager
-
-        mock_cmd.side_effect = lambda cmd: cmd == "apt-get"
-        assert get_package_manager() == "apt-get"
-
-    @patch("installer.platform_utils.is_macos", return_value=False)
-    @patch("installer.platform_utils.is_linux", return_value=True)
-    @patch("installer.platform_utils.is_wsl", return_value=False)
-    @patch("installer.platform_utils.command_exists")
-    def test_get_package_manager_linux_dnf(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
-        """get_package_manager returns 'dnf' on Fedora."""
-        from installer.platform_utils import get_package_manager
-
-        mock_cmd.side_effect = lambda cmd: cmd == "dnf"
-        assert get_package_manager() == "dnf"
-
-    @patch("installer.platform_utils.is_macos", return_value=False)
-    @patch("installer.platform_utils.is_linux", return_value=True)
-    @patch("installer.platform_utils.is_wsl", return_value=False)
-    @patch("installer.platform_utils.command_exists")
-    def test_get_package_manager_linux_yum(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
-        """get_package_manager returns 'yum' on older RHEL."""
-        from installer.platform_utils import get_package_manager
-
-        mock_cmd.side_effect = lambda cmd: cmd == "yum"
-        assert get_package_manager() == "yum"
-
-    @patch("installer.platform_utils.is_macos", return_value=False)
-    @patch("installer.platform_utils.is_linux", return_value=True)
-    @patch("installer.platform_utils.is_wsl", return_value=False)
-    @patch("installer.platform_utils.command_exists")
-    def test_get_package_manager_linux_pacman(self, mock_cmd, mock_wsl, mock_linux, mock_macos):
-        """get_package_manager returns 'pacman' on Arch."""
-        from installer.platform_utils import get_package_manager
-
-        mock_cmd.side_effect = lambda cmd: cmd == "pacman"
-        assert get_package_manager() == "pacman"
-
-
 class TestGetShellConfigFiles:
     """Test get_shell_config_files branches."""
 
@@ -438,75 +317,3 @@ class TestGetShellConfigFiles:
             # Should return default paths
             assert len(result) == 3
             assert any(".bashrc" in str(p) for p in result)
-
-
-class TestAddToPath:
-    """Test add_to_path function."""
-
-    def test_add_to_path_adds_export_to_bashrc(self):
-        """add_to_path adds export line to bashrc."""
-        import tempfile
-
-        from installer.platform_utils import add_to_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            home = Path(tmpdir)
-            bashrc = home / ".bashrc"
-            bashrc.write_text("# existing config\n")
-
-            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
-                add_to_path(Path("/custom/bin"))
-
-            content = bashrc.read_text()
-            assert 'export PATH="/custom/bin:$PATH"' in content
-
-    def test_add_to_path_adds_set_to_fish_config(self):
-        """add_to_path adds set -gx line to fish config."""
-        import tempfile
-
-        from installer.platform_utils import add_to_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            home = Path(tmpdir)
-            fish_dir = home / ".config" / "fish"
-            fish_dir.mkdir(parents=True)
-            fish_config = fish_dir / "config.fish"
-            fish_config.write_text("# existing config\n")
-
-            with patch("installer.platform_utils.get_shell_config_files", return_value=[fish_config]):
-                add_to_path(Path("/custom/bin"))
-
-            content = fish_config.read_text()
-            assert 'set -gx PATH "/custom/bin" $PATH' in content
-
-    def test_add_to_path_skips_if_already_in_path(self):
-        """add_to_path skips if path already in config."""
-        import tempfile
-
-        from installer.platform_utils import add_to_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            home = Path(tmpdir)
-            bashrc = home / ".bashrc"
-            bashrc.write_text('# existing\nexport PATH="/custom/bin:$PATH"\n')
-
-            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
-                add_to_path(Path("/custom/bin"))
-
-            content = bashrc.read_text()
-            # Should not duplicate
-            assert content.count("/custom/bin") == 1
-
-    def test_add_to_path_skips_nonexistent_files(self):
-        """add_to_path skips files that don't exist."""
-        import tempfile
-
-        from installer.platform_utils import add_to_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            home = Path(tmpdir)
-            bashrc = home / ".bashrc"  # Does not exist
-
-            with patch("installer.platform_utils.get_shell_config_files", return_value=[bashrc]):
-                # Should not raise
-                add_to_path(Path("/custom/bin"))

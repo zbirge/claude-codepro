@@ -236,7 +236,7 @@ class TestMain:
             mock_binary.write_text("binary")
             mock_build.return_value = mock_binary
 
-            with patch("shutil.rmtree") as mock_rmtree:
+            with patch("shutil.rmtree"):
                 with patch("installer.build.deploy_to_bin"):
                     # Note: rmtree won't actually be called due to mock structure
                     pass

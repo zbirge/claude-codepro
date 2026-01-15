@@ -76,10 +76,10 @@ class FinalizeStep(BaseStep):
         if ctx.config.get("installed_extensions"):
             installed_items.append(f"VS Code Extensions ({ctx.config['installed_extensions']})")
 
-        if ctx.install_python:
+        if ctx.enable_python:
             installed_items.append("Python development tools")
 
-        if ctx.install_typescript:
+        if ctx.enable_typescript:
             installed_items.append("TypeScript quality hooks")
 
         if ctx.config.get("github_mcp_configured"):
@@ -89,48 +89,77 @@ class FinalizeStep(BaseStep):
 
         ui.success_box("Installation Complete!", installed_items)
 
-        project_slug = ctx.project_dir.name.lower().replace(" ", "-").replace("_", "-")
+        if ctx.is_local_install:
+            ui.next_steps(
+                [
+                    (
+                        "Reload your shell",
+                        "Run: source ~/.zshrc (or ~/.bashrc, or restart terminal)",
+                    ),
+                    ("Start Claude CodePro", "Run: ccp"),
+                    ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
+                    (
+                        "Custom MCP Servers (Optional)",
+                        "Add your MCP servers to mcp_servers.json, then run /setup\n"
+                        "     to generate documentation. Use mcp-cli to interact with them.",
+                    ),
+                    (
+                        "Claude MEM Dashboard (Optional)",
+                        "View stored memories at http://localhost:37777",
+                    ),
+                    (
+                        "Spec-Driven Mode",
+                        '/spec "your task" → For new features with planning and verification',
+                    ),
+                    (
+                        "Quick Mode",
+                        "Just chat → For bug fixes and small changes without a spec",
+                    ),
+                ]
+            )
+        else:
+            project_slug = ctx.project_dir.name.lower().replace(" ", "-").replace("_", "-")
 
-        ui.next_steps(
-            [
-                (
-                    "Connect to dev container",
-                    f"Option A: Use VS Code's integrated terminal (required for image pasting)\n"
-                    f"     Option B: Use your favorite terminal (iTerm, Warp, etc.) and run:\n"
-                    f'     docker exec -it $(docker ps --filter "name={project_slug}" -q) zsh',
-                ),
-                ("Start Claude CodePro", "Run: ccp"),
-                ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
-                (
-                    "Install IDE Extensions",
-                    "Open Extensions sidebar → Filter by '@recommended' → Install all\n"
-                    "     (Extensions may not auto-install in fresh containers)",
-                ),
-                (
-                    "Image Pasting (Optional)",
-                    "Install dkodr.claudeboard extension via the Marketplace\n"
-                    "     Only works in VS Code's integrated terminal",
-                ),
-                (
-                    "Custom MCP Servers (Optional)",
-                    "Add your MCP servers to mcp_servers.json, then run /setup\n"
-                    "     to generate documentation. Use mcp-cli to interact with them.",
-                ),
-                (
-                    "Claude MEM Dashboard (Optional)",
-                    "View stored memories and observations at http://localhost:37777\n"
-                    "     (Check VS Code Ports tab if 37777 is unavailable - may be 37778)",
-                ),
-                (
-                    "Spec-Driven Mode",
-                    '/spec "your task" → For new features with planning and verification',
-                ),
-                (
-                    "Quick Mode",
-                    "Just chat → For bug fixes and small changes without a spec",
-                ),
-            ]
-        )
+            ui.next_steps(
+                [
+                    (
+                        "Connect to dev container",
+                        f"Option A: Use VS Code's integrated terminal (required for image pasting)\n"
+                        f"     Option B: Use your favorite terminal (iTerm, Warp, etc.) and run:\n"
+                        f'     docker exec -it $(docker ps --filter "name={project_slug}" -q) zsh',
+                    ),
+                    ("Start Claude CodePro", "Run: ccp"),
+                    ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
+                    (
+                        "Install IDE Extensions",
+                        "Open Extensions sidebar → Filter by '@recommended' → Install all\n"
+                        "     (Extensions may not auto-install in fresh containers)",
+                    ),
+                    (
+                        "Image Pasting (Optional)",
+                        "Install dkodr.claudeboard extension via the Marketplace\n"
+                        "     Only works in VS Code's integrated terminal",
+                    ),
+                    (
+                        "Custom MCP Servers (Optional)",
+                        "Add your MCP servers to mcp_servers.json, then run /setup\n"
+                        "     to generate documentation. Use mcp-cli to interact with them.",
+                    ),
+                    (
+                        "Claude MEM Dashboard (Optional)",
+                        "View stored memories and observations at http://localhost:37777\n"
+                        "     (Check VS Code Ports tab if 37777 is unavailable - may be 37778)",
+                    ),
+                    (
+                        "Spec-Driven Mode",
+                        '/spec "your task" → For new features with planning and verification',
+                    ),
+                    (
+                        "Quick Mode",
+                        "Just chat → For bug fixes and small changes without a spec",
+                    ),
+                ]
+            )
 
         ui.rule()
         ui.print()

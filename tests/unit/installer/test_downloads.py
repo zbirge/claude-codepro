@@ -6,8 +6,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 class TestDownloadConfig:
     """Test DownloadConfig class."""
@@ -100,17 +98,6 @@ class TestDownloadFile:
 
             result = download_file("nonexistent.txt", dest, config)
             assert result is False
-
-
-class TestVerifyNetwork:
-    """Test verify_network function."""
-
-    def test_verify_network_returns_bool(self):
-        """verify_network returns a boolean."""
-        from installer.downloads import verify_network
-
-        result = verify_network()
-        assert isinstance(result, bool)
 
 
 class TestGetRepoFiles:
@@ -236,46 +223,6 @@ class TestDownloadDirectory:
 
             # Should have been called for each file
             assert len(progress_calls) == 2
-
-
-class TestVerifyNetworkBranches:
-    """Test verify_network edge cases."""
-
-    def test_verify_network_returns_false_on_http_error(self):
-        """verify_network returns False on HTTP error."""
-        import httpx
-
-        from installer.downloads import verify_network
-
-        with patch("installer.downloads.httpx.Client") as mock_client:
-            mock_client.return_value.__enter__.return_value.get.side_effect = httpx.HTTPError("Error")
-
-            result = verify_network()
-            assert result is False
-
-    def test_verify_network_returns_false_on_timeout(self):
-        """verify_network returns False on timeout."""
-        import httpx
-
-        from installer.downloads import verify_network
-
-        with patch("installer.downloads.httpx.Client") as mock_client:
-            mock_client.return_value.__enter__.return_value.get.side_effect = httpx.TimeoutException("Timeout")
-
-            result = verify_network()
-            assert result is False
-
-    def test_verify_network_returns_true_on_success(self):
-        """verify_network returns True on 200 response."""
-        from installer.downloads import verify_network
-
-        with patch("installer.downloads.httpx.Client") as mock_client:
-            mock_response = MagicMock()
-            mock_response.status_code = 200
-            mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-            result = verify_network()
-            assert result is True
 
 
 class TestDownloadFileHttpMode:
@@ -496,73 +443,3 @@ class TestGetRepoFilesHttpMode:
 
             files = get_repo_files("mydir", config)
             assert files == []
-
-
-class TestDownloadWithRetry:
-    """Test download_with_retry function."""
-
-    def test_download_with_retry_succeeds_on_first_attempt(self):
-        """download_with_retry succeeds on first attempt."""
-        from installer.downloads import DownloadConfig, download_with_retry
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            source = Path(tmpdir) / "test.txt"
-            source.write_text("content")
-            dest = Path(tmpdir) / "dest" / "test.txt"
-
-            config = DownloadConfig(
-                repo_url="https://github.com/test/repo",
-                repo_branch="main",
-                local_mode=True,
-                local_repo_dir=Path(tmpdir),
-            )
-
-            result = download_with_retry("test.txt", dest, config)
-            assert result is True
-            assert dest.read_text() == "content"
-
-    def test_download_with_retry_retries_on_failure(self):
-        """download_with_retry retries on failure."""
-        from installer.downloads import DownloadConfig, download_with_retry
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            dest = Path(tmpdir) / "dest" / "test.txt"
-
-            config = DownloadConfig(
-                repo_url="https://github.com/test/repo",
-                repo_branch="main",
-                local_mode=True,
-                local_repo_dir=Path(tmpdir),
-            )
-
-            call_count = 0
-
-            def mock_download_file(*args, **kwargs):
-                nonlocal call_count
-                call_count += 1
-                if call_count < 3:
-                    return False
-                return True
-
-            with patch("installer.downloads.download_file", side_effect=mock_download_file):
-                result = download_with_retry("test.txt", dest, config, max_retries=5)
-                assert result is True
-                assert call_count == 3
-
-    def test_download_with_retry_returns_false_after_max_retries(self):
-        """download_with_retry returns False after max retries."""
-        from installer.downloads import DownloadConfig, download_with_retry
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            dest = Path(tmpdir) / "dest" / "test.txt"
-
-            config = DownloadConfig(
-                repo_url="https://github.com/test/repo",
-                repo_branch="main",
-                local_mode=True,
-                local_repo_dir=Path(tmpdir),
-            )
-
-            with patch("installer.downloads.download_file", return_value=False):
-                result = download_with_retry("test.txt", dest, config, max_retries=3)
-                assert result is False

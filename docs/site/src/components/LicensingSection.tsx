@@ -1,4 +1,4 @@
-import { Mail, Linkedin, Check, Building2 } from "lucide-react";
+import { Mail, Check, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -17,7 +17,7 @@ const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }
 
 const LicensingSection = () => {
   return (
-    <section id="licensing" className="py-20 lg:py-28 px-4 sm:px-6" aria-labelledby="licensing-heading">
+    <section id="licensing" className="py-12 lg:py-16 px-4 sm:px-6" aria-labelledby="licensing-heading">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           title="Licensing"
@@ -94,25 +94,17 @@ const LicensingSection = () => {
               </li>
             </ul>
 
-            <div className="space-y-3">
-              <Button asChild className="w-full">
-                <a href="mailto:zach@birge-consulting.com?subject=Claude%20CodePro%20Commercial%20License">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Get in touch
-                </a>
-              </Button>
-              <Button variant="outline" asChild className="w-full border-primary/50 hover:bg-primary/10">
-                <a href="https://www.linkedin.com/in/zbirge/" target="_blank" rel="noopener noreferrer">
-                  <Linkedin className="h-4 w-4 mr-2" />
-                  Connect on LinkedIn
-                </a>
-              </Button>
-            </div>
+            <Button asChild className="w-full">
+              <a href="mailto:mail@maxritter.net?subject=Claude%20CodePro%20Commercial%20License">
+                <Mail className="h-4 w-4 mr-2" />
+                Contact for License
+              </a>
+            </Button>
           </Card>
         </div>
 
         <p className="text-center text-muted-foreground mt-8 text-sm">
-          Questions about licensing? Contact <a href="mailto:zach@birge-consulting.com" className="text-primary hover:underline">zach@birge-consulting.com</a>
+          Questions about licensing? Contact <a href="mailto:mail@maxritter.net" className="text-primary hover:underline">mail@maxritter.net</a>
         </p>
       </div>
     </section>

@@ -1,32 +1,22 @@
-import { useState } from "react";
-import { Check, Copy, Github, ArrowDown } from "lucide-react";
+import { Github, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 
 const HeroSection = () => {
-  const [copied, setCopied] = useState(false);
-  const installCommand = "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/install.sh | bash";
-
-  const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(installCommand);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const scrollToInstall = () => {
     document.getElementById("installation")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section className="min-h-[90vh] flex flex-col items-center justify-center px-3 xs:px-4 sm:px-6 relative overflow-hidden pt-16 xs:pt-20 pb-8">
+    <section className="min-h-[70vh] flex flex-col items-center justify-center px-3 xs:px-4 sm:px-6 relative overflow-hidden pt-16 xs:pt-20 pb-4">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-48 xs:w-64 sm:w-96 h-48 xs:h-64 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-40 xs:w-56 sm:w-80 h-40 xs:h-56 sm:h-80 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
         <div className="absolute top-1/2 right-0 w-32 xs:w-48 sm:w-64 h-32 xs:h-48 sm:h-64 bg-muted/20 rounded-full blur-3xl" />
         {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear_gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 
       {/* Radial gradient overlay */}
@@ -62,9 +52,9 @@ const HeroSection = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col xs:flex-row items-center justify-center gap-2 xs:gap-3 sm:gap-4 mb-6 xs:mb-8 sm:mb-10 animate-fade-in animation-delay-400 px-2">
+        <div className="flex flex-col xs:flex-row items-center justify-center gap-2 xs:gap-3 sm:gap-4 animate-fade-in animation-delay-400 px-2">
           <Button
-            size="default"
+            size="lg"
             onClick={scrollToInstall}
             className="w-full xs:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm xs:text-base"
           >
@@ -73,37 +63,15 @@ const HeroSection = () => {
           </Button>
           <Button
             variant="outline"
-            size="default"
+            size="lg"
             asChild
-            className="w-full xs:w-auto text-sm xs:text-base"
+            className="w-full xs:w-auto text-sm xs:text-base border-primary/50 hover:bg-primary/10"
           >
             <a href="https://github.com/zbirge/claude-codepro" target="_blank" rel="noopener noreferrer">
               <Github className="mr-1.5 xs:mr-2 h-3.5 w-3.5 xs:h-4 xs:w-4" />
               View on GitHub
             </a>
           </Button>
-        </div>
-
-        {/* Install command box */}
-        <div className="glass rounded-lg xs:rounded-xl p-2 xs:p-3 sm:p-4 w-full max-w-[95%] xs:max-w-xl sm:max-w-2xl mx-auto animate-fade-in animation-delay-500 glow-primary">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-          <div className="flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-4">
-            <code className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground font-mono flex-1 text-left min-w-0 break-all">
-              <span className="text-primary">$</span> {installCommand}
-            </code>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={copyToClipboard}
-              className="flex-shrink-0 hover:bg-primary/10 h-7 w-7 xs:h-8 xs:w-8 p-0"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 xs:h-4 xs:w-4 text-green-500" />
-              ) : (
-                <Copy className="h-3.5 w-3.5 xs:h-4 xs:w-4 text-muted-foreground" />
-              )}
-            </Button>
-          </div>
         </div>
       </div>
     </section>

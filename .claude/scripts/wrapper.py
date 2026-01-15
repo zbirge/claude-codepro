@@ -40,6 +40,32 @@ def get_forced_claude_version() -> str | None:
     return None
 
 
+def check_license() -> tuple[bool, str]:
+    """Check if license is acknowledged. Returns (is_valid, license_type)."""
+    import base64
+    import hashlib
+    import json
+
+    license_path = Path.home() / ".config" / "claude-codepro" / ".state"
+    salt = "ccp_v1_"
+    if license_path.exists():
+        try:
+            content = license_path.read_text().strip()
+            if ":" not in content:
+                return False, "none"
+            sig, encoded = content.split(":", 1)
+            decoded = base64.b64decode(encoded).decode()
+            expected_sig = hashlib.sha256((salt + decoded).encode()).hexdigest()[:16]
+            if sig != expected_sig:
+                return False, "tampered"
+            license_data = json.loads(decoded)
+            if license_data.get("acknowledged"):
+                return True, license_data.get("type", "unknown")
+        except (json.JSONDecodeError, OSError, ValueError):
+            pass
+    return False, "none"
+
+
 def print_banner() -> None:
     """Print the Claude CodePro wrapper banner."""
     print()
@@ -353,6 +379,28 @@ class ClaudeWrapper:
 
         clear_terminal()
         print_banner()
+
+        license_valid, license_type = check_license()
+        if not license_valid:
+            print("  ✗  License not acknowledged")
+            print()
+            print("  Please run the installer first to acknowledge the license terms.")
+            print()
+            self._cleanup()
+            return 1
+
+        self.logger.info(f"License check passed: type={license_type}")
+
+        if license_type != "free":
+            print("  ╭─────────────────────────────────────────────────────────────╮")
+            print("  │  ⚠️  COMMERCIAL USE - LICENSE REQUIRED                       │")
+            print("  │                                                             │")
+            print("  │  You're evaluating Claude CodePro for commercial use.      │")
+            print("  │  A per-seat license is required for production.            │")
+            print("  │                                                             │")
+            print("  │  Contact: mail@maxritter.net                                │")
+            print("  ╰─────────────────────────────────────────────────────────────╯")
+            print()
 
         forced_version = get_forced_claude_version()
         if forced_version:

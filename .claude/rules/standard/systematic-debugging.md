@@ -6,8 +6,7 @@
 
 | Tool | When to Use |
 |------|-------------|
-| **Context7** | Library/framework API lookup (see `library-docs.md` for full docs) |
-| **Firecrawl** | Search error messages, find solutions (`firecrawl_search`), fetch docs (`firecrawl_scrape`) |
+| **Context7** | Library/framework API lookup (see `context7-docs.md` for full docs) |
 | **Vexor** | Find similar patterns in codebase (`vexor search "error handling"`) |
 
 **Context7 Quick Reference:**

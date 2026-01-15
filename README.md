@@ -23,69 +23,84 @@ Start shipping systematically with Endless Mode, Spec-Driven Development, Skills
 
 ### Prerequisites
 
-- **Container Runtime** - [Docker Desktop](https://www.docker.com/products/docker-desktop) or [OrbStack](https://orbstack.dev/) (macOS)
-- **IDE** - [VS Code](https://code.visualstudio.com/), [Cursor](https://cursor.sh/), [Windsurf](https://windsurf.com/editor), or [Antigravity](https://antigravity.google/)
-- **Dev Containers extension** - [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+Choose your installation method:
 
-> **Note:** Claude CodePro automatically runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility on Windows, Mac and Linux. You can bring your own Dev Container configuration if you prefer.
+**Option A: Dev Container (Recommended - All Platforms)**
+- **Container Runtime** - [Docker Desktop](https://www.docker.com/products/docker-desktop) or compatible equivalent
+- **IDE** - [VS Code](https://code.visualstudio.com/) or compatible IDE with Dev Container support
+- **Dev Containers extension** - [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+- Works on **macOS**, **Linux**, and **Windows (with WSL2)**
+
+**Option B: Local Installation (macOS/Linux)**
+- **macOS or Linux** - Homebrew-compatible system
+- **Homebrew** - Installed automatically if not present
 
 ### Installation
 
-Claude CodePro can be installed into any existing project:
-
-1. Open your project folder in your IDE
-2. Run this command in the terminal:
+Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.6.0/install.sh | bash
 ```
 
-3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
-4. Installation completes automatically inside the container
+You'll be asked to choose between **Dev Container** or **Local Installation**.
 
-> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run the install command from step 2 again in the container terminal IDE.
+#### Dev Container Installation
+
+1. Choose "Dev Container" when prompted
+2. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
+3. Dev Container installation completes automatically inside the container
+4. Run the installation command again in the container terminal to finish CCP setup
+5. Follow the post-setup instructions and run `ccp` to start Claude CodePro
+
+#### Local Installation (macOS/Linux)
+
+1. Choose "Local Installation" when prompted
+2. Confirm the installation (Homebrew packages, shell config, Claude Code config)
+3. Wait for installation to finish then follow the post-setup instructions
+4. Reload your shell: `source ~/.zshrc` (or `~/.bashrc`)
+5. Run `ccp` to start Claude CodePro
 
 ---
 
 ## 📦 What's Inside
 
-### ♾️ Endless Mode
+### Endless Mode
 
+- **Works Everywhere** - With `/spec` workflow or Quick Mode - both get unlimited context
 - **Unlimited Context** - Work on complex features across unlimited sessions automatically
 - **Zero Manual Intervention** - Context Monitor detects when nearing limits and triggers seamless handoffs
-- **Works Everywhere** - With `/spec` workflow or Quick Mode - both get unlimited context
 - **Claude Mem Integration** - Relevant observations flow across sessions automatically
 
-### 📋 Spec-Driven Development
+### Spec-Driven Development
 
 - **Planning** - Creates a detailed implementation plan for your review as markdown in `docs/plans/`
 - **Approval** - You review, edit if needed, and approve the plan before implementation
 - **Implementation** - Executes the plan with TDD enforcement and context management
 - **Verification** - Runs tests, quality checks, and validates completion based on the plan
 
-### 💡 Modular Rules System
+### Modular Rules System
 
 - **Standard Rules** - Best-Practices for TDD, Context Management, etc. in `.claude/rules/standard/`
 - **Custom Rules** - Project-specific rules in `.claude/rules/custom/` (never touched by updates)
 - **Command Skills** - Workflow-specific modes: `/spec`, `/setup`, `/plan`, `/implement`, `/verify`
 - **Standards Skills** - Best-Practices for Frontend, Backend, Testing, etc. automatically injected
 
-### 🔌 Enhanced Context Capabilities
+### Enhanced Context Capabilities
 
 - **Claude Mem** - Cross-session persistent memory system that automatically ingest context
 - **Vexor** - Local vector store based semantic code search for token-efficient retrieval
 - **Context7 / Firecrawl** - External context retrieval for code and web search / scraping
-- **mcp-cli** - Command-line access to custom MCP servers for extended integrations
 - **agent-browser** - Headless browser automation and testing within the Dev Container
 
-### 🛠️ Quality Hooks Automation
+### Quality Hooks Automation
 
-- **Python Quality** - Post-edit hook for ruff, mypy, basedpyright and Python LSP server (optional)
+- **Python Quality** - Post-edit hook for ruff, basedpyright and Python LSP server (optional)
 - **TypeScript Quality** - Post-edit hook for eslint, tsc, prettier and TypeScript LSP server (optional)
 - **General Quality** - Post-edit hook using QLTY for all languages for automated formatting and checking
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
 
-### 🏗️ One-Command Installer
+### One-Command Installer
 
 - **Automated Container Setup** - Isolated Linux environment with pre-configured tools and extensions
 - **Extended Language Support** - Optionally install extended support for Python & TypeScript
@@ -96,7 +111,7 @@ curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.5.0/instal
 
 ## ⚡ Quick Start
 
-### 🔧 First Time Setup
+### First Time Setup
 
 Run `/setup` once to initialize project context and semantic search:
 
@@ -107,7 +122,7 @@ ccp
 
 This is independent of which development mode you use - both modes benefit from the initialized context.
 
-### 🔁 Two Modes of Development
+### Two Modes of Development
 
 Claude CodePro supports two development modes. **Endless Mode works in both** - you get unlimited context regardless of which mode you choose.
 
@@ -116,7 +131,7 @@ Claude CodePro supports two development modes. **Endless Mode works in both** - 
 | **Spec-Driven** | `/spec "task"` | New features, major changes, complex work |
 | **Quick Mode** | Just chat | Quick fixes, bug fixes, small changes |
 
-#### 📋 Spec-Driven Mode (`/spec`)
+#### Spec-Driven Mode (`/spec`)
 
 For structured development with planning and verification:
 
@@ -133,7 +148,7 @@ ccp
 
 Use this mode when you want a spec to review before implementation, or when the task is complex enough to benefit from structured planning.
 
-#### ⏩ Quick Mode
+#### Quick Mode
 
 For quick work without a spec:
 
@@ -145,36 +160,18 @@ ccp
 
 Just describe what you need - no plan file, no approval gate. Claude CodePro still provides all the quality hooks, TDD enforcement, and context capabilities. Perfect for bug fixes, small improvements, and exploratory work.
 
-### 🎯 Customizing Rules
+### Customizing Rules
 
 Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/):
 
-- **Standard Rules** in `.claude/rules/standard/` - Updated on install, don't modify
+- **Standard Rules** in `.claude/rules/standard/` - Best-Practices updated on install, don't modify those
 - **Custom Rules** in `.claude/rules/custom/` - Your project-specific rules, never touched by updates
-- **Path-Specific Rules** - Use YAML frontmatter with `paths:` to scope rules to specific files
-
-Add custom rules by creating `.md` files in `.claude/rules/custom/`. You can also use path-specific rules:
-
-```yaml
----
-paths: src/**/*.py
----
-# Python-specific rules for this project
-```
-
-### ♾️ Endless Mode
-
-Both `/spec` and Quick Mode use the full 200K context window with automatic management via Endless Mode:
-
-- **Automatic handoffs** - When context nears the limit, state is saved and work continues in a new session
-- **Claude Mem preserves understanding** - Relevant observations flow across sessions
-- **Auto-compact disabled** - Installation disables auto-compact, giving you 20% more usable context
 
 ---
 
-## 📜 License
+## 🤝 Contributing
 
-Claude CodePro is dual-licensed:
+**Pull Requests are welcome!** If you have new features, improvements, or bug fixes, feel free to open a PR.
 
 ### Open Source (AGPL-3.0)
 
@@ -210,12 +207,6 @@ This fork is maintained by **zbirge**.
 | 💼 **LinkedIn** | [linkedin.com/in/zbirge](https://www.linkedin.com/in/zbirge/) |
 | 🐦 **Twitter** | [@zachbirge](https://twitter.com/zachbirge) |
 
----
-
-## 🤝 Contributing
-
-**Pull Requests are welcome!** If you have new features, improvements, or bug fixes, feel free to open a PR.
-
 **Note:** Issues are disabled. This project evolves alongside my professional work as a freelancer, and I don't have the capacity to maintain a public issue tracker. If you want a feature or find a bug, the best way to contribute is to submit a PR.
 
 ---
@@ -235,3 +226,4 @@ This fork is maintained by **zbirge**.
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
 - **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Automatic .env loading for Claude Code
+
