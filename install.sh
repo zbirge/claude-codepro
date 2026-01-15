@@ -1,8 +1,18 @@
 #!/bin/bash
 # Claude CodePro Installer Bootstrap Script
-# Phase 1: Not in container - offer Dev Container or Local installation
-# Phase 2: Inside container - run full installer
-# Phase 3: Local installation - install via Homebrew then run installer
+#
+# Usage: install.sh [OPTIONS]
+#   --devcontainer    Install Dev Container configuration (non-interactive)
+#   --local           Install locally via Homebrew (non-interactive)
+#   -h, --help        Show help message
+#
+# When run interactively: prompts for Dev Container vs Local installation
+# When piped (curl | bash): use --devcontainer or --local flags
+#
+# Phases:
+#   1. Not in container - offer Dev Container or Local installation
+#   2. Inside container - run full installer
+#   3. Local installation - install via Homebrew then run installer
 
 set -e
 
@@ -13,10 +23,87 @@ REPO="zbirge/claude-codepro"
 REPO_RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
 BINARY_PREFIX="ccp-installer"
 LOCAL_INSTALL=false
+PRESELECT_MODE=""
+
+# Show usage information
+show_usage() {
+    echo "Claude CodePro Installer (v${VERSION})"
+    echo ""
+    echo "Usage: install.sh [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --devcontainer    Install Dev Container configuration (non-interactive)"
+    echo "  --local           Install locally via Homebrew (non-interactive)"
+    echo "  -h, --help        Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  # Interactive mode (prompts for choice)"
+    echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/v${VERSION}/install.sh | bash"
+    echo ""
+    echo "  # Non-interactive Dev Container setup"
+    echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/v${VERSION}/install.sh | bash -s -- --devcontainer"
+    echo ""
+    echo "  # Non-interactive local installation"
+    echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/v${VERSION}/install.sh | bash -s -- --local"
+}
+
+# Parse command-line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --local)
+            PRESELECT_MODE="local"
+            shift
+            ;;
+        --devcontainer)
+            PRESELECT_MODE="devcontainer"
+            shift
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        *)
+            # Pass through unknown arguments to installer binary
+            break
+            ;;
+    esac
+done
 
 # Check if running inside a container
 is_in_container() {
     [ -f "/.dockerenv" ] || [ -f "/run/.containerenv" ]
+}
+
+# Check if we can get interactive input from a terminal
+# More robust than just checking if /dev/tty exists - actually tests usability
+can_use_tty() {
+    # First check: is stdin already a terminal?
+    if [ -t 0 ]; then
+        return 0
+    fi
+
+    # Second check: is /dev/tty available and actually a terminal?
+    # This handles cases where /dev/tty exists but isn't properly connected
+    # (common in PowerShell + WSL/Git Bash environments)
+    if [ -e /dev/tty ] && [ -c /dev/tty ]; then
+        # Try to open it and verify it's a terminal
+        if ( exec 3</dev/tty && [ -t 3 ] ) 2>/dev/null; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# Read from the best available input source (stdin or /dev/tty)
+read_interactive() {
+    if [ -t 0 ]; then
+        read -r "$@"
+    elif [ -e /dev/tty ] && [ -c /dev/tty ]; then
+        read -r "$@" </dev/tty
+    else
+        return 1
+    fi
 }
 
 # Download a file from the repo
@@ -96,18 +183,23 @@ confirm_local_install() {
     echo "    • Add PATH and 'ccp' alias to your shell config (~/.bashrc, ~/.zshrc, fish)"
     echo "    • Configure Claude Code (~/.claude.json): theme, auto-compact off, MCP servers"
     echo ""
-    # Read from /dev/tty for curl|bash compatibility
+
+    # If using --local flag (non-interactive), skip confirmation
+    if [ "$PRESELECT_MODE" = "local" ]; then
+        echo "  (Skipping confirmation due to --local flag)"
+        return 0
+    fi
+
+    # Interactive confirmation
     confirm=""
-    if [ -t 0 ]; then
+    if can_use_tty; then
         printf "  Continue? [Y/n]: "
-        read -r confirm
-    elif [ -e /dev/tty ]; then
-        printf "  Continue? [Y/n]: "
-        read -r confirm </dev/tty
+        read_interactive confirm
     else
         echo "  No interactive terminal available, continuing with defaults."
         confirm="y"
     fi
+
     case "$confirm" in
     [Nn] | [Nn][Oo])
         echo "  Cancelled. Run again to choose Dev Container instead."
@@ -174,25 +266,40 @@ if ! is_in_container; then
         setup_devcontainer
     fi
 
-    echo "  Choose installation method:"
-    echo ""
-    echo "    1) Dev Container - Isolated environment, consistent tooling"
-    echo "    2) Local - Install directly on your system via Homebrew (macOS/Linux)"
-    echo ""
-
-    # Read from /dev/tty for curl|bash compatibility; default to Dev Container if no TTY
+    # Check for preselected mode via CLI flags first
     choice=""
-    if [ -t 0 ]; then
-        # stdin is a terminal
-        printf "  Enter choice [1-2]: "
-        read -r choice
-    elif [ -e /dev/tty ]; then
-        # stdin piped, but /dev/tty available
-        printf "  Enter choice [1-2]: "
-        read -r choice </dev/tty
-    else
-        echo "  No interactive terminal available, defaulting to Dev Container."
+    if [ "$PRESELECT_MODE" = "local" ]; then
+        echo "  Using --local flag: Local installation selected"
+        choice="2"
+    elif [ "$PRESELECT_MODE" = "devcontainer" ]; then
+        echo "  Using --devcontainer flag: Dev Container selected"
         choice="1"
+    elif can_use_tty; then
+        # Interactive mode - show menu and prompt
+        echo "  Choose installation method:"
+        echo ""
+        echo "    1) Dev Container - Isolated environment, consistent tooling"
+        echo "    2) Local - Install directly on your system via Homebrew (macOS/Linux)"
+        echo ""
+        printf "  Enter choice [1-2]: "
+        read_interactive choice
+    else
+        # No terminal available and no preselection - show helpful error
+        echo "  Choose installation method:"
+        echo ""
+        echo "    1) Dev Container - Isolated environment, consistent tooling"
+        echo "    2) Local - Install directly on your system via Homebrew (macOS/Linux)"
+        echo ""
+        echo "  [!!] No interactive terminal available."
+        echo ""
+        echo "  To install, re-run with a flag:"
+        echo "    curl -fsSL ${REPO_RAW}/install.sh | bash -s -- --devcontainer"
+        echo "    curl -fsSL ${REPO_RAW}/install.sh | bash -s -- --local"
+        echo ""
+        echo "  Or run --help for more options:"
+        echo "    curl -fsSL ${REPO_RAW}/install.sh | bash -s -- --help"
+        echo ""
+        exit 1
     fi
 
     case $choice in
