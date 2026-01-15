@@ -40,7 +40,7 @@ Choose your installation method:
 Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.8.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.8.1/install.sh | bash
 ```
 
 You'll be asked to choose between **Dev Container** or **Local Installation**.
