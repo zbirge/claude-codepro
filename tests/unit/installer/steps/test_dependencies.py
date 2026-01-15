@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -689,6 +690,63 @@ class TestClaudeMemInstall:
         result = install_claude_mem()
 
         assert result is True
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_sets_data_dir_to_project_context(self, mock_run):
+        """install_claude_mem sets CLAUDE_MEM_DATA_DIR to project's context/claude-mem."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                install_claude_mem(project_dir)
+
+            # Check settings file has CLAUDE_MEM_DATA_DIR set
+            settings_path = Path(tmpdir) / ".claude-mem" / "settings.json"
+            assert settings_path.exists()
+            settings = json.loads(settings_path.read_text())
+            expected_data_dir = str(project_dir / "context" / "claude-mem")
+            assert settings.get("CLAUDE_MEM_DATA_DIR") == expected_data_dir
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_creates_context_claude_mem_directory(self, mock_run):
+        """install_claude_mem creates the context/claude-mem directory in project."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                install_claude_mem(project_dir)
+
+            # Check context/claude-mem directory was created
+            claude_mem_dir = project_dir / "context" / "claude-mem"
+            assert claude_mem_dir.exists()
+            assert claude_mem_dir.is_dir()
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_without_project_dir_skips_data_dir_setting(self, mock_run):
+        """install_claude_mem without project_dir doesn't set CLAUDE_MEM_DATA_DIR."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                install_claude_mem()  # No project_dir
+
+            # Check settings file exists but doesn't have CLAUDE_MEM_DATA_DIR
+            settings_path = Path(tmpdir) / ".claude-mem" / "settings.json"
+            assert settings_path.exists()
+            settings = json.loads(settings_path.read_text())
+            assert "CLAUDE_MEM_DATA_DIR" not in settings
 
 
 class TestContext7Install:

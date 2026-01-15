@@ -479,8 +479,13 @@ def install_pyright_lsp() -> bool:
     return _run_bash_with_retry("claude plugin install pyright-lsp")
 
 
-def _configure_claude_mem_defaults() -> bool:
-    """Configure Claude Mem with recommended defaults."""
+def _configure_claude_mem_defaults(project_dir: Path | None = None) -> bool:
+    """Configure Claude Mem with recommended defaults.
+
+    Args:
+        project_dir: If provided, sets CLAUDE_MEM_DATA_DIR to project's context/claude-mem
+                     directory for persistence across container rebuilds.
+    """
     import json
 
     settings_dir = Path.home() / ".claude-mem"
@@ -506,6 +511,12 @@ def _configure_claude_mem_defaults() -> bool:
                 "CLAUDE_MEM_MODEL": "opus",
             }
         )
+
+        if project_dir is not None:
+            claude_mem_data_dir = project_dir / "context" / "claude-mem"
+            claude_mem_data_dir.mkdir(parents=True, exist_ok=True)
+            settings["CLAUDE_MEM_DATA_DIR"] = str(claude_mem_data_dir)
+
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
         return True
     except Exception:
@@ -701,10 +712,15 @@ def _ensure_maxritter_marketplace() -> bool:
         return False
 
 
-def install_claude_mem() -> bool:
-    """Install claude-mem plugin via claude plugin marketplace."""
+def install_claude_mem(project_dir: Path | None = None) -> bool:
+    """Install claude-mem plugin via claude plugin marketplace.
+
+    Args:
+        project_dir: If provided, sets CLAUDE_MEM_DATA_DIR to project's context/claude-mem
+                     directory for persistence across container rebuilds.
+    """
     if _is_plugin_installed("claude-mem", "thedotmack"):
-        _configure_claude_mem_defaults()
+        _configure_claude_mem_defaults(project_dir)
         return True
 
     if not _ensure_maxritter_marketplace():
@@ -713,7 +729,7 @@ def install_claude_mem() -> bool:
     if not _run_bash_with_retry("claude plugin install claude-mem"):
         return False
 
-    _configure_claude_mem_defaults()
+    _configure_claude_mem_defaults(project_dir)
     return True
 
 
@@ -855,7 +871,7 @@ class DependenciesStep(BaseStep):
             if _install_with_spinner(ui, "Pyright LSP", install_pyright_lsp):
                 installed.append("pyright_lsp")
 
-        if _install_with_spinner(ui, "claude-mem plugin", install_claude_mem):
+        if _install_with_spinner(ui, "claude-mem plugin", install_claude_mem, ctx.project_dir):
             installed.append("claude_mem")
 
         if _install_with_spinner(ui, "Context7 plugin", install_context7):
