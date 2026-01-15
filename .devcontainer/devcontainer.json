@@ -95,7 +95,7 @@
     /* https://github.com/eitsupi/devcontainer-features/tree/main/src/jq-likes */
     "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {}
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.6.1/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.6.2/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }
