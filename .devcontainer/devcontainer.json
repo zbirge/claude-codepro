@@ -97,5 +97,8 @@
   },
   "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.8.2/install.sh | bash",
   "remoteUser": "root",
-  "containerUser": "root"
+  "containerUser": "root",
+  "remoteEnv": {
+    "CLAUDE_MEM_DATA_DIR": "${containerWorkspaceFolder}/context/claude-mem"
+  }
 }
