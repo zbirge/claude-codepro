@@ -102,7 +102,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline@latest",
+    "command": "python3 /workspaces/claude-codepro/.claude/scripts/statusline.py",
     "padding": 0
   },
   "outputStyle": "default",
