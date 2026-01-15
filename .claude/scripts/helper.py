@@ -10,7 +10,7 @@ import stat
 import sys
 from pathlib import Path
 
-MAX_CONTEXT_TOKENS = 136_000
+MAX_CONTEXT_TOKENS = 200_000
 DEFAULT_THRESHOLD = 90
 PRE_CLEAR_DELAY_SECONDS = 10.0
 

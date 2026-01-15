@@ -37,50 +37,30 @@ When you see the context warning (80% or 90%), take action:
 
 ### At 90% - Mandatory Continuation Protocol
 
-**Step 1: VERIFY Before Writing (CRITICAL)**
+**Step 1: Write Session Summary to File (GUARANTEED BACKUP)**
 
-Before writing the continuation file, you MUST run verification commands:
-```bash
-# Run tests
-uv run pytest tests/ -q
-# Run type checker
-uv run basedpyright installer/
-```
-
-**DO NOT claim work is complete without showing verification output in the continuation file.**
-
-**Step 2: Write Session Summary to File (GUARANTEED BACKUP)**
-
-Write the summary to `/tmp/claude-continuation.md` using the Write tool. Include VERIFIED status with actual command output.
+First, write the summary to `/tmp/claude-continuation.md` using the Write tool. This ensures the next session can read it even if Claude Mem doesn't capture it.
 
 ```markdown
 # Session Continuation
 
 **Task:** [Brief description of what you were working on]
 
-## VERIFIED STATUS (run just before handoff):
-- `uv run pytest tests/ -q` → **X passed** or **X failed** (be honest!)
-- `uv run basedpyright src/` → **X errors** or **0 errors**
-- If tests fail or errors exist, document WHAT is broken
+**Files Modified:**
+- `path/to/file1.py` - [what was changed]
+- `path/to/file2.py` - [what was changed]
 
-## Completed This Session:
-- [x] [What was VERIFIED as finished]
-- [ ] [What was started but NOT verified/complete]
+**Completed:**
+- [x] [What was finished]
 
-## IN PROGRESS / INCOMPLETE:
-- [Describe exactly what was being worked on]
-- [What command was being run]
-- [What error or issue was being fixed]
+**Next Steps:**
+1. [IMMEDIATE: First thing to do when resuming]
+2. [THEN: Second action]
+3. [FINALLY: Complete the work]
 
-## Next Steps:
-1. [IMMEDIATE: First thing to do - be SPECIFIC]
-2. [Include exact file:line if fixing something]
-
-## Files Changed:
-- `path/to/file.py` - [what was changed]
+**Context:**
+- [Key decisions, blockers, user preferences]
 ```
-
-**CRITICAL: If you were in the middle of fixing something, say EXACTLY what and where. The next agent cannot read your mind.**
 
 **Step 2: Output Session End Summary (For User Visibility)**
 

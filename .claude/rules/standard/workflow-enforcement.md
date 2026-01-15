@@ -2,33 +2,31 @@
 
 **Rule:** Follow the /plan → /implement → /verify workflow exactly. No shortcuts. No sub-agents.
 
----
+## No Sub-Agents Policy
 
-## ⛔ ABSOLUTE BAN: No Sub-Agents
+**DO NOT use the Task tool with any subagent_type during project workflows.**
 
-**NEVER use the Task tool. Period.**
+### Prohibited
 
-This is a HARD RULE with NO EXCEPTIONS:
-- ❌ `Task(subagent_type="Explore")` - BANNED
-- ❌ `Task(subagent_type="Plan")` - BANNED
-- ❌ `Task(subagent_type="general-purpose")` - BANNED
-- ❌ `Task(subagent_type="Bash")` - BANNED
-- ❌ Any other Task tool usage - BANNED
+| Subagent Type | Why Prohibited |
+|---------------|----------------|
+| `Explore` | Loses conversation context, use direct tools instead |
+| `Plan` | Use `/plan` command, not Task tool |
+| `general-purpose` | Maintain context yourself with direct tool calls |
 
-**Why:** Sub-agents lose conversation context, make mistakes, and violate user trust.
+### Use Instead
 
-### What to Use Instead
+| Instead of Sub-Agent | Use These Directly |
+|----------------------|---------------------|
+| `Task(subagent_type="Explore")` | `Read`, `Grep`, `Glob` |
+| `Task(subagent_type="Plan")` | `/plan` slash command |
+| `Task(subagent_type="general-purpose")` | Direct tool calls (Read, Grep, Bash, etc.) |
 
-| DON'T use Task for... | DO use these directly |
-|-----------------------|----------------------|
-| Exploring code | `Read`, `Grep`, `Glob` tools |
-| Planning | `/plan` slash command |
-| Running commands | `Bash` tool directly |
-| Any multi-step work | Direct tool calls in sequence |
+### Allowed Task Tool Usage
 
-**If you catch yourself about to use Task: STOP. Use the direct tools listed above.**
-
----
+The Task tool IS allowed for:
+- **Skills:** Invoking project skills via `Skill` tool
+- **Background shells:** Using `run_in_background` for long-running commands
 
 ## Plan-Implement-Verify Lifecycle
 

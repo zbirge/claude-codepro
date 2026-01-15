@@ -55,7 +55,7 @@ Options:
 
 1. **Scan Directory Structure:**
    ```bash
-   tree -L 3 -I 'node_modules|.git|__pycache__|*.pyc|dist|build|.venv|.next|coverage|.cache|cdk.out|.pytest_cache|.ruff_cache'
+   tree -L 3 -I 'node_modules|.git|__pycache__|*.pyc|dist|build|.venv|.next|coverage|.cache|cdk.out|.mypy_cache|.pytest_cache|.ruff_cache'
    ```
 
 2. **Identify Technologies by checking for:**

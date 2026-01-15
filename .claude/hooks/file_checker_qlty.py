@@ -55,7 +55,7 @@ def find_qlty_bin() -> str | None:
     except Exception:
         pass
 
-    qlty_path = Path.home() / ".qlty" / "bin" / "qlty"
+    qlty_path = Path("/root/.qlty/bin/qlty")
     if qlty_path.exists() and os.access(qlty_path, os.X_OK):
         return str(qlty_path)
 
@@ -72,12 +72,6 @@ def main() -> int:
     target_file = get_edited_file_from_stdin()
     if not target_file or not target_file.exists():
         return 0
-
-    if git_root:
-        try:
-            target_file.resolve().relative_to(git_root)
-        except ValueError:
-            return 0
 
     if target_file.suffix == ".py":
         return 0
@@ -114,12 +108,8 @@ def main() -> int:
     remaining_issues = sum(1 for line in check_output.splitlines() if any(x in line for x in ["high", "medium", "low"]))
 
     print("", file=sys.stderr)
-    try:
-        display_path = target_file.relative_to(Path.cwd())
-    except ValueError:
-        display_path = target_file
     print(
-        f"{RED}🛑 QLTY Issues found in: {display_path}{NC}",
+        f"{RED}🛑 QLTY Issues found in: {target_file.relative_to(Path.cwd())}{NC}",
         file=sys.stderr,
     )
     print(f"{RED}Issues: {remaining_issues}{NC}", file=sys.stderr)

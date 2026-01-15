@@ -1,6 +1,6 @@
 ---
 name: Python Standards
-description: Apply Python tooling standards including uv package management, pytest testing, ruff/basedpyright code quality, one-line docstrings, and self-documenting code practices. Use this skill when working with Python backend code, managing dependencies, running tests, or ensuring code quality. Apply when installing packages, writing tests, formatting code, type checking, adding docstrings, organizing imports, or deciding whether to create new files vs. extending existing ones. Use for any Python development task requiring adherence to tooling standards and best practices.
+description: Apply Python tooling standards including uv package management, pytest testing, ruff/mypy code quality, one-line docstrings, and self-documenting code practices. Use this skill when working with Python backend code, managing dependencies, running tests, or ensuring code quality. Apply when installing packages, writing tests, formatting code, type checking, adding docstrings, organizing imports, or deciding whether to create new files vs. extending existing ones. Use for any Python development task requiring adherence to tooling standards and best practices.
 ---
 
 # Python Standards
@@ -73,7 +73,8 @@ ruff format .          # Format all code
 
 **Type Checking:**
 ```bash
-basedpyright src            # Type checker
+mypy src --strict           # Strict type checking with mypy
+basedpyright src            # Alternative type checker
 ```
 
 **Run quality checks before marking work complete.** Use `getDiagnostics` tool to verify no errors.
@@ -248,7 +249,7 @@ Before marking Python work complete:
 - [ ] All tests pass: `uv run pytest`
 - [ ] Code formatted: `ruff format .`
 - [ ] No linting issues: `ruff check .`
-- [ ] Type checking passes: `basedpyright src`
+- [ ] Type checking passes: `mypy src --strict` or `basedpyright src`
 - [ ] No unused imports (check with `getDiagnostics`)
 - [ ] Docstrings added to public functions
 - [ ] Type hints on function signatures
@@ -263,5 +264,6 @@ Before marking Python work complete:
 | Run with coverage    | `uv run pytest --cov=src`     |
 | Format code          | `ruff format .`               |
 | Fix linting          | `ruff check . --fix`          |
+| Type check (mypy)    | `mypy src --strict`           |
 | Type check (pyright) | `basedpyright src`            |
 | Run Python script    | `uv run python script.py`     |

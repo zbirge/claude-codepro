@@ -26,9 +26,9 @@ download_file() {
     local url="${REPO_RAW}/${path}"
 
     mkdir -p "$(dirname "$dest")"
-    if command -v curl > /dev/null 2>&1; then
+    if command -v curl >/dev/null 2>&1; then
         curl -fsSL "$url" -o "$dest"
-    elif command -v wget > /dev/null 2>&1; then
+    elif command -v wget >/dev/null 2>&1; then
         wget -q "$url" -O "$dest"
     else
         echo "Error: Neither curl nor wget found."
@@ -38,7 +38,7 @@ download_file() {
 
 # Check if Homebrew is installed
 check_homebrew() {
-    command -v brew > /dev/null 2>&1
+    command -v brew >/dev/null 2>&1
 }
 
 # Install Homebrew if not present
@@ -48,11 +48,11 @@ install_homebrew() {
 
     # Add to PATH for current session
     if [ -d "/opt/homebrew/bin" ]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"  # macOS ARM
+        eval "$(/opt/homebrew/bin/brew shellenv)" # macOS ARM
     elif [ -d "/usr/local/bin" ] && [ -f "/usr/local/bin/brew" ]; then
-        eval "$(/usr/local/bin/brew shellenv)"      # macOS Intel
+        eval "$(/usr/local/bin/brew shellenv)" # macOS Intel
     elif [ -d "/home/linuxbrew/.linuxbrew/bin" ]; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"  # Linux
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" # Linux
     fi
 
     if ! check_homebrew; then
@@ -103,16 +103,16 @@ confirm_local_install() {
         read -r confirm
     elif [ -e /dev/tty ]; then
         printf "  Continue? [Y/n]: "
-        read -r confirm < /dev/tty
+        read -r confirm </dev/tty
     else
         echo "  No interactive terminal available, continuing with defaults."
         confirm="y"
     fi
     case "$confirm" in
-        [Nn]|[Nn][Oo])
-            echo "  Cancelled. Run again to choose Dev Container instead."
-            exit 0
-            ;;
+    [Nn] | [Nn][Oo])
+        echo "  Cancelled. Run again to choose Dev Container instead."
+        exit 0
+        ;;
     esac
 }
 
@@ -189,61 +189,61 @@ if ! is_in_container; then
     elif [ -e /dev/tty ]; then
         # stdin piped, but /dev/tty available
         printf "  Enter choice [1-2]: "
-        read -r choice < /dev/tty
+        read -r choice </dev/tty
     else
         echo "  No interactive terminal available, defaulting to Dev Container."
         choice="1"
     fi
 
     case $choice in
-        2)
-            LOCAL_INSTALL=true
-            echo ""
-            echo "  Local Installation selected"
-            echo ""
+    2)
+        LOCAL_INSTALL=true
+        echo ""
+        echo "  Local Installation selected"
+        echo ""
 
-            # Confirm what will be installed
-            confirm_local_install
+        # Confirm what will be installed
+        confirm_local_install
 
-            # Check/install Homebrew
-            if check_homebrew; then
-                echo "  [OK] Homebrew already installed"
-            else
-                install_homebrew
-            fi
+        # Check/install Homebrew
+        if check_homebrew; then
+            echo "  [OK] Homebrew already installed"
+        else
+            install_homebrew
+        fi
 
-            # Install required packages
-            install_brew_packages
-            ;;
-        *)
-            # Dev Container flow
-            setup_devcontainer
-            ;;
+        # Install required packages
+        install_brew_packages
+        ;;
+    *)
+        # Dev Container flow
+        setup_devcontainer
+        ;;
     esac
 fi
 
 # Phase 2/3: Run full installer (inside container or local)
 ARCH="$(uname -m)"
 case "$ARCH" in
-    x86_64|amd64) ARCH="x86_64" ;;
-    arm64|aarch64) ARCH="arm64" ;;
-    *)
-        echo "Error: Unsupported architecture: $ARCH"
-        echo "Supported: x86_64, arm64"
-        exit 1
-        ;;
+x86_64 | amd64) ARCH="x86_64" ;;
+arm64 | aarch64) ARCH="arm64" ;;
+*)
+    echo "Error: Unsupported architecture: $ARCH"
+    echo "Supported: x86_64, arm64"
+    exit 1
+    ;;
 esac
 
 # Determine platform (linux for container, darwin/linux for local)
 OS="$(uname -s)"
 case "$OS" in
-    Linux) PLATFORM="linux" ;;
-    Darwin) PLATFORM="darwin" ;;
-    *)
-        echo "Error: Unsupported operating system: $OS"
-        echo "Supported: Linux, macOS (Darwin)"
-        exit 1
-        ;;
+Linux) PLATFORM="linux" ;;
+Darwin) PLATFORM="darwin" ;;
+*)
+    echo "Error: Unsupported operating system: $OS"
+    echo "Supported: Linux, macOS (Darwin)"
+    exit 1
+    ;;
 esac
 
 BINARY_NAME="${BINARY_PREFIX}-${PLATFORM}-${ARCH}"
@@ -255,9 +255,9 @@ echo "  Platform: ${PLATFORM}-${ARCH}"
 echo ""
 
 # Download binary
-if command -v curl > /dev/null 2>&1; then
+if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_PATH"
-elif command -v wget > /dev/null 2>&1; then
+elif command -v wget >/dev/null 2>&1; then
     wget -q "$DOWNLOAD_URL" -O "$INSTALL_PATH"
 else
     echo "Error: Neither curl nor wget found. Please install one of them."

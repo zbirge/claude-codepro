@@ -56,35 +56,6 @@ export function calculateDiscount(price: number, rate: number): number { ... }
 
 **Import order:** Node built-ins → External packages → Internal modules → Relative imports
 
-### Testing - Minimal Output
-
-**⚠️ CRITICAL: Always use minimal output flags to avoid context bloat.**
-
-```bash
-# Jest/Vitest - USE MINIMAL OUTPUT
-npm test -- --silent                    # Suppress console.log output
-npm test -- --reporters=dot             # Minimal dot reporter
-npm test -- --bail                      # Stop on first failure
-
-# AVOID these verbose flags unless actively debugging:
-# --verbose, --expand, --debug
-```
-
-**Why minimal output?** Verbose test output consumes context tokens rapidly. Use `--silent` or minimal reporters by default. Only add verbose flags when debugging a specific failing test.
-
-**Diagnostics & Type Checking - also minimize output:**
-```bash
-# Limit output when many errors exist
-tsc --noEmit 2>&1 | head -50            # Cap type checker output
-eslint . --format compact               # Shorter than default stylish format
-
-# When many errors exist, fix incrementally:
-# 1. Run tool, note first few errors
-# 2. Fix those specific errors
-# 3. Re-run to see next batch
-# DON'T dump 100+ errors into context at once
-```
-
 ### Verification Checklist
 
 Before completing TypeScript work, **always run** (using detected package manager):
@@ -92,7 +63,7 @@ Before completing TypeScript work, **always run** (using detected package manage
 1. **Type check:** `tsc --noEmit` or project's `typecheck` script
 2. **Lint:** `eslint . --fix` or project's `lint` script
 3. **Format:** `prettier --write .` or project's `format` script
-4. **Tests:** Project's `test` script (with minimal output flags)
+4. **Tests:** Project's `test` script
 
 **⚠️ BLOCKERS - Do NOT mark work complete if:**
 - Type checking fails (`tsc --noEmit` has errors)

@@ -50,6 +50,7 @@ Update counts:
 3. **Identify dependencies** - List files, functions, classes that need modification
 4. **Check current state:**
    - Git status: `git status --short` and `git diff --name-only`
+   - Diagnostics: `mcp__ide__getDiagnostics()`
    - Plan progress: Check for `[x]` completed tasks
 
 ### 🔧 Tools for Implementation
@@ -59,9 +60,15 @@ Update counts:
 | Tool | When to Use | Example |
 |------|-------------|---------|
 | **Context7** | Library API lookup | `resolve-library-id(query="how to use fixtures", libraryName="pytest")` then `query-docs(libraryId, query)` |
+| **Firecrawl** | Web content/research | Use `firecrawl_search` for solutions, `firecrawl_scrape` for docs |
 | **mcp-cli** | Custom MCP servers | Use `mcp-cli <server>/<tool> '<json>'` for servers in `mcp_servers.json` |
 
-**Context7 requires descriptive queries for both tools - see `context7-docs.md` for full docs.**
+**Context7 requires descriptive queries for both tools - see `library-docs.md` for full docs.**
+
+**Firecrawl MCP Tools (preferred for web content):**
+- `firecrawl_search` - Search web for solutions, debug errors, find examples
+- `firecrawl_scrape` - Fetch documentation pages, code examples, API references
+- `firecrawl_extract` - Extract structured data from web pages
 
 **Before starting, verify Vexor is available for semantic search:**
 ```bash
@@ -71,6 +78,7 @@ vexor --version
 **During implementation:**
 - Use `vexor search "query" --mode code` to find similar implementations and patterns
 - Use Context7 when unsure about library/framework APIs: `resolve-library-id(query="your question", libraryName="lib")` then `query-docs(libraryId, query="specific question")` - descriptive queries required
+- Use Firecrawl (`firecrawl_search`, `firecrawl_scrape`) to research error messages, find solutions, or fetch documentation
 
 ## ⚠️ CRITICAL: Migration/Refactoring Tasks
 
@@ -137,19 +145,20 @@ If you notice ANY of these, STOP and report to user:
    - **Trace Downwards (Callees):** Identify what the modified code calls
    - **Side Effects:** Check for database, cache, external system impacts
 3. **Mark task as in_progress** in TodoWrite
-4. **Execute TDD Flow (RED → GREEN → REFACTOR):**
+4. **Check diagnostics** - `mcp__ide__getDiagnostics()`
+5. **Execute TDD Flow (RED → GREEN → REFACTOR):**
    - Write failing test first, **verify it fails**
    - Implement minimal code to pass
    - Refactor if needed (keep tests green)
-5. **Verify tests pass** - `uv run pytest tests/path/to/test.py -v`
-6. **Run actual program** - Show real output with sample data
-7. **Check diagnostics** - Must be zero errors - `mcp__ide__getDiagnostics()`
-8. **Validate Definition of Done** - Check all criteria from plan
-9. **Mark task completed** in TodoWrite
+6. **Verify tests pass** - `uv run pytest tests/path/to/test.py -v`
+7. **Run actual program** - Show real output with sample data
+8. **Check diagnostics again** - Must be zero errors
+9. **Validate Definition of Done** - Check all criteria from plan
+10. **Mark task completed** in TodoWrite
 
-### ⛔ STEP 10 IS MANDATORY - DO NOT SKIP
+### ⛔ STEP 11 IS MANDATORY - DO NOT SKIP
 
-10. **UPDATE PLAN FILE IMMEDIATELY:**
+11. **UPDATE PLAN FILE IMMEDIATELY:**
     ```
     Use Edit tool to change in the plan file:
     - [ ] Task N: ...  →  - [x] Task N: ...
@@ -160,7 +169,7 @@ If you notice ANY of these, STOP and report to user:
     **You MUST do this BEFORE proceeding to the next task.**
     **Failure to update = incomplete implementation.**
 
-11. **Check context usage** - Use check-context function of helper.py
+12. **Check context usage**
 
 ## Critical Task Rules
 
