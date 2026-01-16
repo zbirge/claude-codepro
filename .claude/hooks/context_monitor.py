@@ -9,8 +9,8 @@ import time
 from pathlib import Path
 
 EFFECTIVE_LIMIT = 133000
-THRESHOLD_WARN = 75
-THRESHOLD_STOP = 85
+THRESHOLD_WARN = 80
+THRESHOLD_STOP = 90
 
 CACHE_FILE = Path("/tmp/.claude_context_cache.json")
 CACHE_TTL = 30

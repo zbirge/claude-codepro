@@ -82,78 +82,78 @@ class TestShellConfigStep:
 
     def test_shell_config_handles_fish_syntax(self):
         """ShellConfigStep uses fish syntax for fish shell."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        bash_line = get_alias_line("bash")
-        fish_line = get_alias_line("fish")
+        bash_line = get_function_line("bash")
+        fish_line = get_function_line("fish")
 
-        assert "alias" in bash_line
-        assert "function" in fish_line or "alias" in fish_line
+        assert "function ccp()" in bash_line
+        assert "function ccp" in fish_line
 
 
 class TestAliasHelpers:
     """Test shell alias helper functions."""
 
-    def test_get_alias_line_returns_string(self):
-        """get_alias_line returns a string."""
-        from installer.steps.shell_config import get_alias_line
+    def test_get_function_line_returns_string(self):
+        """get_function_line returns a string."""
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("bash")
+        result = get_function_line("bash")
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_alias_contains_ccp(self):
         """Alias line contains ccp command."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("bash")
+        result = get_function_line("bash")
         assert "ccp" in result
 
     def test_alias_uses_dotenvx(self):
         """Alias uses dotenvx to load environment variables."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("bash")
+        result = get_function_line("bash")
         assert "dotenvx run --" in result
 
     def test_alias_uses_nvm(self):
         """Alias sets Node.js version via nvm."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("bash")
+        result = get_function_line("bash")
         assert "nvm use 22" in result
 
     def test_alias_detects_ccp_project(self):
         """Alias checks for CCP project before running."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("bash")
+        result = get_function_line("bash")
         assert ".claude/rules" in result
         assert "/workspaces" in result
 
     def test_fish_alias_uses_correct_syntax(self):
         """Fish alias uses 'and' instead of '&&' and fish-specific syntax."""
-        from installer.steps.shell_config import get_alias_line
+        from installer.steps.shell_config import get_function_line
 
-        result = get_alias_line("fish")
+        result = get_function_line("fish")
         # Fish uses 'and' for chaining commands, 'test' instead of '[]'
         assert "test -d" in result or "and" in result
         assert "dotenvx run --" in result
         assert "nvm use 22" in result
 
-    def test_get_alias_line_bash_includes_marker(self):
-        """get_alias_line for bash includes CCP_ALIAS_MARKER."""
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, get_alias_line
+    def test_get_function_line_bash_includes_marker(self):
+        """get_function_line for bash includes CCP_FUNCTION_MARKER."""
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, get_function_line
 
-        result = get_alias_line("bash")
-        assert CCP_ALIAS_MARKER in result
+        result = get_function_line("bash")
+        assert CCP_FUNCTION_MARKER in result
 
-    def test_get_alias_line_fish_includes_marker(self):
-        """get_alias_line for fish includes CCP_ALIAS_MARKER."""
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, get_alias_line
+    def test_get_function_line_fish_includes_marker(self):
+        """get_function_line for fish includes CCP_FUNCTION_MARKER."""
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, get_function_line
 
-        result = get_alias_line("fish")
-        assert CCP_ALIAS_MARKER in result
+        result = get_function_line("fish")
+        assert CCP_FUNCTION_MARKER in result
 
 
 class TestAliasExistsInFile:
@@ -167,12 +167,12 @@ class TestAliasExistsInFile:
         assert result is False
 
     def test_alias_exists_in_file_returns_true_when_marker_present(self):
-        """alias_exists_in_file returns True when CCP_ALIAS_MARKER present."""
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, alias_exists_in_file
+        """alias_exists_in_file returns True when CCP_FUNCTION_MARKER present."""
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, alias_exists_in_file
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / ".bashrc"
-            config_file.write_text(f"some content\n{CCP_ALIAS_MARKER}\nalias ccp='test'\n")
+            config_file.write_text(f"some content\n{CCP_FUNCTION_MARKER}\nalias ccp='test'\n")
 
             result = alias_exists_in_file(config_file)
             assert result is True
@@ -223,39 +223,39 @@ class TestRemoveOldAlias:
 
     def test_remove_old_alias_removes_marker_and_alias(self):
         """remove_old_alias removes the marker and alias lines."""
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, remove_old_alias
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, remove_old_alias
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / ".bashrc"
             config_file.write_text(
-                f"export PATH=/usr/bin\n{CCP_ALIAS_MARKER}\nalias ccp='old command'\nsome other line\n"
+                f"export PATH=/usr/bin\n{CCP_FUNCTION_MARKER}\nalias ccp='old command'\nsome other line\n"
             )
 
             result = remove_old_alias(config_file)
             assert result is True
 
             content = config_file.read_text()
-            assert CCP_ALIAS_MARKER not in content
+            assert CCP_FUNCTION_MARKER not in content
             assert "alias ccp" not in content
             assert "export PATH=/usr/bin" in content
             assert "some other line" in content
 
     def test_remove_old_alias_handles_multiline_alias(self):
         """remove_old_alias handles multi-line alias definitions."""
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, remove_old_alias
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, remove_old_alias
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / ".bashrc"
             # Multi-line alias that ends with '
             config_file.write_text(
-                f"export PATH=/usr/bin\n{CCP_ALIAS_MARKER}\nalias ccp='if [ -d .claude/rules ]; then echo ok; fi'\nother content\n"
+                f"export PATH=/usr/bin\n{CCP_FUNCTION_MARKER}\nalias ccp='if [ -d .claude/rules ]; then echo ok; fi'\nother content\n"
             )
 
             result = remove_old_alias(config_file)
             assert result is True
 
             content = config_file.read_text()
-            assert CCP_ALIAS_MARKER not in content
+            assert CCP_FUNCTION_MARKER not in content
 
     def test_remove_old_alias_removes_standalone_alias(self):
         """remove_old_alias removes standalone alias without marker."""
@@ -488,13 +488,13 @@ class TestShellConfigRollback:
     def test_rollback_removes_alias(self, mock_get_files):
         """rollback removes alias from modified config files."""
         from installer.context import InstallContext
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, ShellConfigStep
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, ShellConfigStep
         from installer.ui import Console
 
         step = ShellConfigStep()
         with tempfile.TemporaryDirectory() as tmpdir:
             bashrc = Path(tmpdir) / ".bashrc"
-            bashrc.write_text(f"export PATH=/usr/bin\n{CCP_ALIAS_MARKER}\nalias ccp='test'\nother content\n")
+            bashrc.write_text(f"export PATH=/usr/bin\n{CCP_FUNCTION_MARKER}\nalias ccp='test'\nother content\n")
             mock_get_files.return_value = [bashrc]
 
             ctx = InstallContext(
@@ -506,7 +506,7 @@ class TestShellConfigRollback:
             step.rollback(ctx)
 
             content = bashrc.read_text()
-            assert CCP_ALIAS_MARKER not in content
+            assert CCP_FUNCTION_MARKER not in content
             assert "alias ccp" not in content
             assert "export PATH=/usr/bin" in content
             assert "other content" in content
@@ -599,7 +599,7 @@ class TestShellConfigRunBranches:
             step.run(ctx)
 
             content = fish_config.read_text()
-            assert "alias ccp" in content
+            assert "function ccp" in content
             # Fish syntax should use 'test -d' not '[ -d'
             assert "test -d" in content
 
@@ -607,13 +607,13 @@ class TestShellConfigRunBranches:
     def test_run_updates_existing_alias(self, mock_get_files):
         """run updates existing alias when present."""
         from installer.context import InstallContext
-        from installer.steps.shell_config import CCP_ALIAS_MARKER, ShellConfigStep
+        from installer.steps.shell_config import CCP_FUNCTION_MARKER, ShellConfigStep
         from installer.ui import Console
 
         step = ShellConfigStep()
         with tempfile.TemporaryDirectory() as tmpdir:
             bashrc = Path(tmpdir) / ".bashrc"
-            bashrc.write_text(f"export PATH=/usr/bin\n{CCP_ALIAS_MARKER}\nalias ccp='old version'\n")
+            bashrc.write_text(f"export PATH=/usr/bin\n{CCP_FUNCTION_MARKER}\nalias ccp='old version'\n")
             mock_get_files.return_value = [bashrc]
 
             ctx = InstallContext(
