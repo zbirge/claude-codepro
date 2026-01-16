@@ -405,7 +405,7 @@ class TestDotenvxInstall:
         mock_cmd_exists.return_value = False
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_dotenvx()
+        install_dotenvx()
 
         # Should call curl shell installer
         mock_run.assert_called()
@@ -443,7 +443,7 @@ class TestTypescriptLspInstall:
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_typescript_lsp()
+        install_typescript_lsp()
 
         assert mock_run.call_count >= 2
         # Check npm install call
@@ -476,7 +476,7 @@ class TestPyrightLspInstall:
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = install_pyright_lsp()
+        install_pyright_lsp()
 
         assert mock_run.call_count >= 3
         # Check npm install call
@@ -510,7 +510,7 @@ class TestClaudeMemInstall:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = install_claude_mem()
+                install_claude_mem()
 
         assert mock_run.call_count >= 2
         # First call adds marketplace

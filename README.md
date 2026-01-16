@@ -61,6 +61,14 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 4. Reload your shell: `source ~/.zshrc` (or `~/.bashrc`)
 5. Run `ccp` to start Claude CodePro
 
+### Claude Subscription
+
+Claude CodePro is designed to be token-efficient, but quality has its cost. For the best experience, use:
+
+- **Claude Max 5x** — For individual developers with moderate usage
+- **Claude Max 20x** — For heavy usage or professional development
+- **Enterprise Plan** — For teams and organizations
+
 ---
 
 ## 📦 What's Inside
@@ -212,12 +220,10 @@ I'm **Max Ritter**, a senior IT freelancer based near **Munich, Germany**, speci
 - **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search capabilities
 - **[philschmid/mcp-cli](https://github.com/philschmid/mcp-cli)** - CC MCP Servers lazy loading
 - **[vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)** - Headless browser automation CLI
-- **[ManuelKugelmann/BitBot](https://github.com/ManuelKugelmann/BitBot)** - CC Wrapper control inspirations
 - **[upstash/context7](https://github.com/upstash/context7)** - Library code context retrieval
 - **[firecrawl/firecrawl](https://github.com/firecrawl/firecrawl)** - Web search and scraping tool
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
-- **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Automatic .env loading for Claude Code
 

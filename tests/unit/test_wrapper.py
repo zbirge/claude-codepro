@@ -17,7 +17,7 @@ class TestClaudeWrapper:
         from scripts.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
-        wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
+        ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
 
         assert pipe_dir.exists()
 

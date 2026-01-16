@@ -30,6 +30,38 @@ This is a HARD RULE with NO EXCEPTIONS:
 
 ---
 
+## ⛔ ABSOLUTE BAN: No Built-in Plan Mode
+
+**NEVER use Claude Code's built-in plan mode tools. Period.**
+
+This is a HARD RULE with NO EXCEPTIONS:
+- ❌ `EnterPlanMode` tool - BANNED
+- ❌ `ExitPlanMode` tool - BANNED
+
+**Why:** This project has its own planning workflow via `/spec` → `/plan` → `/implement` → `/verify`. The built-in plan mode writes to incompatible paths and breaks our workflow.
+
+### What to Use Instead
+
+| DON'T use... | DO use this instead |
+|--------------|---------------------|
+| `EnterPlanMode` tool | `/spec` command via Skill tool |
+| `ExitPlanMode` tool | AskUserQuestion for plan approval |
+| Built-in plan files | `docs/plans/YYYY-MM-DD-*.md` |
+
+**When you think planning is needed:**
+
+```
+# CORRECT: Use /spec via Skill tool
+Skill(skill="spec", args="task description here")
+
+# WRONG: Never do this
+EnterPlanMode()  # ❌ BANNED
+```
+
+**If you catch yourself about to use EnterPlanMode or ExitPlanMode: STOP. Use `/spec` instead.**
+
+---
+
 ## Plan-Implement-Verify Lifecycle
 
 The project uses a three-phase workflow that must be followed strictly:

@@ -18,7 +18,7 @@ class TestRunWithWrapper:
         with patch("installer.cli.subprocess.call") as mock_call:
             mock_call.return_value = 0
 
-            result = run_with_wrapper(["--model", "opus"])
+            run_with_wrapper(["--model", "opus"])
 
             mock_call.assert_called_once()
             call_args = mock_call.call_args[0][0]
@@ -79,10 +79,11 @@ class TestLaunchCommand:
 
                 # Simulate CLI invocation
                 from typer.testing import CliRunner
+
                 from installer.cli import app
 
                 runner = CliRunner()
-                result = runner.invoke(app, ["launch"])
+                runner.invoke(app, ["launch"])
 
                 # Should have called run_with_wrapper
                 mock_wrapper.assert_called_once()
@@ -95,10 +96,11 @@ class TestLaunchCommand:
             mock_call.return_value = 0
 
             from typer.testing import CliRunner
+
             from installer.cli import app
 
             runner = CliRunner()
-            result = runner.invoke(app, ["launch", "--no-wrapper"])
+            runner.invoke(app, ["launch", "--no-wrapper"])
 
             # Should call claude directly
             call_args = mock_call.call_args[0][0]
@@ -114,10 +116,11 @@ class TestLaunchCommand:
                 mock_wrapper.return_value = 0
 
                 from typer.testing import CliRunner
+
                 from installer.cli import app
 
                 runner = CliRunner()
-                result = runner.invoke(app, ["launch", "--", "--model", "opus"])
+                runner.invoke(app, ["launch", "--", "--model", "opus"])
 
                 # Args should be passed through
                 call_args = mock_wrapper.call_args[0][0]

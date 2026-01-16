@@ -71,6 +71,14 @@ install_brew_packages() {
     echo ""
     echo "  Installing required packages via Homebrew..."
     echo ""
+
+    # Tap bun repository (required for bun formula)
+    if ! brew tap | grep -q "oven-sh/bun"; then
+        echo "  [..] Adding bun tap..."
+        brew tap oven-sh/bun
+        echo "  [OK] bun tap added"
+    fi
+
     for pkg in $BREW_PACKAGES; do
         if brew list "$pkg" >/dev/null 2>&1; then
             echo "  [OK] $pkg already installed"
@@ -267,11 +275,48 @@ fi
 # Make executable
 chmod +x "$INSTALL_PATH"
 
-# Run installer with appropriate flags
+# Remove macOS quarantine flag if on Darwin
+if [ "$(uname -s)" = "Darwin" ]; then
+    xattr -cr "$INSTALL_PATH" 2>/dev/null || true
+fi
+
+# Run installer with error handling for macOS Gatekeeper
+set +e  # Temporarily disable exit on error
 if [ "$LOCAL_INSTALL" = true ]; then
     "$INSTALL_PATH" install --local-system "$@"
 else
     "$INSTALL_PATH" install "$@"
+fi
+EXIT_CODE=$?
+set -e
+
+if [ $EXIT_CODE -ne 0 ]; then
+    # Check if killed by signal (137 = 128 + 9 = SIGKILL)
+    if [ $EXIT_CODE -eq 137 ] || [ $EXIT_CODE -eq 9 ]; then
+        echo ""
+        echo "  ╭─────────────────────────────────────────────────────────────╮"
+        echo "  │  macOS Security Blocked the Installer                       │"
+        echo "  ╰─────────────────────────────────────────────────────────────╯"
+        echo ""
+        echo "  macOS Gatekeeper blocked the unsigned installer binary."
+        echo ""
+        echo "  To fix this, run these commands:"
+        echo ""
+        echo "    sudo xattr -rd com.apple.quarantine $INSTALL_PATH"
+        echo "    $INSTALL_PATH install --local-system"
+        echo ""
+        echo "  Or allow it in System Settings:"
+        echo "    1. Open System Settings → Privacy & Security"
+        echo "    2. Scroll down to find the blocked app message"
+        echo "    3. Click 'Allow Anyway'"
+        echo "    4. Re-run this installer"
+        echo ""
+        rm -f "$INSTALL_PATH"
+        exit 1
+    else
+        rm -f "$INSTALL_PATH"
+        exit $EXIT_CODE
+    fi
 fi
 
 # Clean up
