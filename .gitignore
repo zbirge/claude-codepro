@@ -233,5 +233,8 @@ tmp/
 .claude/bin/
 docs/plans
 
+# Local data directories
+context/
+
 # Kiro
 .kiro/
