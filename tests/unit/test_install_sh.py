@@ -13,8 +13,8 @@ def test_install_sh_runs_install_command():
     # The script must run the binary with 'install' command
     assert "install" in content, "install.sh must pass 'install' command to binary"
 
-    # Check that the script runs INSTALL_PATH with 'install' command
-    assert "$INSTALL_PATH" in content, "Script must reference INSTALL_PATH variable"
+    # Check that the script runs INSTALLER_PATH with 'install' command
+    assert "$INSTALLER_PATH" in content, "Script must reference INSTALLER_PATH variable"
     assert 'install "$@"' in content or "install --non-interactive" in content, "Script must pass install command"
 
 

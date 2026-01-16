@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -35,7 +34,6 @@ class TestDependenciesStep:
             # Dependencies always need to be checked
             assert step.check(ctx) is False
 
-    @patch("installer.steps.dependencies.install_dotenvx")
     @patch("installer.steps.dependencies.run_qlty_check")
     @patch("installer.steps.dependencies.install_qlty")
     @patch("installer.steps.dependencies.install_vexor")
@@ -54,7 +52,6 @@ class TestDependenciesStep:
         mock_vexor,
         mock_qlty,
         mock_qlty_check,
-        mock_dotenvx,
     ):
         """DependenciesStep installs core dependencies."""
         from installer.context import InstallContext
@@ -69,7 +66,6 @@ class TestDependenciesStep:
         mock_context7.return_value = True
         mock_vexor.return_value = True
         mock_qlty.return_value = (True, False)
-        mock_dotenvx.return_value = True
 
         step = DependenciesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -86,7 +82,6 @@ class TestDependenciesStep:
             mock_typescript_lsp.assert_called_once()
             mock_claude.assert_called_once()
 
-    @patch("installer.steps.dependencies.install_dotenvx")
     @patch("installer.steps.dependencies.run_qlty_check")
     @patch("installer.steps.dependencies.install_qlty")
     @patch("installer.steps.dependencies.install_vexor")
@@ -111,7 +106,6 @@ class TestDependenciesStep:
         mock_vexor,
         mock_qlty,
         mock_qlty_check,
-        mock_dotenvx,
     ):
         """DependenciesStep installs Python tools when enabled."""
         from installer.context import InstallContext
@@ -129,7 +123,6 @@ class TestDependenciesStep:
         mock_context7.return_value = True
         mock_vexor.return_value = True
         mock_qlty.return_value = (True, False)
-        mock_dotenvx.return_value = True
 
         step = DependenciesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -174,24 +167,17 @@ class TestDependencyInstallFunctions:
 
         assert callable(install_python_tools)
 
-    def test_install_dotenvx_exists(self):
-        """install_dotenvx function exists."""
-        from installer.steps.dependencies import install_dotenvx
-
-        assert callable(install_dotenvx)
-
 
 class TestClaudeCodeInstall:
     """Test Claude Code installation."""
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_removes_native_binaries(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version
     ):
         """install_claude_code removes native binaries before npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -204,13 +190,12 @@ class TestClaudeCodeInstall:
         mock_remove.assert_called_once()
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_always_runs_npm_install(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version
     ):
         """install_claude_code always runs npm install (upgrades if exists)."""
         from installer.steps.dependencies import install_claude_code
@@ -227,13 +212,12 @@ class TestClaudeCodeInstall:
         assert len(npm_calls) >= 1
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_configures_defaults(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version
     ):
         """install_claude_code configures Claude defaults after npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -246,13 +230,12 @@ class TestClaudeCodeInstall:
         mock_config.assert_called_once()
 
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_mcp_servers")
     @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("subprocess.run")
     @patch("installer.steps.dependencies._remove_native_claude_binaries")
     def test_install_claude_code_configures_firecrawl_mcp(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
+        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version
     ):
         """install_claude_code configures Firecrawl MCP after npm install."""
         from installer.steps.dependencies import install_claude_code
@@ -263,29 +246,6 @@ class TestClaudeCodeInstall:
             install_claude_code(Path(tmpdir))
 
         mock_firecrawl.assert_called_once()
-
-    @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_mcp_servers")
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
-    @patch("installer.steps.dependencies._configure_claude_defaults")
-    @patch("subprocess.run")
-    @patch("installer.steps.dependencies._remove_native_claude_binaries")
-    def test_install_claude_code_calls_configure_mcp_servers(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_mcp_servers, mock_version
-    ):
-        """install_claude_code calls _configure_mcp_servers with project_dir and ui."""
-        from installer.steps.dependencies import install_claude_code
-
-        mock_run.return_value = MagicMock(returncode=0)
-        mock_ui = MagicMock()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            install_claude_code(Path(tmpdir), mock_ui)
-
-        mock_mcp_servers.assert_called_once()
-        call_args = mock_mcp_servers.call_args
-        assert call_args[0][0] == Path(tmpdir)  # project_dir
-        assert call_args[0][1] == mock_ui  # ui
 
     def test_patch_claude_config_creates_file(self):
         """_patch_claude_config creates config file if it doesn't exist."""
@@ -335,131 +295,6 @@ class TestClaudeCodeInstall:
                 config_path = Path(tmpdir) / ".claude.json"
                 config = json.loads(config_path.read_text())
                 assert config["respectGitignore"] is False
-
-
-class TestGitHubMcpConfig:
-    """Test GitHub MCP server configuration."""
-
-    def test_configure_github_mcp_creates_config(self):
-        """_configure_github_mcp creates config with mcpServers if not exists."""
-        import json
-
-        from installer.steps.dependencies import _configure_github_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_github_mcp()
-
-                assert result is True
-                config_path = Path(tmpdir) / ".claude.json"
-                assert config_path.exists()
-                config = json.loads(config_path.read_text())
-                assert "mcpServers" in config
-                assert "github" in config["mcpServers"]
-                assert config["mcpServers"]["github"]["command"] == "npx"
-                assert config["mcpServers"]["github"]["args"] == ["-y", "@modelcontextprotocol/server-github"]
-                assert config["mcpServers"]["github"]["env"]["GITHUB_PERSONAL_ACCESS_TOKEN"] == "${GITHUB_PERSONAL_ACCESS_TOKEN}"
-
-    def test_configure_github_mcp_preserves_existing_mcp_servers(self):
-        """_configure_github_mcp preserves other MCP servers."""
-        import json
-
-        from installer.steps.dependencies import _configure_github_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"other_server": {"command": "other", "args": ["--flag"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_github_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                assert "other_server" in config["mcpServers"]
-                assert config["mcpServers"]["other_server"]["command"] == "other"
-                assert "github" in config["mcpServers"]
-
-    def test_configure_github_mcp_skips_if_already_exists(self):
-        """_configure_github_mcp skips if github already configured."""
-        import json
-
-        from installer.steps.dependencies import _configure_github_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"github": {"command": "custom", "args": ["custom"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_github_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                # Should preserve custom config, not overwrite
-                assert config["mcpServers"]["github"]["command"] == "custom"
-
-
-class TestGitLabMcpConfig:
-    """Test GitLab MCP server configuration."""
-
-    def test_configure_gitlab_mcp_creates_config(self):
-        """_configure_gitlab_mcp creates config with mcpServers if not exists."""
-        import json
-
-        from installer.steps.dependencies import _configure_gitlab_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_gitlab_mcp()
-
-                assert result is True
-                config_path = Path(tmpdir) / ".claude.json"
-                assert config_path.exists()
-                config = json.loads(config_path.read_text())
-                assert "mcpServers" in config
-                assert "gitlab" in config["mcpServers"]
-                assert config["mcpServers"]["gitlab"]["command"] == "npx"
-                assert config["mcpServers"]["gitlab"]["args"] == ["-y", "@modelcontextprotocol/server-gitlab"]
-                assert config["mcpServers"]["gitlab"]["env"]["GITLAB_PERSONAL_ACCESS_TOKEN"] == "${GITLAB_PERSONAL_ACCESS_TOKEN}"
-
-    def test_configure_gitlab_mcp_preserves_existing_mcp_servers(self):
-        """_configure_gitlab_mcp preserves other MCP servers."""
-        import json
-
-        from installer.steps.dependencies import _configure_gitlab_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"firecrawl": {"command": "npx", "args": ["firecrawl-mcp"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_gitlab_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                assert "firecrawl" in config["mcpServers"]
-                assert "gitlab" in config["mcpServers"]
-
-    def test_configure_gitlab_mcp_skips_if_already_exists(self):
-        """_configure_gitlab_mcp skips if gitlab already configured."""
-        import json
-
-        from installer.steps.dependencies import _configure_gitlab_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"gitlab": {"command": "custom", "args": ["custom"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_gitlab_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                # Should preserve custom config, not overwrite
-                assert config["mcpServers"]["gitlab"]["command"] == "custom"
 
 
 class TestFirecrawlMcpConfig:
@@ -546,38 +381,6 @@ class TestFirecrawlMcpConfig:
                 assert "firecrawl" in config["mcpServers"]
 
 
-class TestDotenvxInstall:
-    """Test dotenvx installation."""
-
-    @patch("installer.steps.dependencies.command_exists")
-    @patch("subprocess.run")
-    def test_install_dotenvx_calls_native_installer(self, mock_run, mock_cmd_exists):
-        """install_dotenvx calls native shell installer."""
-        from installer.steps.dependencies import install_dotenvx
-
-        mock_cmd_exists.return_value = False
-        mock_run.return_value = MagicMock(returncode=0)
-
-        install_dotenvx()
-
-        # Should call curl shell installer
-        mock_run.assert_called()
-        call_args = mock_run.call_args[0][0]
-        assert "bash" in call_args
-        assert "dotenvx.sh" in call_args[2]  # The curl command is the 3rd arg
-
-    @patch("installer.steps.dependencies.command_exists")
-    def test_install_dotenvx_skips_if_exists(self, mock_cmd_exists):
-        """install_dotenvx skips if already installed."""
-        from installer.steps.dependencies import install_dotenvx
-
-        mock_cmd_exists.return_value = True
-
-        result = install_dotenvx()
-
-        assert result is True
-
-
 class TestTypescriptLspInstall:
     """Test TypeScript language server plugin installation."""
 
@@ -596,7 +399,7 @@ class TestTypescriptLspInstall:
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        install_typescript_lsp()
+        result = install_typescript_lsp()
 
         assert mock_run.call_count >= 2
         # Check npm install call
@@ -629,7 +432,7 @@ class TestPyrightLspInstall:
 
         mock_run.return_value = MagicMock(returncode=0)
 
-        install_pyright_lsp()
+        result = install_pyright_lsp()
 
         assert mock_run.call_count >= 3
         # Check npm install call
@@ -642,119 +445,6 @@ class TestPyrightLspInstall:
         # Check plugin install call
         third_call = mock_run.call_args_list[2][0][0]
         assert "claude plugin install pyright-lsp" in third_call[2]
-
-
-class TestClaudeMemSymlink:
-    """Test claude-mem symlink creation for project persistence."""
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_creates_symlink_to_project_context(self, mock_run):
-        """install_claude_mem creates symlink from ~/.claude-mem to project context."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-            home_dir = Path(tmpdir) / "home"
-            home_dir.mkdir()
-
-            with patch.object(Path, "home", return_value=home_dir):
-                install_claude_mem(project_dir)
-
-            # Check that ~/.claude-mem is a symlink pointing to project context
-            claude_mem_link = home_dir / ".claude-mem"
-            expected_target = project_dir / "context" / "claude-mem"
-            assert claude_mem_link.is_symlink()
-            assert claude_mem_link.resolve() == expected_target.resolve()
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_migrates_existing_directory(self, mock_run):
-        """install_claude_mem migrates existing ~/.claude-mem directory to symlink."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-            home_dir = Path(tmpdir) / "home"
-            home_dir.mkdir()
-
-            # Create existing ~/.claude-mem with settings.json
-            existing_claude_mem = home_dir / ".claude-mem"
-            existing_claude_mem.mkdir()
-            existing_settings = existing_claude_mem / "settings.json"
-            existing_settings.write_text('{"existing": "setting"}')
-
-            with patch.object(Path, "home", return_value=home_dir):
-                install_claude_mem(project_dir)
-
-            # Check symlink was created
-            assert existing_claude_mem.is_symlink()
-
-            # Check settings were preserved in project context
-            project_settings = project_dir / "context" / "claude-mem" / "settings.json"
-            assert project_settings.exists()
-            settings = json.loads(project_settings.read_text())
-            # Should have merged settings (existing + new defaults)
-            assert "CLAUDE_MEM_MODEL" in settings  # New default
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_replaces_wrong_symlink(self, mock_run):
-        """install_claude_mem replaces symlink pointing to wrong location."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-            home_dir = Path(tmpdir) / "home"
-            home_dir.mkdir()
-
-            # Create symlink pointing to wrong location
-            wrong_target = Path(tmpdir) / "wrong_location"
-            wrong_target.mkdir()
-            claude_mem_link = home_dir / ".claude-mem"
-            claude_mem_link.symlink_to(wrong_target)
-
-            with patch.object(Path, "home", return_value=home_dir):
-                install_claude_mem(project_dir)
-
-            # Check symlink now points to correct location
-            expected_target = project_dir / "context" / "claude-mem"
-            assert claude_mem_link.is_symlink()
-            assert claude_mem_link.resolve() == expected_target.resolve()
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_idempotent_with_correct_symlink(self, mock_run):
-        """install_claude_mem is idempotent when correct symlink exists."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-            home_dir = Path(tmpdir) / "home"
-            home_dir.mkdir()
-
-            # Create correct symlink ahead of time
-            context_dir = project_dir / "context" / "claude-mem"
-            context_dir.mkdir(parents=True)
-            claude_mem_link = home_dir / ".claude-mem"
-            claude_mem_link.symlink_to(context_dir)
-
-            with patch.object(Path, "home", return_value=home_dir):
-                # Call multiple times
-                install_claude_mem(project_dir)
-                install_claude_mem(project_dir)
-
-            # Symlink should still be correct
-            assert claude_mem_link.is_symlink()
-            assert claude_mem_link.resolve() == context_dir.resolve()
 
 
 class TestClaudeMemInstall:
@@ -776,7 +466,7 @@ class TestClaudeMemInstall:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
-                install_claude_mem()
+                result = install_claude_mem()
 
         assert mock_run.call_count >= 2
         # First call adds marketplace
@@ -803,63 +493,6 @@ class TestClaudeMemInstall:
         result = install_claude_mem()
 
         assert result is True
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_sets_data_dir_to_project_context(self, mock_run):
-        """install_claude_mem sets CLAUDE_MEM_DATA_DIR to project's context/claude-mem."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                install_claude_mem(project_dir)
-
-            # Check settings file has CLAUDE_MEM_DATA_DIR set
-            settings_path = Path(tmpdir) / ".claude-mem" / "settings.json"
-            assert settings_path.exists()
-            settings = json.loads(settings_path.read_text())
-            expected_data_dir = str(project_dir / "context" / "claude-mem")
-            assert settings.get("CLAUDE_MEM_DATA_DIR") == expected_data_dir
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_creates_context_claude_mem_directory(self, mock_run):
-        """install_claude_mem creates the context/claude-mem directory in project."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir) / "my_project"
-            project_dir.mkdir()
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                install_claude_mem(project_dir)
-
-            # Check context/claude-mem directory was created
-            claude_mem_dir = project_dir / "context" / "claude-mem"
-            assert claude_mem_dir.exists()
-            assert claude_mem_dir.is_dir()
-
-    @patch("subprocess.run")
-    def test_install_claude_mem_without_project_dir_skips_data_dir_setting(self, mock_run):
-        """install_claude_mem without project_dir doesn't set CLAUDE_MEM_DATA_DIR."""
-        from installer.steps.dependencies import install_claude_mem
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                install_claude_mem()  # No project_dir
-
-            # Check settings file exists but doesn't have CLAUDE_MEM_DATA_DIR
-            settings_path = Path(tmpdir) / ".claude-mem" / "settings.json"
-            assert settings_path.exists()
-            settings = json.loads(settings_path.read_text())
-            assert "CLAUDE_MEM_DATA_DIR" not in settings
 
 
 class TestContext7Install:
@@ -898,58 +531,35 @@ class TestVexorInstall:
         assert callable(install_vexor)
 
     @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
     @patch("installer.steps.dependencies.command_exists")
-    def test_install_vexor_skips_if_exists(self, mock_cmd_exists, mock_gpu, mock_config):
+    def test_install_vexor_skips_if_exists(self, mock_cmd_exists, mock_config):
         """install_vexor skips installation if already installed."""
         from installer.steps.dependencies import install_vexor
 
         mock_cmd_exists.return_value = True
-        mock_gpu.return_value = False
         mock_config.return_value = True
 
         result = install_vexor()
 
         assert result is True
-        mock_config.assert_called_once_with("cpu", None)
-
-    @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
-    @patch("installer.steps.dependencies.subprocess.run")
-    @patch("installer.steps.dependencies.command_exists")
-    def test_install_vexor_uses_uv_tool(self, mock_cmd_exists, mock_run, mock_gpu, mock_config):
-        """install_vexor uses uv tool install."""
-        from installer.steps.dependencies import install_vexor
-
-        mock_cmd_exists.return_value = False
-        mock_gpu.return_value = False
-        mock_run.return_value = MagicMock(returncode=0)
-        mock_config.return_value = True
-
-        result = install_vexor()
-
-        assert result is True
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert call_args == ["uv", "tool", "install", "vexor[local]"]
-        mock_config.assert_called_once_with("cpu", None)
+        mock_config.assert_called_once()
 
     def test_configure_vexor_defaults_creates_config(self):
-        """_configure_vexor_defaults creates config file with cpu defaults."""
+        """_configure_vexor_defaults creates config file."""
         import json
 
         from installer.steps.dependencies import _configure_vexor_defaults
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_vexor_defaults()  # Default is cpu mode
+                result = _configure_vexor_defaults()
 
                 assert result is True
                 config_path = Path(tmpdir) / ".vexor" / "config.json"
                 assert config_path.exists()
                 config = json.loads(config_path.read_text())
+                assert config["model"] == "intfloat/multilingual-e5-small"
                 assert config["provider"] == "local"
-                assert config["local_cuda"] is False
                 assert config["rerank"] == "bm25"
 
     def test_configure_vexor_defaults_merges_existing(self):
@@ -970,427 +580,4 @@ class TestVexorInstall:
                 assert result is True
                 config = json.loads(config_path.read_text())
                 assert config["custom_key"] == "custom_value"
-                assert config["provider"] == "local"
-
-
-class TestVexorCudaSupport:
-    """Test vexor CUDA installation logic."""
-
-    @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies._fix_vexor_onnxruntime_conflict")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
-    @patch("installer.steps.dependencies.command_exists")
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_install_vexor_with_cuda_when_gpu_available(self, mock_run, mock_exists, mock_gpu, mock_fix, mock_config):
-        """install_vexor installs with [local-cuda] when GPU available."""
-        from installer.steps.dependencies import install_vexor
-
-        mock_exists.return_value = False  # vexor not installed
-        mock_gpu.return_value = True  # GPU available
-        mock_run.return_value = MagicMock(returncode=0)
-        mock_fix.return_value = True
-        mock_config.return_value = True
-
-        result = install_vexor()
-
-        assert result is True
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert "vexor[local-cuda]" in call_args
-        mock_fix.assert_called_once()
-        mock_config.assert_called_once_with("cuda", None)
-
-    @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
-    @patch("installer.steps.dependencies.command_exists")
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_install_vexor_without_cuda_when_no_gpu(self, mock_run, mock_exists, mock_gpu, mock_config):
-        """install_vexor installs without CUDA when no GPU."""
-        from installer.steps.dependencies import install_vexor
-
-        mock_exists.return_value = False  # vexor not installed
-        mock_gpu.return_value = False  # No GPU
-        mock_run.return_value = MagicMock(returncode=0)
-        mock_config.return_value = True
-
-        result = install_vexor()
-
-        assert result is True
-        call_args = mock_run.call_args[0][0]
-        assert "vexor[local]" in call_args
-        assert "[local-cuda]" not in str(call_args)
-        mock_config.assert_called_once_with("cpu", None)
-
-    @patch("installer.steps.dependencies._fix_vexor_onnxruntime_conflict")
-    @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
-    @patch("installer.steps.dependencies.command_exists")
-    def test_install_vexor_existing_with_gpu_fixes_conflict(self, mock_exists, mock_gpu, mock_config, mock_fix):
-        """install_vexor fixes onnxruntime conflict when vexor already installed with GPU."""
-        from installer.steps.dependencies import install_vexor
-
-        mock_exists.return_value = True  # vexor already installed
-        mock_gpu.return_value = True  # GPU available
-        mock_config.return_value = True
-        mock_fix.return_value = True
-
-        result = install_vexor()
-
-        assert result is True
-        mock_fix.assert_called_once()
-        mock_config.assert_called_once_with("cuda", None)
-
-    @patch("installer.steps.dependencies._configure_vexor_defaults")
-    @patch("installer.steps.dependencies.has_nvidia_gpu")
-    @patch("installer.steps.dependencies.command_exists")
-    def test_install_vexor_existing_without_gpu_no_conflict_fix(self, mock_exists, mock_gpu, mock_config):
-        """install_vexor skips conflict fix when vexor already installed without GPU."""
-        from installer.steps.dependencies import install_vexor
-
-        mock_exists.return_value = True  # vexor already installed
-        mock_gpu.return_value = False  # No GPU
-        mock_config.return_value = True
-
-        result = install_vexor()
-
-        assert result is True
-        mock_config.assert_called_once_with("cpu", None)
-
-    def test_configure_vexor_defaults_cuda_mode(self):
-        """_configure_vexor_defaults sets local_cuda True, provider local, and e5 model for cuda mode."""
-        import json
-
-        from installer.steps.dependencies import _configure_vexor_defaults
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_vexor_defaults(provider_mode="cuda")
-
-                assert result is True
-                config_path = Path(tmpdir) / ".vexor" / "config.json"
-                config = json.loads(config_path.read_text())
-                assert config["local_cuda"] is True
-                assert config["provider"] == "local"
                 assert config["model"] == "intfloat/multilingual-e5-small"
-
-    def test_configure_vexor_defaults_cpu_mode(self):
-        """_configure_vexor_defaults sets local_cuda False, provider local, and e5 model for cpu mode."""
-        import json
-
-        from installer.steps.dependencies import _configure_vexor_defaults
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_vexor_defaults(provider_mode="cpu")
-
-                assert result is True
-                config_path = Path(tmpdir) / ".vexor" / "config.json"
-                config = json.loads(config_path.read_text())
-                assert config["local_cuda"] is False
-                assert config["provider"] == "local"
-                assert config["model"] == "intfloat/multilingual-e5-small"
-
-    def test_configure_vexor_defaults_openai_mode_with_key(self):
-        """_configure_vexor_defaults sets openai provider and saves api_key."""
-        import json
-
-        from installer.steps.dependencies import _configure_vexor_defaults
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_vexor_defaults(provider_mode="openai", api_key="sk-test123")
-
-                assert result is True
-                config_path = Path(tmpdir) / ".vexor" / "config.json"
-                config = json.loads(config_path.read_text())
-                assert config["local_cuda"] is False
-                assert config["provider"] == "openai"
-                assert config["api_key"] == "sk-test123"
-                assert config["model"] == "text-embedding-3-small"
-
-    def test_configure_vexor_defaults_openai_mode_without_key(self):
-        """_configure_vexor_defaults sets openai provider without api_key if not provided."""
-        import json
-
-        from installer.steps.dependencies import _configure_vexor_defaults
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_vexor_defaults(provider_mode="openai")
-
-                assert result is True
-                config_path = Path(tmpdir) / ".vexor" / "config.json"
-                config = json.loads(config_path.read_text())
-                assert config["local_cuda"] is False
-                assert config["provider"] == "openai"
-                assert "api_key" not in config
-                assert config["model"] == "text-embedding-3-small"
-
-
-class TestGetOpenaiApiKey:
-    """Test _get_openai_api_key function."""
-
-    @patch.dict("os.environ", {"OPENAI_API_KEY": "sk-test123"})
-    def test_returns_key_when_set(self):
-        """_get_openai_api_key returns key when environment variable is set."""
-        from installer.steps.dependencies import _get_openai_api_key
-
-        assert _get_openai_api_key() == "sk-test123"
-
-    @patch.dict("os.environ", {}, clear=True)
-    def test_returns_none_when_not_set(self):
-        """_get_openai_api_key returns None when environment variable is not set."""
-        from installer.steps.dependencies import _get_openai_api_key
-
-        assert _get_openai_api_key() is None
-
-
-class TestVexorOnnxruntimeConflictFix:
-    """Test onnxruntime conflict fix helpers."""
-
-    def test_get_vexor_pip_path_returns_path_when_exists(self):
-        """_get_vexor_pip_path returns Path when vexor pip exists."""
-        from installer.steps.dependencies import _get_vexor_pip_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            vexor_dir = Path(tmpdir) / ".local" / "share" / "uv" / "tools" / "vexor" / "bin"
-            vexor_dir.mkdir(parents=True)
-            vexor_pip = vexor_dir / "pip"
-            vexor_pip.touch()
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _get_vexor_pip_path()
-
-                assert result is not None
-                assert result.name == "pip"
-
-    def test_get_vexor_pip_path_returns_none_when_not_exists(self):
-        """_get_vexor_pip_path returns None when vexor pip doesn't exist."""
-        from installer.steps.dependencies import _get_vexor_pip_path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _get_vexor_pip_path()
-
-                assert result is None
-
-    @patch("installer.steps.dependencies._get_vexor_pip_path")
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_fix_vexor_onnxruntime_conflict_removes_cpu_package(self, mock_run, mock_pip_path):
-        """_fix_vexor_onnxruntime_conflict removes onnxruntime when both packages present."""
-        from installer.steps.dependencies import _fix_vexor_onnxruntime_conflict
-
-        mock_pip_path.return_value = Path("/fake/vexor/bin/pip")
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="onnxruntime       1.17.0\nonnxruntime-gpu   1.17.0\n",
-        )
-
-        result = _fix_vexor_onnxruntime_conflict()
-
-        assert result is True
-        # Should call pip list and pip uninstall
-        assert mock_run.call_count == 2
-
-    @patch("installer.steps.dependencies._get_vexor_pip_path")
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_fix_vexor_onnxruntime_conflict_skips_when_no_conflict(self, mock_run, mock_pip_path):
-        """_fix_vexor_onnxruntime_conflict skips uninstall when only one package."""
-        from installer.steps.dependencies import _fix_vexor_onnxruntime_conflict
-
-        mock_pip_path.return_value = Path("/fake/vexor/bin/pip")
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="onnxruntime-gpu   1.17.0\n",  # Only GPU version
-        )
-
-        result = _fix_vexor_onnxruntime_conflict()
-
-        assert result is True
-        # Should only call pip list, no uninstall
-        assert mock_run.call_count == 1
-
-    @patch("installer.steps.dependencies._get_vexor_pip_path")
-    def test_fix_vexor_onnxruntime_conflict_returns_false_when_no_pip(self, mock_pip_path):
-        """_fix_vexor_onnxruntime_conflict returns False when vexor pip not found."""
-        from installer.steps.dependencies import _fix_vexor_onnxruntime_conflict
-
-        mock_pip_path.return_value = None
-
-        result = _fix_vexor_onnxruntime_conflict()
-
-        assert result is False
-
-
-class TestPromptMcpServerChoice:
-    """Test _prompt_mcp_server_choice function."""
-
-    def test_returns_github_when_ui_is_none(self):
-        """_prompt_mcp_server_choice returns 'github' when UI is None."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-
-        result = _prompt_mcp_server_choice(None)
-
-        assert result == "github"
-
-    def test_returns_github_when_non_interactive(self):
-        """_prompt_mcp_server_choice returns 'github' in non-interactive mode."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-        from installer.ui import Console
-
-        ui = Console(non_interactive=True)
-        result = _prompt_mcp_server_choice(ui)
-
-        assert result == "github"
-
-    def test_returns_github_when_github_selected(self):
-        """_prompt_mcp_server_choice returns 'github' when user selects GitHub."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-
-        mock_ui = MagicMock()
-        mock_ui.non_interactive = False
-        mock_ui.select.return_value = "GitHub (recommended)"
-
-        result = _prompt_mcp_server_choice(mock_ui)
-
-        assert result == "github"
-        mock_ui.select.assert_called_once()
-
-    def test_returns_gitlab_when_gitlab_selected(self):
-        """_prompt_mcp_server_choice returns 'gitlab' when user selects GitLab."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-
-        mock_ui = MagicMock()
-        mock_ui.non_interactive = False
-        mock_ui.select.return_value = "GitLab"
-
-        result = _prompt_mcp_server_choice(mock_ui)
-
-        assert result == "gitlab"
-
-    def test_returns_both_when_both_selected(self):
-        """_prompt_mcp_server_choice returns 'both' when user selects Both."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-
-        mock_ui = MagicMock()
-        mock_ui.non_interactive = False
-        mock_ui.select.return_value = "Both"
-
-        result = _prompt_mcp_server_choice(mock_ui)
-
-        assert result == "both"
-
-    def test_shows_info_message_before_prompt(self):
-        """_prompt_mcp_server_choice shows info message about detection failure."""
-        from installer.steps.dependencies import _prompt_mcp_server_choice
-
-        mock_ui = MagicMock()
-        mock_ui.non_interactive = False
-        mock_ui.select.return_value = "GitHub (recommended)"
-
-        _prompt_mcp_server_choice(mock_ui)
-
-        mock_ui.info.assert_called_once()
-        assert "detect" in mock_ui.info.call_args[0][0].lower()
-
-
-class TestConfigureMcpServers:
-    """Test _configure_mcp_servers function."""
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_github_only_when_github_detected(self, mock_detect, mock_github, mock_gitlab):
-        """_configure_mcp_servers configures only GitHub when GitHub remote detected."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (True, False)  # is_github=True, is_gitlab=False
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir))
-
-        mock_github.assert_called_once()
-        mock_gitlab.assert_not_called()
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_gitlab_only_when_gitlab_detected(self, mock_detect, mock_github, mock_gitlab):
-        """_configure_mcp_servers configures only GitLab when GitLab remote detected."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (False, True)  # is_github=False, is_gitlab=True
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir))
-
-        mock_github.assert_not_called()
-        mock_gitlab.assert_called_once()
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_both_when_both_detected(self, mock_detect, mock_github, mock_gitlab):
-        """_configure_mcp_servers configures both when both remotes detected."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (True, True)  # Both detected
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir))
-
-        mock_github.assert_called_once()
-        mock_gitlab.assert_called_once()
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_prompts_user_when_neither_detected(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
-        """_configure_mcp_servers prompts user when no remotes detected."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (False, False)  # Neither detected
-        mock_prompt.return_value = "github"
-        mock_ui = MagicMock()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir), mock_ui)
-
-        mock_prompt.assert_called_once_with(mock_ui)
-        mock_github.assert_called_once()
-        mock_gitlab.assert_not_called()
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_configures_gitlab_when_user_chooses_gitlab(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
-        """_configure_mcp_servers configures GitLab when user chooses gitlab."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (False, False)
-        mock_prompt.return_value = "gitlab"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir), None)
-
-        mock_github.assert_not_called()
-        mock_gitlab.assert_called_once()
-
-    @patch("installer.steps.dependencies._configure_gitlab_mcp")
-    @patch("installer.steps.dependencies._configure_github_mcp")
-    @patch("installer.steps.dependencies._prompt_mcp_server_choice")
-    @patch("installer.steps.dependencies.detect_git_hosting")
-    def test_configures_both_when_user_chooses_both(self, mock_detect, mock_prompt, mock_github, mock_gitlab):
-        """_configure_mcp_servers configures both when user chooses both."""
-        from installer.steps.dependencies import _configure_mcp_servers
-
-        mock_detect.return_value = (False, False)
-        mock_prompt.return_value = "both"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _configure_mcp_servers(Path(tmpdir), None)
-
-        mock_github.assert_called_once()
-        mock_gitlab.assert_called_once()

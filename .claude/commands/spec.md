@@ -144,7 +144,7 @@ After reading the plan file's Status and Approved fields:
 After each major operation, check context:
 
 ```bash
-python3 .claude/scripts/helper.py check-context --json
+.claude/bin/ccp check-context --json
 ```
 
 If response shows `"status": "CLEAR_NEEDED"` (context >= 90%):
@@ -173,14 +173,14 @@ Write to `/tmp/claude-continuation.md`:
 **Step 2: Trigger session clear**
 
 ```bash
-python3 .claude/scripts/helper.py send-clear <plan-path>
+.claude/bin/ccp send-clear <plan-path>
 ```
 
-The wrapper will restart with `/spec --continue <plan-path>`
+CCP will restart with `/spec --continue <plan-path>`
 
 ## Error Handling
 
-### Wrapper Not Running
+### No Active Session
 
 If `send-clear` fails:
 - Tell user: "Context at X%. Please run `/clear` manually, then `/spec --continue <plan-path>`"

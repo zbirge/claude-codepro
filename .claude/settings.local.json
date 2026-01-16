@@ -2,6 +2,7 @@
   "env": {
     "ENABLE_TOOL_SEARCH": "true",
     "ENABLE_LSP_TOOL": "true",
+    "FORCE_CLAUDE_VERSION": "2.1.6",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "63999",
     "MAX_MCP_OUTPUT_TOKENS": "10000",
     "MAX_THINKING_TOKENS": "31999",
@@ -43,8 +44,6 @@
       "Write",
       "mcp__ide__*",
       "mcp__firecrawl__*",
-      "mcp__github__*",
-      "mcp__gitlab__*",
       "mcp__plugin_claude-mem_mcp-search__*",
       "mcp__plugin_context7_context7__*",
       "Skill(ccp)",
@@ -53,7 +52,7 @@
       "Skill(implement)",
       "Skill(verify)",
       "Skill(setup)",
-      "Skill(commit)"
+      "Skill(spec)"
     ],
     "deny": []
   },

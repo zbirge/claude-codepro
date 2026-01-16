@@ -84,6 +84,7 @@ class FinalizeStep(BaseStep):
 
         if ctx.config.get("github_mcp_configured"):
             installed_items.append("GitHub MCP Server")
+
         if ctx.config.get("gitlab_mcp_configured"):
             installed_items.append("GitLab MCP Server")
 
@@ -131,11 +132,6 @@ class FinalizeStep(BaseStep):
                     ("Start Claude CodePro", "Run: ccp"),
                     ("Connect IDE", "Run: /ide → Enables real-time diagnostics"),
                     (
-                        "Install IDE Extensions",
-                        "Open Extensions sidebar → Filter by '@recommended' → Install all\n"
-                        "     (Extensions may not auto-install in fresh containers)",
-                    ),
-                    (
                         "Image Pasting (Optional)",
                         "Install dkodr.claudeboard extension via the Marketplace\n"
                         "     Only works in VS Code's integrated terminal",
@@ -163,16 +159,7 @@ class FinalizeStep(BaseStep):
 
         ui.rule()
         ui.print()
-        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/zbirge/claude-codepro")
-        ui.print()
-
-        ui.print("  [bold white]📜 License:[/bold white] Free for individuals, freelancers & open source (AGPL-3.0)")
-        ui.print(
-            "             Companies with proprietary software require a [bold yellow]commercial license[/bold yellow]."
-        )
-        ui.print("             Contact: [cyan]zach@birge-consulting.com[/cyan]")
-        ui.print()
-        ui.print("  [dim]💝 Enjoying Claude CodePro? Consider sponsoring: https://github.com/sponsors/maxritter[/dim]")
+        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
         ui.print()
         ui.print(f"  [dim]Installed version: {__version__}[/dim]")
         ui.print()

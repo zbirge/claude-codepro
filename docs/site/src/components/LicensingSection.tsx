@@ -1,4 +1,4 @@
-import { Mail, Check, Building2 } from "lucide-react";
+import { ExternalLink, Check, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -21,7 +21,7 @@ const LicensingSection = () => {
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           title="Licensing"
-          subtitle="Free for individuals and open source. Commercial license for companies."
+          subtitle="Free for personal use, students, and nonprofits. Commercial license required for businesses."
         />
 
         <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
@@ -41,24 +41,24 @@ const LicensingSection = () => {
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Individuals and personal projects</span>
+                <span className="text-muted-foreground text-sm">Personal use</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Freelancers and client work</span>
+                <span className="text-muted-foreground text-sm">Students and educators</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Open source projects (AGPL-3.0 compatible)</span>
+                <span className="text-muted-foreground text-sm">Nonprofit organizations</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">All features included</span>
+                <span className="text-muted-foreground text-sm">Open source projects (AGPL-3.0)</span>
               </li>
             </ul>
 
             <p className="text-xs text-muted-foreground">
-              Just install and use. No registration required.
+              Just install and use.
             </p>
           </Card>
 
@@ -71,41 +71,37 @@ const LicensingSection = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-foreground">Commercial</h3>
-                <p className="text-sm text-muted-foreground">For companies</p>
+                <p className="text-sm text-muted-foreground">Paid license required</p>
               </div>
             </div>
 
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Companies with proprietary software</span>
+                <span className="text-muted-foreground text-sm">Companies and organizations</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Internal tools (closed source)</span>
+                <span className="text-muted-foreground text-sm">Freelancers and agencies</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">SaaS products using Claude CodePro</span>
+                <span className="text-muted-foreground text-sm">SaaS products and internal tools</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm">Custom development and support available</span>
+                <span className="text-muted-foreground text-sm">Any revenue-generating use</span>
               </li>
             </ul>
 
             <Button asChild className="w-full">
-              <a href="mailto:mail@maxritter.net?subject=Claude%20CodePro%20Commercial%20License">
-                <Mail className="h-4 w-4 mr-2" />
-                Contact for License
+              <a href="https://license.claude-code.pro" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Get License
               </a>
             </Button>
           </Card>
         </div>
-
-        <p className="text-center text-muted-foreground mt-8 text-sm">
-          Questions about licensing? Contact <a href="mailto:mail@maxritter.net" className="text-primary hover:underline">mail@maxritter.net</a>
-        </p>
       </div>
     </section>
   );

@@ -132,7 +132,7 @@ def run_context_monitor() -> int:
         print(f"{RED}⚠️  CONTEXT {percentage:.0f}% - HANDOFF NOW (not optional){NC}", file=sys.stderr)
         print(f"{RED}STOP current work. Your NEXT action must be:{NC}", file=sys.stderr)
         print(f"{RED}1. Write /tmp/claude-continuation.md{NC}", file=sys.stderr)
-        print(f"{RED}2. Run: helper.py send-clear [--general | <plan-path>]{NC}", file=sys.stderr)
+        print(f"{RED}2. Run: .claude/bin/ccp send-clear [--general | <plan-path>]{NC}", file=sys.stderr)
         print(f"{RED}Do NOT summarize or explain - just execute handoff.{NC}", file=sys.stderr)
         return 2
 

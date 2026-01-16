@@ -30,6 +30,7 @@ EXCLUDED_EXTENSIONS = [
     ".env",
     ".env.example",
     ".sql",
+    ".tsx",
 ]
 
 EXCLUDED_DIRS = [

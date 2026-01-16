@@ -17,11 +17,10 @@
 set -e
 
 # Version updated by semantic-release
-VERSION="4.10.1"
+VERSION="4.11.0"
 
 REPO="zbirge/claude-codepro"
 REPO_RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
-BINARY_PREFIX="ccp-installer"
 LOCAL_INSTALL=false
 PRESELECT_MODE=""
 
@@ -69,41 +68,8 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-# Check if running inside a container
 is_in_container() {
     [ -f "/.dockerenv" ] || [ -f "/run/.containerenv" ]
-}
-
-# Check if we can get interactive input from a terminal
-# More robust than just checking if /dev/tty exists - actually tests usability
-can_use_tty() {
-    # First check: is stdin already a terminal?
-    if [ -t 0 ]; then
-        return 0
-    fi
-
-    # Second check: is /dev/tty available and actually a terminal?
-    # This handles cases where /dev/tty exists but isn't properly connected
-    # (common in PowerShell + WSL/Git Bash environments)
-    if [ -e /dev/tty ] && [ -c /dev/tty ]; then
-        # Try to open it and verify it's a terminal
-        if ( exec 3</dev/tty && [ -t 3 ] ) 2>/dev/null; then
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
-# Read from the best available input source (stdin or /dev/tty)
-read_interactive() {
-    if [ -t 0 ]; then
-        read -r "$@"
-    elif [ -e /dev/tty ] && [ -c /dev/tty ]; then
-        read -r "$@" </dev/tty
-    else
-        return 1
-    fi
 }
 
 # Download a file from the repo
@@ -123,17 +89,14 @@ download_file() {
     fi
 }
 
-# Check if Homebrew is installed
 check_homebrew() {
     command -v brew >/dev/null 2>&1
 }
 
-# Install Homebrew if not present
 install_homebrew() {
     echo "  [..] Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    # Add to PATH for current session
     if [ -d "/opt/homebrew/bin" ]; then
         eval "$(/opt/homebrew/bin/brew shellenv)" # macOS ARM
     elif [ -d "/usr/local/bin" ] && [ -f "/usr/local/bin/brew" ]; then
@@ -151,7 +114,6 @@ install_homebrew() {
     echo "  [OK] Homebrew installed"
 }
 
-# Install required packages via Homebrew
 BREW_PACKAGES="git gh python@3.12 node@22 nvm pnpm bun uv"
 
 install_brew_packages() {
@@ -175,7 +137,6 @@ install_brew_packages() {
     echo "  [OK] All Homebrew packages installed"
 }
 
-# Confirm local installation with user
 confirm_local_install() {
     echo ""
     echo "  Local installation will:"
@@ -192,9 +153,9 @@ confirm_local_install() {
 
     # Interactive confirmation
     confirm=""
-    if can_use_tty; then
+    if [ -t 0 ]; then
         printf "  Continue? [Y/n]: "
-        read_interactive confirm
+        read -r confirm
     else
         echo "  No interactive terminal available, continuing with defaults."
         confirm="y"
@@ -208,7 +169,6 @@ confirm_local_install() {
     esac
 }
 
-# Dev Container setup flow
 setup_devcontainer() {
     if [ -d ".devcontainer" ]; then
         echo "  [OK] .devcontainer already exists"
@@ -217,7 +177,6 @@ setup_devcontainer() {
         download_file ".devcontainer/Dockerfile" ".devcontainer/Dockerfile"
         download_file ".devcontainer/devcontainer.json" ".devcontainer/devcontainer.json"
 
-        # Replace placeholders with current directory name
         PROJECT_NAME="$(basename "$(pwd)")"
         PROJECT_SLUG="$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '-')"
         if [ -f ".devcontainer/devcontainer.json" ]; then
@@ -229,7 +188,6 @@ setup_devcontainer() {
         echo "  [OK] Dev container configuration installed"
     fi
 
-    # Download VS Code extensions recommendations
     if [ ! -f ".vscode/extensions.json" ]; then
         echo "  [..] Downloading VS Code extensions recommendations..."
         download_file ".vscode/extensions.json" ".vscode/extensions.json"
@@ -251,7 +209,6 @@ setup_devcontainer() {
     exit 0
 }
 
-# Phase 1: Not in container - offer choice
 if ! is_in_container; then
     echo ""
     echo "======================================================================"
@@ -259,7 +216,6 @@ if ! is_in_container; then
     echo "======================================================================"
     echo ""
 
-    # Auto-select Dev Container if .devcontainer already exists
     if [ -d ".devcontainer" ]; then
         echo "  Detected existing .devcontainer - using Dev Container mode."
         echo ""
@@ -274,7 +230,7 @@ if ! is_in_container; then
     elif [ "$PRESELECT_MODE" = "devcontainer" ]; then
         echo "  Using --devcontainer flag: Dev Container selected"
         choice="1"
-    elif can_use_tty; then
+    elif [ -t 0 ]; then
         # Interactive mode - show menu and prompt
         echo "  Choose installation method:"
         echo ""
@@ -282,7 +238,7 @@ if ! is_in_container; then
         echo "    2) Local - Install directly on your system via Homebrew (macOS/Linux)"
         echo ""
         printf "  Enter choice [1-2]: "
-        read_interactive choice
+        read -r choice
     else
         # No terminal available and no preselection - show helpful error
         echo "  Choose installation method:"
@@ -329,7 +285,6 @@ if ! is_in_container; then
     esac
 fi
 
-# Phase 2/3: Run full installer (inside container or local)
 ARCH="$(uname -m)"
 case "$ARCH" in
 x86_64 | amd64) ARCH="x86_64" ;;
@@ -341,7 +296,6 @@ arm64 | aarch64) ARCH="arm64" ;;
     ;;
 esac
 
-# Determine platform (linux for container, darwin/linux for local)
 OS="$(uname -s)"
 case "$OS" in
 Linux) PLATFORM="linux" ;;
@@ -353,33 +307,64 @@ Darwin) PLATFORM="darwin" ;;
     ;;
 esac
 
-BINARY_NAME="${BINARY_PREFIX}-${PLATFORM}-${ARCH}"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
-INSTALL_PATH="/tmp/${BINARY_NAME}"
+INSTALLER_NAME="ccp-installer-${PLATFORM}-${ARCH}"
+INSTALLER_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${INSTALLER_NAME}"
+INSTALLER_PATH=".claude/bin/ccp-installer"
 
-echo "Downloading Claude CodePro Installer (v${VERSION})..."
+CCP_NAME="ccp-${PLATFORM}-${ARCH}"
+CCP_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${CCP_NAME}"
+CCP_PATH=".claude/bin/ccp"
+
+echo "Downloading Claude CodePro (v${VERSION})..."
 echo "  Platform: ${PLATFORM}-${ARCH}"
 echo ""
 
-# Download binary
+mkdir -p .claude/bin
+
+if [ -f ".claude/bin/ccp" ]; then
+    if ! rm -f ".claude/bin/ccp" 2>/dev/null; then
+        echo "Error: Cannot update CCP binary - it may be in use."
+        echo ""
+        echo "Please quit Claude CodePro first (Ctrl+C or /exit), then run this installer again."
+        exit 1
+    fi
+fi
+
+echo "  [..] Downloading installer..."
 if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_PATH"
+    curl -fsSL "$INSTALLER_URL" -o "$INSTALLER_PATH"
 elif command -v wget >/dev/null 2>&1; then
-    wget -q "$DOWNLOAD_URL" -O "$INSTALL_PATH"
+    wget -q "$INSTALLER_URL" -O "$INSTALLER_PATH"
 else
     echo "Error: Neither curl nor wget found. Please install one of them."
     exit 1
 fi
-
-# Make executable
-chmod +x "$INSTALL_PATH"
-
-# Run installer with appropriate flags
-if [ "$LOCAL_INSTALL" = true ]; then
-    "$INSTALL_PATH" install --local-system "$@"
-else
-    "$INSTALL_PATH" install "$@"
+chmod +x "$INSTALLER_PATH"
+# Remove macOS quarantine flag if on Darwin
+if [ "$(uname -s)" = "Darwin" ]; then
+    xattr -cr "$INSTALLER_PATH" 2>/dev/null || true
 fi
+echo "  [OK] Installer downloaded"
 
-# Clean up
-rm -f "$INSTALL_PATH"
+echo "  [..] Downloading ccp binary..."
+if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$CCP_URL" -o "$CCP_PATH"
+elif command -v wget >/dev/null 2>&1; then
+    wget -q "$CCP_URL" -O "$CCP_PATH"
+else
+    echo "Error: Neither curl nor wget found. Please install one of them."
+    exit 1
+fi
+chmod +x "$CCP_PATH"
+# Remove macOS quarantine flag if on Darwin
+if [ "$(uname -s)" = "Darwin" ]; then
+    xattr -cr "$CCP_PATH" 2>/dev/null || true
+fi
+echo "  [OK] CCP binary downloaded"
+echo ""
+
+if [ "$LOCAL_INSTALL" = true ]; then
+    "$INSTALLER_PATH" install --local-system "$@"
+else
+    "$INSTALLER_PATH" install "$@"
+fi

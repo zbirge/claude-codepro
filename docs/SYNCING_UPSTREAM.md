@@ -158,8 +158,8 @@ This fork uses version numbers ahead of upstream to avoid confusion:
 |------------------|--------------|
 | 4.3.4 | 4.5.0 |
 | 4.4.6 | 4.6.0 |
-| 4.5.x | 4.7.x |
-| 4.6.x | 4.8.x |
+| 4.5.6 | 4.11.0 |
+| 4.6.x | 4.12.x |
 
 When syncing, bump the fork version to stay ahead of the upstream version being merged.
 
@@ -188,5 +188,6 @@ If `test_get_all_steps_returns_list` fails:
 
 | Date | Upstream Version | Fork Version | Notes |
 |------|------------------|--------------|-------|
+| 2026-01-16 | 4.5.6 | 4.11.0 | Added CCP binary with Endless Mode, license improvements, git-crypt CI, preserved MCP servers |
 | 2026-01-15 | 4.4.6 | 4.6.0 | Added macOS builds, preserved GitHub/GitLab MCP |
 | 2026-01-14 | 4.3.4 | 4.5.0 | Initial documented sync |

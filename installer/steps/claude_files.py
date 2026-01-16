@@ -85,7 +85,7 @@ class ClaudeFilesStep(BaseStep):
         ui = ctx.ui
 
         config = DownloadConfig(
-            repo_url="https://github.com/zbirge/claude-codepro",
+            repo_url="https://github.com/maxritter/claude-codepro",
             repo_branch="main",
             local_mode=ctx.local_mode,
             local_repo_dir=ctx.local_repo_dir,
@@ -114,7 +114,6 @@ class ClaudeFilesStep(BaseStep):
             "rules": [],
             "hooks": [],
             "skills": [],
-            "scripts": [],
             "other": [],
         }
 
@@ -173,7 +172,7 @@ class ClaudeFilesStep(BaseStep):
             elif "/skills/" in file_path:
                 categories["skills"].append(file_path)
             elif "/scripts/" in file_path:
-                categories["scripts"].append(file_path)
+                continue
             else:
                 categories["other"].append(file_path)
 
@@ -183,7 +182,6 @@ class ClaudeFilesStep(BaseStep):
             "rules": "custom rules",
             "hooks": "hooks",
             "skills": "skills",
-            "scripts": "scripts",
             "other": "config files",
         }
 
@@ -195,7 +193,6 @@ class ClaudeFilesStep(BaseStep):
             dirs_to_clear = [
                 ("commands", categories["commands"], ctx.project_dir / ".claude" / "commands"),
                 ("hooks", categories["hooks"], ctx.project_dir / ".claude" / "hooks"),
-                ("scripts", categories["scripts"], ctx.project_dir / ".claude" / "scripts"),
                 ("standard rules", categories["rules_standard"], ctx.project_dir / ".claude" / "rules" / "standard"),
             ]
 
@@ -209,22 +206,29 @@ class ClaudeFilesStep(BaseStep):
                         if ui:
                             ui.warning(f"Failed to clear {name} directory: {e}")
 
-            # Clear skills directory contents, preserving custom/ subdirectory
             skills_dir = ctx.project_dir / ".claude" / "skills"
             if skills_dir.exists() and categories["skills"]:
                 if ui:
                     ui.status("Clearing old skills...")
-                for item in skills_dir.iterdir():
-                    if item.name == "custom":
-                        continue  # Preserve custom skills
-                    try:
-                        if item.is_dir():
+                try:
+                    for item in skills_dir.iterdir():
+                        if item.is_dir() and item.name != "custom":
                             shutil.rmtree(item)
-                        else:
+                        elif item.is_file():
                             item.unlink()
-                    except (OSError, IOError) as e:
-                        if ui:
-                            ui.warning(f"Failed to clear skill {item.name}: {e}")
+                except (OSError, IOError) as e:
+                    if ui:
+                        ui.warning(f"Failed to clear skills directory: {e}")
+
+            scripts_dir = ctx.project_dir / ".claude" / "scripts"
+            if scripts_dir.exists():
+                if ui:
+                    ui.status("Removing deprecated scripts folder...")
+                try:
+                    shutil.rmtree(scripts_dir)
+                except (OSError, IOError) as e:
+                    if ui:
+                        ui.warning(f"Failed to remove scripts directory: {e}")
 
         for category, files in categories.items():
             if not files:
@@ -295,6 +299,7 @@ class ClaudeFilesStep(BaseStep):
         skills_dir = ctx.project_dir / ".claude" / "skills"
         if not skills_dir.exists():
             skills_dir.mkdir(parents=True, exist_ok=True)
+            (skills_dir / ".gitkeep").touch()
 
         skills_custom_dir = ctx.project_dir / ".claude" / "skills" / "custom"
         if not skills_custom_dir.exists():

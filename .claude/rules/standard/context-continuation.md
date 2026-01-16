@@ -21,7 +21,7 @@ This enables "endless mode" for any development session, not just /spec workflow
 
 1. **Context Monitor** warns at 80% and 90% usage
 2. **You save state** to Claude Mem before clearing
-3. **Wrapper restarts** Claude with continuation prompt
+3. **CCP restarts** Claude with continuation prompt
 4. **Claude Mem injects** your saved state
 5. **You continue** where you left off
 
@@ -79,17 +79,17 @@ Triggering session restart...
 **Step 3: Trigger Session Clear**
 
 ```bash
-python3 .claude/scripts/helper.py send-clear --general
+.claude/bin/ccp send-clear --general
 ```
 
-This sends a `clear-continue-general` command to the wrapper, which:
-1. Waits 10s for Claude Mem to capture the session (helper delay)
+This triggers session continuation in Endless Mode:
+1. Waits 10s for Claude Mem to capture the session
 2. Waits 5s for graceful shutdown (SessionEnd hooks run)
 3. Waits 5s for session hooks to complete
 4. Waits 3s for Claude Mem initialization
 5. Restarts Claude with the continuation prompt
 
-Or if wrapper is not running, inform user:
+Or if no active session, inform user:
 ```
 Context at 90%. Please run `/clear` and then tell me to continue where I left off.
 ```
@@ -139,20 +139,20 @@ If you're in general development (no plan file):
 | 80-89% | Wrap up current work, avoid new features |
 | ≥ 90% | **MANDATORY:** Save state → Clear session → Continue |
 
-## Wrapper Commands
+## CCP Commands for Endless Mode
 
 ```bash
 # Check context percentage
-python3 .claude/scripts/helper.py check-context --json
+.claude/bin/ccp check-context --json
 
-# Clear and restart (no continuation prompt)
-python3 .claude/scripts/helper.py send-clear
+# Trigger session continuation (no continuation prompt)
+.claude/bin/ccp send-clear
 
-# Clear and restart with general continuation prompt (for non-/spec sessions)
-python3 .claude/scripts/helper.py send-clear --general
+# Trigger continuation with general prompt (for non-/spec sessions)
+.claude/bin/ccp send-clear --general
 
-# Clear and restart with /spec continuation prompt (for /spec sessions)
-python3 .claude/scripts/helper.py send-clear <plan-path>
+# Trigger continuation with /spec prompt (for /spec sessions)
+.claude/bin/ccp send-clear <plan-path>
 ```
 
 ## Important Notes

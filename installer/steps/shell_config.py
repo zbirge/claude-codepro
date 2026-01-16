@@ -1,4 +1,4 @@
-"""Shell config step - configures shell with ccp function, fzf, dotenv, and zsh."""
+"""Shell config step - configures shell with ccp alias, fzf, dotenv, and zsh."""
 
 from __future__ import annotations
 
@@ -12,152 +12,93 @@ from installer.steps.base import BaseStep
 if TYPE_CHECKING:
     from installer.context import InstallContext
 
-CCP_FUNCTION_MARKER = "# Claude CodePro function"
+CCP_ALIAS_MARKER = "# Claude CodePro alias"
 FZF_MARKER = "source <(fzf --zsh)"
 DOTENV_MARKER = "ZSH_DOTENV_PROMPT"
 QLTY_PATH_MARKER = "# qlty PATH"
 BUN_PATH_MARKER = "# bun PATH"
 
 
-def get_function_line(shell_type: str) -> str:
-    """Get the ccp function for the given shell type.
+def get_alias_line(shell_type: str) -> str:
+    """Get the alias line for the given shell type.
 
-    Creates a function that:
-    1. If current dir is CCP project (.claude/rules/ exists) → use it
+    Creates an alias that:
+    1. If current dir is CCP project (.claude/bin/ccp exists) → use it
     2. If in devcontainer (/workspaces exists) → find CCP project there
     3. Otherwise → show error
 
-    The function:
-    - Uses nvm to set Node.js 22
-    - Clears screen
-    - Runs Claude via wrapper.py for /spec command support
-    - Falls back to direct claude if wrapper not found
-    - Passes all arguments (like --continue) to the wrapper/claude
-
-    Note: Rules are now natively loaded by Claude Code from .claude/rules/*.md
+    The alias runs the ccp binary from the project's .claude/bin/ directory.
     """
-    claude_cmd = (
-        "if [ -f .claude/scripts/wrapper.py ]; then "
-        'dotenvx run -- python3 .claude/scripts/wrapper.py "$@"; '
-        'else dotenvx run -- claude "$@"; fi'
-    )
-    claude_cmd_fish = (
-        "if test -f .claude/scripts/wrapper.py; "
-        "dotenvx run -- python3 .claude/scripts/wrapper.py $argv; "
-        "else; dotenvx run -- claude $argv; end"
-    )
-
     if shell_type == "fish":
         return (
-            f"{CCP_FUNCTION_MARKER}\n"
-            "function ccp\n"
-            "    if test -d .claude/rules\n"
-            f"        nvm use 22; and clear; and {claude_cmd_fish}\n"
-            "    else if test -d /workspaces\n"
-            '        set ccp_dir ""\n'
-            "        for d in /workspaces/*/\n"
-            '            if test -d "$d.claude/rules"\n'
-            '                set ccp_dir "$d"\n'
-            "                break\n"
-            "            end\n"
-            "        end\n"
-            '        if test -n "$ccp_dir"\n'
-            f'            cd "$ccp_dir"; and nvm use 22; and clear; and {claude_cmd_fish}\n'
-            "        else\n"
-            '            echo "Error: No CCP project found in /workspaces"\n'
-            "        end\n"
-            "    else\n"
-            '        echo "Error: Not a Claude CodePro project. Please cd to a CCP-enabled project first."\n'
-            "    end\n"
-            "end"
+            f"{CCP_ALIAS_MARKER}\n"
+            "alias ccp='"
+            "if test -f .claude/bin/ccp; "
+            ".claude/bin/ccp; "
+            "else if test -d /workspaces; "
+            'set ccp_dir ""; for d in /workspaces/*/; test -f "$d.claude/bin/ccp"; and set ccp_dir "$d"; and break; end; '
+            'if test -n "$ccp_dir"; cd "$ccp_dir"; and .claude/bin/ccp; '
+            'else; echo "Error: No CCP project found in /workspaces"; end; '
+            "else; "
+            'echo "Error: Not a Claude CodePro project. Run the installer first or cd to a CCP-enabled project."; '
+            "end'"
         )
     else:
         return (
-            f"{CCP_FUNCTION_MARKER}\n"
-            "function ccp() {\n"
-            "    if [ -d .claude/rules ]; then\n"
-            f"        nvm use 22 && clear && {claude_cmd}\n"
-            "    elif [ -d /workspaces ]; then\n"
-            '        local ccp_dir=""\n'
-            "        for d in /workspaces/*/; do\n"
-            '            [ -d "$d.claude/rules" ] && ccp_dir="$d" && break\n'
-            "        done\n"
-            '        if [ -n "$ccp_dir" ]; then\n'
-            f'            cd "$ccp_dir" && nvm use 22 && clear && {claude_cmd}\n'
-            "        else\n"
-            '            echo "Error: No CCP project found in /workspaces"\n'
-            "        fi\n"
-            "    else\n"
-            '        echo "Error: Not a Claude CodePro project. Please cd to a CCP-enabled project first."\n'
-            "    fi\n"
-            "}"
+            f"{CCP_ALIAS_MARKER}\n"
+            "alias ccp='"
+            "if [ -f .claude/bin/ccp ]; then "
+            ".claude/bin/ccp; "
+            "elif [ -d /workspaces ]; then "
+            'ccp_dir=""; for d in /workspaces/*/; do [ -f "$d.claude/bin/ccp" ] && ccp_dir="$d" && break; done; '
+            'if [ -n "$ccp_dir" ]; then cd "$ccp_dir" && .claude/bin/ccp; '
+            'else echo "Error: No CCP project found in /workspaces"; fi; '
+            "else "
+            'echo "Error: Not a Claude CodePro project. Run the installer first or cd to a CCP-enabled project."; '
+            "fi'"
         )
 
 
-def ccp_exists_in_file(config_file: Path) -> bool:
-    """Check if ccp alias or function already exists in config file."""
+def alias_exists_in_file(config_file: Path) -> bool:
+    """Check if ccp alias already exists in config file."""
     if not config_file.exists():
         return False
     content = config_file.read_text()
-    return "alias ccp" in content or "function ccp" in content or CCP_FUNCTION_MARKER in content
+    return "alias ccp" in content or CCP_ALIAS_MARKER in content
 
 
-def remove_old_ccp(config_file: Path) -> bool:
-    """Remove old ccp alias/function from config file to allow clean update."""
+def remove_old_alias(config_file: Path) -> bool:
+    """Remove old ccp alias from config file to allow clean update."""
     if not config_file.exists():
         return False
 
     content = config_file.read_text()
-    has_marker = CCP_FUNCTION_MARKER in content
-    has_alias = "alias ccp" in content
-    has_function = "function ccp" in content
-
-    if not (has_marker or has_alias or has_function):
+    if CCP_ALIAS_MARKER not in content and "alias ccp" not in content:
         return False
 
     lines = content.split("\n")
     new_lines = []
-    in_function = False
-    brace_count = 0
+    skip_next = False
 
     for line in lines:
-        if CCP_FUNCTION_MARKER in line:
+        if CCP_ALIAS_MARKER in line:
+            skip_next = True
             continue
-
-        if line.strip().startswith("alias ccp="):
+        if skip_next and ("alias ccp" in line or line.strip().startswith("if [")):
+            if line.rstrip().endswith("'"):
+                skip_next = False
             continue
-
-        if "function ccp()" in line or line.strip().startswith("function ccp()"):
-            in_function = True
-            brace_count = line.count("{") - line.count("}")
-            continue
-
-        if line.strip() == "function ccp":
-            in_function = True
-            continue
-
-        if in_function:
-            if brace_count > 0:
-                brace_count += line.count("{") - line.count("}")
-                if brace_count <= 0:
-                    in_function = False
-                continue
-            if line.strip() == "end":
-                in_function = False
-                continue
-            continue
-
+        skip_next = False
         new_lines.append(line)
 
-    while new_lines and new_lines[-1].strip() == "":
-        new_lines.pop()
+    final_lines = []
+    for line in new_lines:
+        if line.strip().startswith("alias ccp="):
+            continue
+        final_lines.append(line)
 
-    config_file.write_text("\n".join(new_lines) + "\n")
+    config_file.write_text("\n".join(final_lines))
     return True
-
-
-alias_exists_in_file = ccp_exists_in_file
-remove_old_alias = remove_old_ccp
 
 
 def _configure_zsh_fzf(zshrc: Path, ui) -> bool:
@@ -299,6 +240,7 @@ class ShellConfigStep(BaseStep):
 
     def check(self, ctx: InstallContext) -> bool:
         """Always return False to ensure alias is updated on every install."""
+        _ = ctx
         return False
 
     def run(self, ctx: InstallContext) -> None:
@@ -336,11 +278,9 @@ class ShellConfigStep(BaseStep):
             alias_existed = alias_exists_in_file(config_file)
             if alias_existed:
                 remove_old_alias(config_file)
-                if ui:
-                    ui.info(f"Updating alias in {config_file.name}")
 
             shell_type = "fish" if "fish" in config_file.name else "bash"
-            alias_line = get_function_line(shell_type)
+            alias_line = get_alias_line(shell_type)
 
             try:
                 with open(config_file, "a") as f:
@@ -378,7 +318,7 @@ class ShellConfigStep(BaseStep):
                 skip_next = False
 
                 for line in lines:
-                    if CCP_FUNCTION_MARKER in line:
+                    if CCP_ALIAS_MARKER in line:
                         skip_next = True
                         continue
                     if skip_next and line.startswith("alias ccp"):

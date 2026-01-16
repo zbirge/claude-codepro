@@ -6,14 +6,13 @@
 
 Start shipping systematically with Endless Mode, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, Modular Rules System, and much more 🚀
 
-
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 ![Opus 4.5](https://img.shields.io/badge/Opus_4.5-Compatible-purple.svg)
 ![Endless Mode](https://img.shields.io/badge/Endless-Mode-red.svg)
 ![Spec-Driven](https://img.shields.io/badge/Spec-Driven-yellow.svg)
 ![TDD](https://img.shields.io/badge/TDD-Enforcement-green.svg)
+![License](https://img.shields.io/badge/License-AGPL--3.0%20%2F%20Commercial-blue.svg)
 
-#### ⭐ [Star this repository](https://github.com/zbirge/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/zbirge/) · ✉️ [Get in touch](mailto:zach@birge-consulting.com)
+#### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
 
 </div>
 
@@ -40,7 +39,7 @@ Choose your installation method:
 Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v4.10.1/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.6/install.sh | bash
 ```
 
 You'll be asked to choose between **Dev Container** or **Local Installation**.
@@ -60,6 +59,14 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 3. Wait for installation to finish then follow the post-setup instructions
 4. Reload your shell: `source ~/.zshrc` (or `~/.bashrc`)
 5. Run `ccp` to start Claude CodePro
+
+### Claude Subscription
+
+Claude CodePro is designed to be token-efficient, but quality has its cost. For the best experience, use:
+
+- **Claude Max 5x** — For individual developers with moderate usage
+- **Claude Max 20x** — For heavy usage or professional development
+- **Enterprise Plan** — For teams and organizations
 
 ---
 
@@ -173,40 +180,6 @@ Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/e
 
 **Pull Requests are welcome!** If you have new features, improvements, or bug fixes, feel free to open a PR.
 
-### Open Source (AGPL-3.0)
-
-Free for:
-- **Individuals** - Personal projects and learning
-- **Freelancers** - Client work and consulting
-- **Open Source Projects** - Projects that release source under AGPL-3.0
-
-If you find Claude CodePro useful, consider [sponsoring the project](https://github.com/sponsors/maxritter) to support continued development.
-
-### Commercial License
-
-**Companies using Claude CodePro in proprietary/closed-source products must obtain a commercial license.**
-
-This applies to:
-- Companies with closed-source software
-- Internal tools at companies that don't want to open-source
-- SaaS products using Claude CodePro
-
-**Contact:** [zach@birge-consulting.com](mailto:zach@birge-consulting.com) for commercial licensing inquiries.
-
----
-
-## 💼 Fork Maintainer
-
-This fork is maintained by **zbirge**.
-
-### Contact & Connect
-
-| | |
-|---|---|
-| ✉️ **Email** | [zach@birge-consulting.com](mailto:zach@birge-consulting.com) |
-| 💼 **LinkedIn** | [linkedin.com/in/zbirge](https://www.linkedin.com/in/zbirge/) |
-| 🐦 **Twitter** | [@zachbirge](https://twitter.com/zachbirge) |
-
 **Note:** Issues are disabled. This project evolves alongside my professional work as a freelancer, and I don't have the capacity to maintain a public issue tracker. If you want a feature or find a bug, the best way to contribute is to submit a PR.
 
 ---
@@ -218,12 +191,10 @@ This fork is maintained by **zbirge**.
 - **[scarletkc/vexor](https://github.com/scarletkc/vexor)** - CC Semantic code search capabilities
 - **[philschmid/mcp-cli](https://github.com/philschmid/mcp-cli)** - CC MCP Servers lazy loading
 - **[vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)** - Headless browser automation CLI
-- **[ManuelKugelmann/BitBot](https://github.com/ManuelKugelmann/BitBot)** - CC Wrapper control inspirations
 - **[upstash/context7](https://github.com/upstash/context7)** - Library code context retrieval
 - **[firecrawl/firecrawl](https://github.com/firecrawl/firecrawl)** - Web search and scraping tool
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
-- **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Automatic .env loading for Claude Code
 

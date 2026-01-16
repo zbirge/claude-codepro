@@ -426,14 +426,6 @@ def run_qlty_check(project_dir: Path, ui) -> bool:
         return False
 
 
-def install_dotenvx() -> bool:
-    """Install dotenvx (environment variable management) via native shell installer."""
-    if command_exists("dotenvx"):
-        return True
-
-    return _run_bash_with_retry("curl -sfS https://dotenvx.sh | sh")
-
-
 def _ensure_official_marketplace() -> bool:
     """Ensure official Claude plugins marketplace is installed."""
     if _is_marketplace_installed("claude-plugins-official"):
@@ -952,9 +944,6 @@ class DependenciesStep(BaseStep):
         else:
             if ui:
                 ui.warning("Could not install qlty - please install manually")
-
-        if _install_with_spinner(ui, "dotenvx", install_dotenvx):
-            installed.append("dotenvx")
 
         ctx.config["installed_dependencies"] = installed
 

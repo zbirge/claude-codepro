@@ -68,7 +68,7 @@ const Index = () => {
     <>
       <SEO
         title="Claude CodePro - Professional Development Environment for Claude Code"
-        description="Start shipping systematically with Automated Context Management, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, and more. Free for individuals, commercial license for companies."
+        description="Start shipping systematically with Automated Context Management, Spec-Driven Development, Skills, TDD, LSP, Semantic Search, Persistent Memory, Quality Hooks, and more. Free for personal use, students, and nonprofits."
         structuredData={[websiteStructuredData, breadcrumbStructuredData, softwareStructuredData]}
       />
       <NavBar />

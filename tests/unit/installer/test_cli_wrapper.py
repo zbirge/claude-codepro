@@ -1,128 +1,90 @@
-"""Unit tests for CLI wrapper integration."""
+"""Unit tests for CLI ccp binary integration."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 
-class TestRunWithWrapper:
-    """Tests for run_with_wrapper function."""
+class TestFindCcpBinary:
+    """Tests for find_ccp_binary function."""
 
-    def test_run_with_wrapper_calls_subprocess(self) -> None:
-        """run_with_wrapper launches wrapper.py via subprocess."""
-        from installer.cli import run_with_wrapper
+    def test_find_ccp_binary_returns_path_when_exists(self, tmp_path: Path) -> None:
+        """find_ccp_binary returns path when binary exists."""
+        from installer.cli import find_ccp_binary
 
-        with patch("installer.cli.subprocess.call") as mock_call:
-            mock_call.return_value = 0
+        with patch("installer.cli.Path.cwd", return_value=tmp_path):
+            bin_dir = tmp_path / ".claude" / "bin"
+            bin_dir.mkdir(parents=True)
+            (bin_dir / "ccp").touch()
 
-            run_with_wrapper(["--model", "opus"])
+            path = find_ccp_binary()
 
-            mock_call.assert_called_once()
-            call_args = mock_call.call_args[0][0]
+            assert path is not None
+            assert path.name == "ccp"
 
-            # Should call python with wrapper.py
-            assert "python" in call_args[0] or call_args[0].endswith("python3")
-            assert "wrapper.py" in call_args[1]
-            # Should pass through args
-            assert "--model" in call_args
-            assert "opus" in call_args
+    def test_find_ccp_binary_returns_none_when_missing(self, tmp_path: Path) -> None:
+        """find_ccp_binary returns None if binary doesn't exist."""
+        from installer.cli import find_ccp_binary
 
-    def test_run_with_wrapper_returns_exit_code(self) -> None:
-        """run_with_wrapper returns subprocess exit code."""
-        from installer.cli import run_with_wrapper
-
-        with patch("installer.cli.subprocess.call") as mock_call:
-            mock_call.return_value = 42
-
-            result = run_with_wrapper([])
-
-            assert result == 42
-
-
-class TestFindWrapperScript:
-    """Tests for find_wrapper_script function."""
-
-    def test_find_wrapper_script_returns_path(self) -> None:
-        """find_wrapper_script returns path to wrapper.py."""
-        from installer.cli import find_wrapper_script
-
-        path = find_wrapper_script()
-
-        assert path is not None
-        assert path.name == "wrapper.py"
-        assert ".claude/scripts" in str(path)
-
-    def test_find_wrapper_script_checks_existence(self) -> None:
-        """find_wrapper_script returns None if wrapper doesn't exist."""
-        from installer.cli import find_wrapper_script
-
-        with patch("installer.cli.Path.exists", return_value=False):
-            # This test is tricky - we need to mock the existence check
-            # Let's test differently
-            pass
+        with patch("installer.cli.Path.cwd", return_value=tmp_path):
+            path = find_ccp_binary()
+            assert path is None
 
 
 class TestLaunchCommand:
     """Tests for launch CLI command."""
 
-    def test_launch_uses_wrapper_by_default(self) -> None:
-        """launch command uses wrapper by default."""
-        from installer.cli import launch
+    def test_launch_uses_ccp_binary_when_available(self, tmp_path: Path) -> None:
+        """launch command uses ccp binary when available."""
+        from typer.testing import CliRunner
 
-        with patch("installer.cli.run_with_wrapper") as mock_wrapper:
-            with patch("installer.cli.find_wrapper_script") as mock_find:
-                mock_find.return_value = Path("/fake/wrapper.py")
-                mock_wrapper.return_value = 0
-
-                # Simulate CLI invocation
-                from typer.testing import CliRunner
-
-                from installer.cli import app
-
-                runner = CliRunner()
-                runner.invoke(app, ["launch"])
-
-                # Should have called run_with_wrapper
-                mock_wrapper.assert_called_once()
-
-    def test_launch_with_no_wrapper_flag(self) -> None:
-        """launch --no-wrapper bypasses wrapper."""
-        from installer.cli import launch
+        from installer.cli import app
 
         with patch("installer.cli.subprocess.call") as mock_call:
-            mock_call.return_value = 0
-
-            from typer.testing import CliRunner
-
-            from installer.cli import app
-
-            runner = CliRunner()
-            runner.invoke(app, ["launch", "--no-wrapper"])
-
-            # Should call claude directly
-            call_args = mock_call.call_args[0][0]
-            assert call_args[0] == "claude"
-
-    def test_launch_passes_extra_args(self) -> None:
-        """launch passes extra arguments to claude."""
-        from installer.cli import launch
-
-        with patch("installer.cli.run_with_wrapper") as mock_wrapper:
-            with patch("installer.cli.find_wrapper_script") as mock_find:
-                mock_find.return_value = Path("/fake/wrapper.py")
-                mock_wrapper.return_value = 0
-
-                from typer.testing import CliRunner
-
-                from installer.cli import app
+            with patch("installer.cli.find_ccp_binary") as mock_find:
+                mock_find.return_value = tmp_path / ".claude" / "bin" / "ccp"
+                mock_call.return_value = 0
 
                 runner = CliRunner()
-                runner.invoke(app, ["launch", "--", "--model", "opus"])
+                result = runner.invoke(app, ["launch"])
 
-                # Args should be passed through
-                call_args = mock_wrapper.call_args[0][0]
+                mock_call.assert_called_once()
+                call_args = mock_call.call_args[0][0]
+                assert "ccp" in str(call_args[0])
+
+    def test_launch_falls_back_to_claude_when_no_binary(self) -> None:
+        """launch falls back to claude when binary not found."""
+        from typer.testing import CliRunner
+
+        from installer.cli import app
+
+        with patch("installer.cli.subprocess.call") as mock_call:
+            with patch("installer.cli.find_ccp_binary", return_value=None):
+                mock_call.return_value = 0
+
+                runner = CliRunner()
+                result = runner.invoke(app, ["launch"])
+
+                call_args = mock_call.call_args[0][0]
+                assert call_args[0] == "claude"
+
+    def test_launch_passes_extra_args(self, tmp_path: Path) -> None:
+        """launch passes extra arguments to claude."""
+        from typer.testing import CliRunner
+
+        from installer.cli import app
+
+        with patch("installer.cli.subprocess.call") as mock_call:
+            with patch("installer.cli.find_ccp_binary") as mock_find:
+                mock_find.return_value = tmp_path / ".claude" / "bin" / "ccp"
+                mock_call.return_value = 0
+
+                runner = CliRunner()
+                result = runner.invoke(app, ["launch", "--", "--model", "opus"])
+
+                call_args = mock_call.call_args[0][0]
                 assert "--model" in call_args
                 assert "opus" in call_args

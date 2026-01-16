@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -12,7 +12,7 @@ from typing import Optional
 import typer
 
 from installer import __build__
-from installer.config import acknowledge_license, is_license_acknowledged, load_config, save_config
+from installer.config import load_config, save_config
 from installer.context import InstallContext
 from installer.errors import FatalInstallError
 from installer.steps.base import BaseStep
@@ -47,6 +47,113 @@ def get_all_steps() -> list[BaseStep]:
         VSCodeExtensionsStep(),
         FinalizeStep(),
     ]
+
+
+def _register_email(
+    console: Console,
+    project_dir: Path,
+    email: str,
+    tier: str,
+    subscribe: bool,
+    local_mode: bool,
+    local_repo_dir: Path | None,
+) -> bool:
+    """Register email for free/trial license using ccp binary."""
+    bin_path = project_dir / ".claude" / "bin" / "ccp"
+
+    if local_mode and local_repo_dir:
+        local_bin = local_repo_dir / ".claude" / "bin" / "ccp"
+        if local_bin.exists():
+            bin_path = local_bin
+
+    if not bin_path.exists():
+        console.error("CCP binary not found - cannot register")
+        return False
+
+    cmd = [str(bin_path), "register", email, "--tier", tier, "--json"]
+    if not subscribe:
+        cmd.append("--no-subscribe")
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        return True
+    else:
+        console.error("Registration failed")
+        if result.stderr:
+            console.print(f"  [dim]{result.stderr.strip()}[/dim]")
+        return False
+
+
+def _validate_license_key(
+    console: Console,
+    project_dir: Path,
+    license_key: str,
+    local_mode: bool,
+    local_repo_dir: Path | None,
+) -> bool:
+    """Validate license key using ccp binary."""
+    bin_path = project_dir / ".claude" / "bin" / "ccp"
+
+    if local_mode and local_repo_dir:
+        local_bin = local_repo_dir / ".claude" / "bin" / "ccp"
+        if local_bin.exists():
+            bin_path = local_bin
+
+    if not bin_path.exists():
+        console.warning("CCP binary not found - skipping license validation")
+        console.info("License will be validated on first run")
+        return True
+
+    result = subprocess.run(
+        [str(bin_path), "activate", license_key, "--json"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        console.print()
+        console.success("License activated successfully!")
+        console.print()
+        return True
+    else:
+        console.print()
+        console.error("License validation failed")
+        if result.stderr:
+            console.print(f"  [dim]{result.stderr.strip()}[/dim]")
+        console.print()
+        return False
+
+
+def _get_license_info(project_dir: Path, local: bool = False, local_repo_dir: Path | None = None) -> dict | None:
+    """Get current license information using ccp binary.
+
+    Returns dict with: tier, email, created_at, expires_at, days_remaining, is_expired
+    or None if no license exists or ccp binary not found.
+    """
+    bin_path = project_dir / ".claude" / "bin" / "ccp"
+    if not bin_path.exists() and local and local_repo_dir:
+        local_bin = local_repo_dir / ".claude" / "bin" / "ccp"
+        if local_bin.exists():
+            bin_path = local_bin
+
+    if not bin_path.exists():
+        return None
+
+    try:
+        result = subprocess.run(
+            [str(bin_path), "status", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        output = result.stdout.strip() or result.stderr.strip()
+        if output:
+            data = json.loads(output)
+            if not data.get("success", True) and "expired" in data.get("error", "").lower():
+                data["is_expired"] = True
+            return data
+    except (subprocess.SubprocessError, json.JSONDecodeError):
+        pass
+    return None
 
 
 def rollback_completed_steps(ctx: InstallContext, steps: list[BaseStep]) -> None:
@@ -115,87 +222,198 @@ def install(
     project_dir = Path.cwd()
     saved_config = load_config(project_dir)
 
-    if not skip_prompts and not is_license_acknowledged():
+    license_info = _get_license_info(project_dir, local, effective_local_repo_dir)
+    license_acknowledged = license_info is not None and license_info.get("tier") in ("free", "trial", "commercial")
+
+    if not skip_prompts and license_acknowledged and license_info:
+        console.print()
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print("  [bold]📜 Current License[/bold]")
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print()
+
+        tier = license_info.get("tier", "unknown")
+        email = license_info.get("email", "")
+        created_at = license_info.get("created_at", "")
+        expires_at = license_info.get("expires_at")
+        is_expired = license_info.get("is_expired", False)
+        days_remaining = license_info.get("days_remaining")
+
+        if tier == "free":
+            console.print("  [bold green]Tier: Free[/bold green] (personal/student/nonprofit/OSS)")
+        elif tier == "trial":
+            if is_expired:
+                console.print("  [bold red]Tier: Trial (EXPIRED)[/bold red]")
+            else:
+                console.print(f"  [bold yellow]Tier: Trial[/bold yellow] ({days_remaining} days remaining)")
+        elif tier == "commercial":
+            console.print("  [bold green]Tier: Commercial[/bold green]")
+
+        if email:
+            console.print(f"  Email: {email}")
+
+        if created_at:
+            try:
+                created_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                console.print(f"  Registered: {created_dt.strftime('%Y-%m-%d')}")
+            except (ValueError, AttributeError):
+                pass
+
+        if expires_at and tier == "trial":
+            try:
+                expires_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                label = "Expired" if is_expired else "Expires"
+                console.print(f"  {label}: {expires_dt.strftime('%Y-%m-%d')}")
+            except (ValueError, AttributeError):
+                pass
+
+        console.print()
+
+        if tier == "trial" and is_expired:
+            console.print("  [bold red]Your trial has expired.[/bold red]")
+            console.print()
+            console.print("  [bold]Enter your license key to continue:[/bold]")
+            console.print("  [dim]Purchase at: https://license.claude-code.pro[/dim]")
+            console.print()
+
+            for attempt in range(3):
+                license_key = console.input("License key").strip()
+                if not license_key:
+                    console.error("License key is required")
+                    continue
+
+                console.status("Validating license key...")
+                validated = _validate_license_key(console, project_dir, license_key, local, effective_local_repo_dir)
+                if validated:
+                    break
+                if attempt < 2:
+                    console.print("  [dim]Please check your license key and try again.[/dim]")
+            else:
+                console.error("License validation failed after 3 attempts.")
+                console.print("  [bold]Purchase a license at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                raise typer.Exit(1)
+
+            console.print()
+        elif tier == "free":
+            console.print(
+                "  [bold yellow]Upgrade to Commercial:[/bold yellow] [cyan]https://license.claude-code.pro[/cyan]"
+            )
+            console.print()
+
+        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+        console.print()
+
+    elif not skip_prompts and not license_acknowledged:
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print("  [bold]📜 License Agreement[/bold]")
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
         console.print("  Claude CodePro is [bold green]FREE[/bold green] for:")
-        console.print("    • Individuals (personal projects, learning)")
-        console.print("    • Freelancers (client work, consulting)")
-        console.print("    • Open Source Projects (AGPL-3.0 compatible)")
+        console.print("    • Personal use")
+        console.print("    • Students and educators")
+        console.print("    • Nonprofit organizations")
+        console.print("    • Open source projects (AGPL-3.0 compatible)")
         console.print()
         console.print("  [bold yellow]Commercial License REQUIRED[/bold yellow] for:")
-        console.print("    • Companies with closed-source/proprietary software")
-        console.print("    • Internal tools at companies not willing to open-source")
-        console.print("    • SaaS products using Claude CodePro")
+        console.print("    • Companies and organizations")
+        console.print("    • Freelancers and agencies")
+        console.print("    • SaaS products and internal tools")
+        console.print("    • Any revenue-generating use")
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
-        console.print("  [bold]💡 Why Support Claude CodePro?[/bold]")
+        console.print("  [bold]💡 What's Included with a Commercial License?[/bold]")
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
-        console.print("  Your license supports continuous development of:")
-        console.print("    ✨ Pre-configured professional development environment")
-        console.print("    ✨ Endless Mode for unlimited context sessions")
-        console.print("    ✨ TDD enforcement, quality hooks, and LSP integration")
-        console.print("    ✨ Semantic search, persistent memory, and MCP servers")
-        console.print("    ✨ Regular updates with latest Claude Code best practices")
+        console.print("    • You can modify Claude CodePro to fit your own workflow and requirements")
+        console.print("    • Continuous updates and improvements for the duration of your subscription")
+        console.print("    • Anything you generate using Claude CodePro is yours to use commercially forever")
         console.print()
-        console.print("  [dim]Save your team countless hours of setup, configuration,[/dim]")
-        console.print("  [dim]and keeping up with the rapidly evolving AI tooling landscape.[/dim]")
+        console.print("  [bold yellow]Subscribe:[/bold yellow] [bold cyan]https://license.claude-code.pro[/bold cyan]")
+        console.print()
+        console.print("  [dim]License terms: https://claude-code.pro/#licensing[/dim]")
+        console.print("  [dim]Full license: https://github.com/maxritter/claude-codepro/blob/main/LICENSE[/dim]")
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
 
         license_choices = [
-            "Free tier (individual/freelancer/open-source)",
-            "Commercial - I want to evaluate first",
-            "Commercial - I need a license",
+            "Free tier (personal/student/nonprofit/open-source)",
+            "Commercial - 7 day trial",
+            "Commercial - I have a license key",
         ]
         choice = console.select("How will you use Claude CodePro?", license_choices)
 
         if choice == license_choices[2]:
             console.print()
-            console.print("  [bold]To obtain a commercial license, please contact:[/bold]")
-            console.print()
-            console.print("  [bold cyan]✉️  mail@maxritter.net[/bold cyan]")
-            console.print()
-            console.print("  [dim]Include your company name and expected number of users.[/dim]")
-            console.print()
-            raise typer.Exit(0)
+            for attempt in range(3):
+                license_key = console.input("Enter your license key").strip()
+                if not license_key:
+                    console.error("License key is required")
+                    if attempt < 2:
+                        console.print("  [dim]Please try again.[/dim]")
+                    continue
 
-        use_type = "free" if choice == license_choices[0] else "commercial_eval"
+                console.status("Validating license key...")
+                validated = _validate_license_key(console, project_dir, license_key, local, effective_local_repo_dir)
+                if validated:
+                    use_type = "commercial"
+                    break
+                else:
+                    if attempt < 2:
+                        console.print()
+                        console.print("  [dim]Please check your license key and try again.[/dim]")
+                        console.print("  [dim]Purchase at: https://license.claude-code.pro[/dim]")
+                        console.print()
+            else:
+                console.print()
+                console.error("License validation failed after 3 attempts.")
+                console.print("  [bold]Purchase a license at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                console.print()
+                raise typer.Exit(1)
+        elif choice == license_choices[1]:
+            use_type = "commercial_trial"
+        else:
+            use_type = "free"
 
-        if use_type == "commercial_eval":
+        if use_type != "commercial":
             console.print()
-            console.print("  [bold green]✓ Evaluation mode enabled[/bold green]")
+            console.print("  Enter your email to register:")
+            console.print("  [dim](Your email is only stored locally in your license file.[/dim]")
+            console.print("  [dim]We won't spam you or share it anywhere.)[/dim]")
             console.print()
-            console.print("  You may proceed with installation to evaluate Claude CodePro.")
-            console.print("  [bold yellow]Please acquire a license before production use.[/bold yellow]")
+            email = console.input("Email").strip()
+
+            if not email or "@" not in email:
+                console.print()
+                console.error("Valid email required for registration.")
+                raise typer.Exit(1)
+
             console.print()
-            console.print("  [bold]Contact:[/bold] [cyan]mail@maxritter.net[/cyan]")
-            console.print()
+            subscribe = console.confirm("Subscribe to newsletter for updates?", default=True)
 
-        console.print("  [bold]Please type the following to confirm:[/bold]")
-        console.print()
-        console.print('  [cyan]"I acknowledge the Claude CodePro license terms"[/cyan]')
-        console.print()
+            tier = "trial" if use_type == "commercial_trial" else "free"
+            registered = _register_email(console, project_dir, email, tier, subscribe, local, effective_local_repo_dir)
 
-        confirmation = console.input("Your confirmation").strip().lower()
-        expected = "i acknowledge the claude codepro license terms"
-
-        if confirmation != expected:
-            console.print()
-            console.error("Confirmation text did not match. Installation cancelled.")
-            console.print("  [dim]Please type the exact phrase shown above.[/dim]")
-            raise typer.Exit(1)
-
-        console.print()
-        console.success("License terms acknowledged. Thank you!")
-        console.print()
-
-        acknowledge_license(use_type)
+            if registered:
+                console.print()
+                console.success("Registered successfully!")
+                tier_display = (
+                    "7-day Trial" if use_type == "commercial_trial" else "Free (personal/student/nonprofit/OSS)"
+                )
+                console.print(f"  Tier: {tier_display}")
+                console.print(f"  Email: {email}")
+                if subscribe:
+                    console.print()
+                    console.print("  [dim]Please confirm your newsletter subscription.[/dim]")
+                    console.print("  [dim]Check your email for a message from Gumroad (check spam folder).[/dim]")
+                if use_type == "commercial_trial":
+                    console.print()
+                    console.print(
+                        "  [bold yellow]Please purchase a license within 7 days for continued use.[/bold yellow]"
+                    )
+                    console.print("  [bold]Purchase:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                console.print()
 
     claude_dir = Path.cwd() / ".claude"
     if claude_dir.exists() and not skip_prompts:
@@ -206,7 +424,7 @@ def install(
         console.print("    • .claude/commands/")
         console.print("    • .claude/hooks/")
         console.print("    • .claude/skills/")
-        console.print("    • .claude/scripts/")
+        console.print("    • .claude/bin/")
         console.print("    • .claude/rules/standard/")
         console.print("    • .claude/settings.json")
         console.print()
@@ -355,44 +573,28 @@ def version() -> None:
     typer.echo(f"ccp-installer (build: {__build__})")
 
 
-def find_wrapper_script() -> Path | None:
-    """Find the wrapper.py script in .claude/scripts/."""
-    wrapper_path = Path.cwd() / ".claude" / "scripts" / "wrapper.py"
-    if wrapper_path.exists():
-        return wrapper_path
-
-    module_path = Path(__file__).parent.parent / ".claude" / "scripts" / "wrapper.py"
-    if module_path.exists():
-        return module_path
-
+def find_ccp_binary() -> Path | None:
+    """Find the ccp binary in .claude/bin/."""
+    binary_path = Path.cwd() / ".claude" / "bin" / "ccp"
+    if binary_path.exists():
+        return binary_path
     return None
-
-
-def run_with_wrapper(args: list[str]) -> int:
-    """Run Claude via the wrapper script."""
-    wrapper_path = find_wrapper_script()
-    if wrapper_path is None:
-        typer.echo("Error: wrapper.py not found in .claude/scripts/", err=True)
-        return 1
-
-    cmd = [sys.executable, str(wrapper_path)] + args
-    return subprocess.call(cmd)
 
 
 @app.command()
 def launch(
-    no_wrapper: bool = typer.Option(False, "--no-wrapper", help="Bypass wrapper, run claude directly"),
     args: Optional[list[str]] = typer.Argument(None, help="Arguments to pass to claude"),
 ) -> None:
-    """Launch Claude Code (via wrapper by default)."""
+    """Launch Claude Code via ccp binary."""
     claude_args = args or []
 
-    if no_wrapper:
-        cmd = ["claude"] + claude_args
-        exit_code = subprocess.call(cmd)
+    ccp_path = find_ccp_binary()
+    if ccp_path:
+        cmd = [str(ccp_path)] + claude_args
     else:
-        exit_code = run_with_wrapper(claude_args)
+        cmd = ["claude"] + claude_args
 
+    exit_code = subprocess.call(cmd)
     raise typer.Exit(exit_code)
 
 

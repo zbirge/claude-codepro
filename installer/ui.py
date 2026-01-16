@@ -145,13 +145,13 @@ class Console:
         license_text = Text()
         license_text.append("  📜 ", style="yellow")
         license_text.append("Dual License: ", style="bold white")
-        license_text.append("Free for individuals, freelancers & open source (AGPL-3.0)\n", style="green")
+        license_text.append("Free for personal use, students, nonprofits & open source (AGPL-3.0)\n", style="green")
         license_text.append("     ", style="white")
-        license_text.append("Companies with proprietary software require a ", style="dim white")
+        license_text.append("Commercial use requires a ", style="dim white")
         license_text.append("commercial license", style="bold yellow")
         license_text.append(".\n", style="dim white")
-        license_text.append("     Contact: ", style="dim white")
-        license_text.append("zach@birge-consulting.com", style="cyan")
+        license_text.append("     Get license: ", style="dim white")
+        license_text.append("https://license.claude-code.pro", style="cyan")
         self._console.print(license_text)
         self._console.print()
 
@@ -336,23 +336,28 @@ class Console:
         self._console.print(f"  [bold cyan]?[/bold cyan] {message}")
         for i, choice in enumerate(choices, 1):
             self._console.print(f"    [bold magenta]{i}.[/bold magenta] {choice}")
-        self._console.print(f"  Enter choice [1-{len(choices)}]: ", end="")
 
-        try:
-            tty = self._get_input_stream()
-            response = tty.readline().strip()
-        except (EOFError, KeyboardInterrupt, OSError):
-            self._console.print()
-            return choices[0] if choices else ""
+        while True:
+            self._console.print(f"  Enter choice [1-{len(choices)}]: ", end="")
 
-        try:
-            idx = int(response) - 1
-            if 0 <= idx < len(choices):
-                return choices[idx]
-        except ValueError:
-            pass
+            try:
+                tty = self._get_input_stream()
+                response = tty.readline().strip()
+            except (EOFError, KeyboardInterrupt, OSError):
+                self._console.print()
+                raise SystemExit(1)
 
-        return choices[0] if choices else ""
+            if not response:
+                continue
+
+            try:
+                idx = int(response) - 1
+                if 0 <= idx < len(choices):
+                    return choices[idx]
+            except ValueError:
+                pass
+
+            self._console.print(f"  [yellow]Please enter a number between 1 and {len(choices)}[/yellow]")
 
     def input(self, message: str, default: str = "") -> str:
         """Prompt for text input."""

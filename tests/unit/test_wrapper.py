@@ -14,7 +14,7 @@ class TestClaudeWrapper:
 
     def test_wrapper_creates_pipe_directory(self, tmp_path: Path) -> None:
         """Wrapper creates pipe directory if it doesn't exist."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -23,7 +23,7 @@ class TestClaudeWrapper:
 
     def test_wrapper_creates_named_pipe(self, tmp_path: Path) -> None:
         """Wrapper creates a named pipe file."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -34,7 +34,7 @@ class TestClaudeWrapper:
 
     def test_wrapper_exports_pipe_env_var(self, tmp_path: Path) -> None:
         """Wrapper sets WRAPPER_PIPE environment variable."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -46,7 +46,7 @@ class TestClaudeWrapper:
 
     def test_wrapper_cleanup_removes_pipe(self, tmp_path: Path) -> None:
         """Wrapper cleans up pipe on exit."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -59,7 +59,7 @@ class TestClaudeWrapper:
 
     def test_handle_clear_command(self, tmp_path: Path) -> None:
         """Wrapper handles 'clear' command by setting restart flags."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -77,7 +77,7 @@ class TestClaudeWrapper:
 
     def test_handle_clear_continue_command(self, tmp_path: Path) -> None:
         """Wrapper handles 'clear-continue <plan>' command by setting restart flags."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -94,7 +94,7 @@ class TestClaudeWrapper:
 
     def test_handle_exit_command(self, tmp_path: Path) -> None:
         """Wrapper handles 'exit' command by setting shutdown flag."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
@@ -109,7 +109,7 @@ class TestClaudeWrapper:
 
     def test_wrapper_passes_args_to_claude(self, tmp_path: Path) -> None:
         """Wrapper passes arguments to claude command."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=["--model", "opus", "--verbose"], pipe_dir=pipe_dir)
@@ -122,7 +122,7 @@ class TestWrapperIntegration:
 
     def test_pipe_receives_commands(self, tmp_path: Path) -> None:
         """Test that pipe can receive and process commands."""
-        from scripts.wrapper import ClaudeWrapper
+        from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
