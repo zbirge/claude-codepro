@@ -21,15 +21,6 @@
         "type": "separator"
       },
       {
-        "id": "3",
-        "type": "context-percentage",
-        "color": "brightRed"
-      },
-      {
-        "id": "4",
-        "type": "separator"
-      },
-      {
         "id": "5",
         "type": "git-branch",
         "color": "brightWhite"

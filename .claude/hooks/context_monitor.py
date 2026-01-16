@@ -8,8 +8,9 @@ import sys
 import time
 from pathlib import Path
 
-THRESHOLD_WARN = 80
-THRESHOLD_STOP = 90
+EFFECTIVE_LIMIT = 133000
+THRESHOLD_WARN = 75
+THRESHOLD_STOP = 85
 
 CACHE_FILE = Path("/tmp/.claude_context_cache.json")
 CACHE_TTL = 30
@@ -124,7 +125,7 @@ def run_context_monitor() -> int:
         total_tokens = actual_tokens
         save_cache(total_tokens, session_id)
 
-    percentage = (total_tokens / 200000) * 100
+    percentage = (total_tokens / EFFECTIVE_LIMIT) * 100
 
     if percentage >= THRESHOLD_STOP:
         print("", file=sys.stderr)

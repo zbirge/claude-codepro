@@ -480,19 +480,44 @@ def install_pyright_lsp() -> bool:
 
 
 def _configure_claude_mem_defaults(project_dir: Path | None = None) -> bool:
-    """Configure Claude Mem with recommended defaults.
+    """Configure Claude Mem with recommended defaults and create symlink for project persistence.
 
     Args:
-        project_dir: If provided, sets CLAUDE_MEM_DATA_DIR to project's context/claude-mem
-                     directory for persistence across container rebuilds.
+        project_dir: If provided, creates a symlink from ~/.claude-mem to project's
+                     context/claude-mem directory for persistence across container rebuilds.
     """
     import json
+    import shutil
 
-    settings_dir = Path.home() / ".claude-mem"
-    settings_path = settings_dir / "settings.json"
+    home_claude_mem = Path.home() / ".claude-mem"
 
     try:
-        settings_dir.mkdir(parents=True, exist_ok=True)
+        if project_dir is not None:
+            project_claude_mem = project_dir / "context" / "claude-mem"
+            project_claude_mem.mkdir(parents=True, exist_ok=True)
+
+            if home_claude_mem.exists() and not home_claude_mem.is_symlink():
+                existing_settings = home_claude_mem / "settings.json"
+                if existing_settings.exists():
+                    project_settings = project_claude_mem / "settings.json"
+                    if not project_settings.exists():
+                        shutil.copy2(existing_settings, project_settings)
+                shutil.rmtree(home_claude_mem)
+
+            if home_claude_mem.is_symlink():
+                current_target = home_claude_mem.resolve()
+                if current_target != project_claude_mem.resolve():
+                    home_claude_mem.unlink()
+                    home_claude_mem.symlink_to(project_claude_mem)
+            elif not home_claude_mem.exists():
+                home_claude_mem.symlink_to(project_claude_mem)
+
+            settings_dir = project_claude_mem
+        else:
+            home_claude_mem.mkdir(parents=True, exist_ok=True)
+            settings_dir = home_claude_mem
+
+        settings_path = settings_dir / "settings.json"
 
         if settings_path.exists():
             settings = json.loads(settings_path.read_text())
@@ -513,9 +538,7 @@ def _configure_claude_mem_defaults(project_dir: Path | None = None) -> bool:
         )
 
         if project_dir is not None:
-            claude_mem_data_dir = project_dir / "context" / "claude-mem"
-            claude_mem_data_dir.mkdir(parents=True, exist_ok=True)
-            settings["CLAUDE_MEM_DATA_DIR"] = str(claude_mem_data_dir)
+            settings["CLAUDE_MEM_DATA_DIR"] = str(project_dir / "context" / "claude-mem")
 
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
         return True

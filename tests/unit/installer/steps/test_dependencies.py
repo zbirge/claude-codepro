@@ -644,6 +644,119 @@ class TestPyrightLspInstall:
         assert "claude plugin install pyright-lsp" in third_call[2]
 
 
+class TestClaudeMemSymlink:
+    """Test claude-mem symlink creation for project persistence."""
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_creates_symlink_to_project_context(self, mock_run):
+        """install_claude_mem creates symlink from ~/.claude-mem to project context."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+            home_dir = Path(tmpdir) / "home"
+            home_dir.mkdir()
+
+            with patch.object(Path, "home", return_value=home_dir):
+                install_claude_mem(project_dir)
+
+            # Check that ~/.claude-mem is a symlink pointing to project context
+            claude_mem_link = home_dir / ".claude-mem"
+            expected_target = project_dir / "context" / "claude-mem"
+            assert claude_mem_link.is_symlink()
+            assert claude_mem_link.resolve() == expected_target.resolve()
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_migrates_existing_directory(self, mock_run):
+        """install_claude_mem migrates existing ~/.claude-mem directory to symlink."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+            home_dir = Path(tmpdir) / "home"
+            home_dir.mkdir()
+
+            # Create existing ~/.claude-mem with settings.json
+            existing_claude_mem = home_dir / ".claude-mem"
+            existing_claude_mem.mkdir()
+            existing_settings = existing_claude_mem / "settings.json"
+            existing_settings.write_text('{"existing": "setting"}')
+
+            with patch.object(Path, "home", return_value=home_dir):
+                install_claude_mem(project_dir)
+
+            # Check symlink was created
+            assert existing_claude_mem.is_symlink()
+
+            # Check settings were preserved in project context
+            project_settings = project_dir / "context" / "claude-mem" / "settings.json"
+            assert project_settings.exists()
+            settings = json.loads(project_settings.read_text())
+            # Should have merged settings (existing + new defaults)
+            assert "CLAUDE_MEM_MODEL" in settings  # New default
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_replaces_wrong_symlink(self, mock_run):
+        """install_claude_mem replaces symlink pointing to wrong location."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+            home_dir = Path(tmpdir) / "home"
+            home_dir.mkdir()
+
+            # Create symlink pointing to wrong location
+            wrong_target = Path(tmpdir) / "wrong_location"
+            wrong_target.mkdir()
+            claude_mem_link = home_dir / ".claude-mem"
+            claude_mem_link.symlink_to(wrong_target)
+
+            with patch.object(Path, "home", return_value=home_dir):
+                install_claude_mem(project_dir)
+
+            # Check symlink now points to correct location
+            expected_target = project_dir / "context" / "claude-mem"
+            assert claude_mem_link.is_symlink()
+            assert claude_mem_link.resolve() == expected_target.resolve()
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_idempotent_with_correct_symlink(self, mock_run):
+        """install_claude_mem is idempotent when correct symlink exists."""
+        from installer.steps.dependencies import install_claude_mem
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir) / "my_project"
+            project_dir.mkdir()
+            home_dir = Path(tmpdir) / "home"
+            home_dir.mkdir()
+
+            # Create correct symlink ahead of time
+            context_dir = project_dir / "context" / "claude-mem"
+            context_dir.mkdir(parents=True)
+            claude_mem_link = home_dir / ".claude-mem"
+            claude_mem_link.symlink_to(context_dir)
+
+            with patch.object(Path, "home", return_value=home_dir):
+                # Call multiple times
+                install_claude_mem(project_dir)
+                install_claude_mem(project_dir)
+
+            # Symlink should still be correct
+            assert claude_mem_link.is_symlink()
+            assert claude_mem_link.resolve() == context_dir.resolve()
+
+
 class TestClaudeMemInstall:
     """Test claude-mem plugin installation."""
 
