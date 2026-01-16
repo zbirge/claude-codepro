@@ -52,6 +52,7 @@ def print_banner() -> None:
     print()
     print('  📋 Spec-Driven  /spec "your task" → Plan, approve, implement, verify')
     print("  ⚡ Quick Mode   Just chat → For bug fixes and small changes")
+    print("  💾 Resume       ccp --continue → Pick up where you left off")
     print()
     print("  ♾️  Endless Mode works in both - unlimited context automatically")
     print()
@@ -144,10 +145,12 @@ class ClaudeWrapper:
         self,
         claude_args: list[str],
         pipe_dir: Path | None = None,
+        continue_session: bool = False,
     ) -> None:
         """Initialize wrapper with claude arguments."""
         self.logger = get_logger()
         self.claude_args = claude_args
+        self.continue_session = continue_session
         self.pipe_dir = pipe_dir or self._default_pipe_dir()
         self.pipe_path: Path = self.pipe_dir / f"claude-{os.getpid()}.pipe"
         self.claude_process: subprocess.Popen[bytes] | None = None
@@ -260,6 +263,43 @@ class ClaudeWrapper:
                 self.claude_process.kill()
                 self.claude_process.wait()
                 self.logger.info(f"Claude {pid} force killed")
+
+    def _build_continuation_prompt(self) -> str:
+        """Build the continuation prompt based on whether a continuation file exists."""
+        continuation_file = Path("/tmp/claude-continuation.md")
+        if continuation_file.exists():
+            return (
+                "CONTINUING FROM PREVIOUS SESSION. "
+                "First, read /tmp/claude-continuation.md for session context. "
+                "Also check Claude Mem for recent session observations. "
+                "Start by saying: 'Resuming previous session...' then proceed with the work."
+            )
+        else:
+            print("  ⚠  No continuation file found at /tmp/claude-continuation.md")
+            return (
+                "CONTINUING FROM PREVIOUS SESSION (no saved state found). "
+                "Check Claude Mem for recent session observations. "
+                "Start by saying: 'Resuming - checking for context...' then ask the user what they'd like to continue."
+            )
+
+    def _save_session_state(self) -> None:
+        """Save generic session state for continuation with ccp --continue."""
+        continuation_file = Path("/tmp/claude-continuation.md")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        content = f"""# Session Continuation (Auto-saved)
+
+**Saved:** {timestamp}
+**Type:** Automatic save on exit
+
+## How to Resume
+
+Claude Mem should have context from your previous session.
+Check for recent observations about your work.
+
+If you need more context, ask the user what they were working on.
+"""
+        continuation_file.write_text(content)
+        self.logger.info(f"Session state saved to {continuation_file}")
 
     def _start_claude(self, prompt: str | None = None) -> None:
         """Start a new Claude process."""
@@ -427,7 +467,10 @@ class ClaudeWrapper:
                 self._restart_pending = False
 
             if first_run:
-                self._start_claude(prompt=None)
+                if self.continue_session:
+                    self._start_claude(prompt=self._build_continuation_prompt())
+                else:
+                    self._start_claude(prompt=None)
                 first_run = False
             else:
                 self._start_claude(prompt=prompt)
@@ -465,6 +508,7 @@ class ClaudeWrapper:
 
                 self._consecutive_crashes = 0
                 self.logger.info("Claude exited normally")
+                self._save_session_state()
                 break
 
         self._running = False
@@ -480,9 +524,12 @@ class ClaudeWrapper:
 
 def main() -> int:
     """Main entry point for wrapper script."""
-    claude_args = sys.argv[1:]
+    args = sys.argv[1:]
 
-    wrapper = ClaudeWrapper(claude_args=claude_args)
+    continue_session = "--continue" in args
+    claude_args = [arg for arg in args if arg != "--continue"]
+
+    wrapper = ClaudeWrapper(claude_args=claude_args, continue_session=continue_session)
     return wrapper.start()
 
 
