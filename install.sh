@@ -217,7 +217,7 @@ install_dependencies() {
 
     cd "$installer_dir"
     uv venv .venv --quiet
-    uv pip install --quiet -e . || {
+    uv pip install --quiet rich httpx typer platformdirs || {
         echo "  [!!] Failed to install dependencies"
         exit 1
     }
