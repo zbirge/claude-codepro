@@ -356,10 +356,9 @@ class TestWrapperUpdateCheck:
             with patch.object(wrapper, "_save_ccp_config"):
                 with patch("ccp.updater.check_for_update") as mock_check:
                     mock_check.return_value = (True, "4.5.8", "4.6.0")
-                    with patch("ccp.updater.download_installer") as mock_download:
+                    with patch("ccp.updater.download_install_script") as mock_download:
                         mock_download.return_value = True
-                        with patch("ccp.updater.run_installer") as mock_run:
-                            mock_run.return_value = (True, "")
+                        with patch("ccp.updater.run_update_and_exit"):
                             # Mock /dev/tty with "y" response to accept update
                             mock_tty = MagicMock()
                             mock_tty.__enter__ = MagicMock(return_value=StringIO("y\n"))
@@ -368,5 +367,4 @@ class TestWrapperUpdateCheck:
                                 result = wrapper._check_and_prompt_update()
 
         mock_download.assert_called_once()
-        mock_run.assert_called_once()
         assert result is True

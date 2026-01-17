@@ -122,7 +122,7 @@ Claude CodePro is designed to be token-efficient, but quality has its cost. For 
 
 - **Automated Container Setup** - Isolated Linux environment with pre-configured tools and extensions
 - **Extended Language Support** - Optionally install extended support for Python & TypeScript
-- **Automated Setup Script** - Installs and configures everything in one installation command
+- **Automated Updater** - Updates CCP to the latest version when launched over the binary
 - **Shell Integration** - Auto-configures bash, fish and zsh with `ccp` alias
 
 ---

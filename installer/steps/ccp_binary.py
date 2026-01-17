@@ -82,6 +82,8 @@ def _download_binary(version: str, dest_path: Path) -> bool:
                 return False
 
             dest_path.parent.mkdir(parents=True, exist_ok=True)
+            if dest_path.exists():
+                dest_path.unlink()
             dest_path.write_bytes(response.content)
 
             dest_path.chmod(dest_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)

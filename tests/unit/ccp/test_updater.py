@@ -231,40 +231,38 @@ class TestDownloadInstaller:
             assert result is False
 
 
-class TestRunInstaller:
-    """Test run_installer function."""
+class TestDownloadInstallScript:
+    """Test download_install_script function."""
 
-    @patch("subprocess.run")
-    def test_run_installer_calls_python_module(self, mock_run):
-        """run_installer calls uv run python -m installer."""
-        from ccp.updater import run_installer
+    @patch("httpx.Client")
+    def test_download_install_script_success(self, mock_client):
+        """download_install_script downloads and saves script."""
+        from ccp.updater import download_install_script
 
-        mock_run.return_value = MagicMock(returncode=0)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            success, error = run_installer(project_dir)
-
-        assert success is True
-        assert error == ""
-        mock_run.assert_called_once()
-
-        call_args = mock_run.call_args[0][0]
-        assert "uv" in call_args
-        assert "python" in call_args
-        assert "-m" in call_args
-        assert "installer" in call_args
-
-    @patch("subprocess.run")
-    def test_run_installer_returns_false_on_failure(self, mock_run):
-        """run_installer returns False with error message on subprocess failure."""
-        from ccp.updater import run_installer
-
-        mock_run.return_value = MagicMock(returncode=1, stderr="Some error", stdout="")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b"#!/bin/bash\necho test"
+        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmpdir:
             project_dir = Path(tmpdir)
-            success, error = run_installer(project_dir)
+            result = download_install_script("4.5.16", project_dir)
 
-        assert success is False
-        assert "Some error" in error
+            assert result is True
+            script_path = project_dir / ".claude" / "update.sh"
+            assert script_path.exists()
+
+    @patch("httpx.Client")
+    def test_download_install_script_failure(self, mock_client):
+        """download_install_script returns False on HTTP error."""
+        from ccp.updater import download_install_script
+
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            result = download_install_script("4.5.16", project_dir)
+
+            assert result is False

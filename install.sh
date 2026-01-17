@@ -195,8 +195,8 @@ if ! is_in_container; then
 
     echo "  Choose installation method:"
     echo ""
-    echo "    1) Dev Container - Isolated environment, consistent tooling"
-    echo "    2) Local - Install directly on your system (macOS/Linux)"
+    echo "    1) Dev Container - Isolated, consistent environment (RECOMMENDED)"
+    echo "    2) Local - Install directly on your system (ONLY macOS/Linux)"
     echo ""
 
     choice=""
