@@ -381,7 +381,7 @@ def _configure_claude_mem_defaults() -> bool:
                 "CLAUDE_MEM_CONTEXT_SESSION_COUNT": "10",
                 "CLAUDE_MEM_CONTEXT_FULL_COUNT": "10",
                 "CLAUDE_MEM_CONTEXT_FULL_FIELD": "facts",
-                "CLAUDE_MEM_MODEL": "opus",
+                "CLAUDE_MEM_MODEL": "sonnet",
             }
         )
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
