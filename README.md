@@ -28,7 +28,7 @@ TDD enforced. Quality automated. Ship with confidence. 🚀
 curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.26/install.sh | bash
 ```
 
-Then run `ccp` and `/setup` once. That's it.
+Then run `ccp` and `/setup` once. Use `/spec` or the quick mode for full quality.
 
 ---
 
@@ -152,18 +152,9 @@ ccp
 
 This is independent of which development mode you use - both modes benefit from the initialized context.
 
-### Two Modes of Development
+### Spec-Driven Mode (`/spec`)
 
-Claude CodePro supports two development modes:
-
-| Mode | Command | Best For |
-|------|---------|----------|
-| **Spec-Driven** | `/spec "task"` | New features, major changes, complex work |
-| **Quick Mode** | Just chat | Quick fixes, bug fixes, small changes |
-
-#### Spec-Driven Mode (`/spec`)
-
-For structured development with planning and verification:
+Use this mode when you want a spec to review before implementation, or when the task is complex enough to benefit from structured planning:
 
 ```bash
 ccp
@@ -183,19 +174,14 @@ ccp
 3. **🔨 Implement** - Executes tasks with TDD enforcement and quality hooks
 4. **🔍 Verify** - Runs tests, quality checks, validates completion (loops back if issues found)
 
-Use this mode when you want a spec to review before implementation, or when the task is complex enough to benefit from structured planning.
-
 #### Quick Mode
 
-For quick work without a spec:
+Just describe what you need - no plan file, no approval gate. Claude CodePro still provides all the quality hooks, TDD enforcement, and context capabilities. Perfect for bug fixes, small improvements, and exploratory work:
 
 ```bash
 ccp
 > Fix the null pointer bug in user.py
-> Add a loading spinner to the submit button
 ```
-
-Just describe what you need - no plan file, no approval gate. Claude CodePro still provides all the quality hooks, TDD enforcement, and context capabilities. Perfect for bug fixes, small improvements, and exploratory work.
 
 ### Customizing Rules
 
