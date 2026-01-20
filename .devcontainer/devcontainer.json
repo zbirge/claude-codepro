@@ -86,7 +86,7 @@
       "cudnnVersion": "automatic"
     }
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.0.6/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v5.1.0/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }

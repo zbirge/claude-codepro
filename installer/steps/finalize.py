@@ -108,7 +108,7 @@ class FinalizeStep(BaseStep):
 
         ui.rule()
         ui.print()
-        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
+        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/zbirge/claude-codepro")
         ui.print()
         ui.print(f"  [dim]Installed version: {__version__}[/dim]")
         ui.print()

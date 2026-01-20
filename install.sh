@@ -2,9 +2,9 @@
 
 set -e
 
-VERSION="5.0.6"
+VERSION="5.1.0"
 
-REPO="maxritter/claude-codepro"
+REPO="zbirge/claude-codepro"
 REPO_RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
 
 is_in_container() {

@@ -6,13 +6,13 @@
 
 TDD enforced. Quality automated. Ship with confidence. 🚀
 
-[![Version](https://img.shields.io/github/v/release/maxritter/claude-codepro?label=Version&color=orange)](https://github.com/maxritter/claude-codepro/releases)
-[![Stars](https://img.shields.io/github/stars/maxritter/claude-codepro?style=flat&color=yellow)](https://github.com/maxritter/claude-codepro/stargazers)
-[![Last Commit](https://img.shields.io/github/last-commit/maxritter/claude-codepro?color=blue)](https://github.com/maxritter/claude-codepro/commits/main)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/maxritter/claude-codepro/pulls)
+[![Version](https://img.shields.io/github/v/release/zbirge/claude-codepro?label=Version&color=orange)](https://github.com/zbirge/claude-codepro/releases)
+[![Stars](https://img.shields.io/github/stars/zbirge/claude-codepro?style=flat&color=yellow)](https://github.com/zbirge/claude-codepro/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/zbirge/claude-codepro?color=blue)](https://github.com/zbirge/claude-codepro/commits/main)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/zbirge/claude-codepro/pulls)
 ![License](https://img.shields.io/badge/License-AGPL--3.0%20%2F%20Paid-blue.svg)
 
-#### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
+#### ⭐ [Star this repository](https://github.com/zbirge/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
 
 <br>
 
@@ -25,7 +25,7 @@ TDD enforced. Quality automated. Ship with confidence. 🚀
 ## ⚡ TL;DR
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.0.6/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v5.1.0/install.sh | bash
 ```
 
 Then run `ccp` and `/setup` once. Use `/spec` or the quick mode for full quality.
@@ -67,7 +67,7 @@ Choose your installation method:
 Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.0.6/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zbirge/claude-codepro/v5.1.0/install.sh | bash
 ```
 
 You'll be asked to choose between **Dev Container** or **Local Installation**.
@@ -198,7 +198,7 @@ Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/e
 
 **Pull Requests** - New features, improvements, and bug fixes are welcome. Open a PR to contribute.
 
-**Issues** - Found a bug or have a feature request? [Open an issue](https://github.com/maxritter/claude-codepro/issues).
+**Issues** - Found a bug or have a feature request? [Open an issue](https://github.com/zbirge/claude-codepro/issues).
 
 ---
 

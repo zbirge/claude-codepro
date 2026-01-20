@@ -85,7 +85,7 @@ class ClaudeFilesStep(BaseStep):
         ui = ctx.ui
 
         config = DownloadConfig(
-            repo_url="https://github.com/maxritter/claude-codepro",
+            repo_url="https://github.com/zbirge/claude-codepro",
             repo_branch="main",
             local_mode=ctx.local_mode,
             local_repo_dir=ctx.local_repo_dir,
