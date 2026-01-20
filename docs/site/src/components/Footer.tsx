@@ -102,7 +102,7 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Claude CodePro. Dual-licensed: AGPL-3.0 (free) or Commercial. Created by{" "}
+              © {new Date().getFullYear()} Claude CodePro. Source code AGPL-3.0. Created by{" "}
               <a
                 href="https://maxritter.net/"
                 target="_blank"

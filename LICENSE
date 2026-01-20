@@ -1,43 +1,55 @@
 ================================================================================
-                         CLAUDE CODEPRO - DUAL LICENSE
+                         CLAUDE CODEPRO LICENSE
 ================================================================================
 
-Copyright (C) 2025 Max Ritter (@maxritter). All rights reserved.
-
-This software is dual-licensed. You may choose ONE of the following licenses:
+Copyright (C) 2026 Max Ritter (@maxritter). All rights reserved.
 
 --------------------------------------------------------------------------------
-OPTION 1: AGPL-3.0 (Free/Open Source)
+PRICING
 --------------------------------------------------------------------------------
 
-Free for:
-  - Personal use
-  - Students and educators
-  - Nonprofit organizations
-  - Open source projects (must also be AGPL-3.0 licensed)
+Standard License:
+  - All features included
+  - Continuous updates
+  - Basic support via GitHub
 
-Under this option, the full AGPL-3.0 license terms below apply.
+Enterprise License:
+  - Everything in Standard
+  - Dedicated email support
+  - Optional training sessions
+
+Subscribe at: https://license.claude-code.pro
+
+A 7-day free trial is available for evaluation purposes. The trial starts
+automatically on first run, requires no credit card, and is limited to one
+per machine.
 
 --------------------------------------------------------------------------------
-OPTION 2: Commercial License (Paid)
+YOUR RIGHTS
 --------------------------------------------------------------------------------
 
-Required for:
-  - Companies and organizations
-  - Freelancers and agencies
-  - SaaS products and internal tools
-  - Any revenue-generating use
-
-Commercial License Rights:
+  - All code, artifacts, configs, and extensions YOU generate using Claude
+    CodePro are yours to use commercially in perpetuity (forever), even after
+    your subscription ends
   - You MAY modify Claude CodePro for your internal use
-  - All code and artifacts generated using Claude CodePro are yours to use
-    commercially in perpetuity (forever), even after subscription ends
   - You may NOT redistribute Claude CodePro itself or derivative works
 
-Purchase your license at: https://license.claude-code.pro
+--------------------------------------------------------------------------------
+SOURCE CODE
+--------------------------------------------------------------------------------
+
+Most of Claude CodePro's source code is open source under AGPL-3.0 (see below).
+
+The following components are proprietary and closed source:
+  - The CCP binary (.claude/bin/ccp) - license verification and advanced features
+  - Related license management code in the ccp/ directory
+
+The AGPL-3.0 license applies to the open source portions of the codebase.
+Using Claude CodePro (the complete product) requires a paid license after
+the trial period.
 
 ================================================================================
-                     AGPL-3.0 LICENSE TEXT (Option 1)
+                         AGPL-3.0 LICENSE TEXT
 ================================================================================
 
                   GNU AFFERO GENERAL PUBLIC LICENSE

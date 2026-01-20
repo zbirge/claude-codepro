@@ -89,11 +89,15 @@
         ]
       },
       {
-        "matcher": "Bash|Read|Grep|Glob|Write|Edit|MultiEdit",
+        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
             "command": "python3 /workspaces/claude-codepro/.claude/hooks/context_monitor.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 /workspaces/claude-codepro/.claude/hooks/auditor_feedback.py"
           }
         ]
       }
@@ -101,7 +105,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline@latest",
+    "command": ".claude/bin/ccp statusline",
     "padding": 0
   },
   "outputStyle": "default",

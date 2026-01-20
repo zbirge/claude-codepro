@@ -1,10 +1,20 @@
 ## Git Operations - Read-Only by Default
 
-**Rule:** You may READ git state freely, but NEVER WRITE to git without EXPLICIT user permission.
+**Rule:** You may READ git state freely, but NEVER execute git WRITE COMMANDS without EXPLICIT user permission.
 
-### ⛔ CRITICAL: User Approval Required
+### Clarification: File Modifications Are Always Allowed
 
-**NEVER perform these operations without the user explicitly saying "commit", "push", etc.:**
+**This rule is about git commands, NOT file operations.**
+
+- ✅ **Always allowed:** Creating, editing, deleting files in the working tree
+- ✅ **Always allowed:** Making code changes, writing tests, modifying configs
+- ❌ **Needs permission:** Git commands that modify repository state (commit, push, etc.)
+
+Editing files is normal development work. The rule only restricts git commands that persist changes to the repository.
+
+### ⛔ CRITICAL: User Approval Required for Git Commands
+
+**NEVER execute these git commands without the user explicitly saying "commit", "push", etc.:**
 - `git add` / `git commit` / `git commit --amend`
 - `git push` / `git push --force`
 - `git pull` / `git fetch` / `git merge` / `git rebase`

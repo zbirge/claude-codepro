@@ -18,21 +18,31 @@ allowed-tools: Skill
 /spec --continue <path/to/plan.md> # Resume after session clear
 ```
 
-## CRITICAL: Use the Skill Tool
+## ⛔ CRITICAL: NEVER STOP BETWEEN PHASES
+
+**This is the #1 rule of /spec: NEVER stop between phases.**
+
+After ANY skill (/plan, /implement, /verify) completes:
+1. **IMMEDIATELY re-read the plan file status**
+2. **IMMEDIATELY invoke the next skill based on status**
+3. **NEVER just announce what will happen next - DO IT**
+
+❌ **WRONG:** "The workflow will now continue to implementation..."
+✅ **RIGHT:** `Skill(implement, "docs/plans/...")` [actually invoke it]
+
+**The ONLY time you stop is:**
+- When plan needs user approval (handled by /plan skill asking via AskUserQuestion)
+- When Status is VERIFIED (workflow complete)
+- When context >= 90% (hand off to next session)
+
+## Use the Skill Tool
 
 **You MUST use the Skill tool to invoke /plan, /implement, and /verify.**
 
-Do NOT just describe what to do - actually invoke the tools like this:
-
 ```
-To run /plan:
-  Skill tool with: skill="plan", args="task description here"
-
-To run /implement:
-  Skill tool with: skill="implement", args="path/to/plan.md"
-
-To run /verify:
-  Skill tool with: skill="verify", args="path/to/plan.md"
+Skill tool with: skill="plan", args="task description here"
+Skill tool with: skill="implement", args="path/to/plan.md"
+Skill tool with: skill="verify", args="path/to/plan.md"
 ```
 
 ## Workflow Logic
@@ -57,7 +67,8 @@ ELIF arguments end with ".md" AND file exists:
 ELSE:
     task_description = arguments
     → Use Skill tool to run /plan with task_description
-    → After plan is created, STOP and wait for user approval (see Step 2a)
+    → /plan handles user approval internally via AskUserQuestion
+    → After /plan completes, RE-READ plan status and continue (DO NOT STOP)
 ```
 
 ### Session Resume (--continue)

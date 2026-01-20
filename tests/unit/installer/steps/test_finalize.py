@@ -37,64 +37,6 @@ class TestFinalizeStep:
             assert step.check(ctx) is False
 
 
-class TestStatuslineConfig:
-    """Test statusline configuration installation."""
-
-    def test_run_installs_statusline_config(self):
-        """run() copies statusline.json to config dir."""
-        from installer.context import InstallContext
-        from installer.steps.finalize import FinalizeStep
-        from installer.ui import Console
-
-        step = FinalizeStep()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            claude_dir = project_dir / ".claude"
-            claude_dir.mkdir()
-
-            # Create statusline.json
-            statusline_config = {"status": "enabled"}
-            import json
-
-            (claude_dir / "statusline.json").write_text(json.dumps(statusline_config))
-
-            ctx = InstallContext(
-                project_dir=project_dir,
-                ui=Console(non_interactive=True),
-            )
-
-            # Mock home directory
-            with patch("pathlib.Path.home") as mock_home:
-                mock_home.return_value = Path(tmpdir) / "home"
-                (Path(tmpdir) / "home").mkdir()
-
-                step.run(ctx)
-
-                # Check config was installed
-                target_config = Path(tmpdir) / "home" / ".config" / "ccstatusline" / "settings.json"
-                assert target_config.exists()
-                assert json.loads(target_config.read_text()) == statusline_config
-
-    def test_run_skips_statusline_if_no_source(self):
-        """run() skips statusline if no source file."""
-        from installer.context import InstallContext
-        from installer.steps.finalize import FinalizeStep
-        from installer.ui import Console
-
-        step = FinalizeStep()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            (project_dir / ".claude").mkdir()
-
-            ctx = InstallContext(
-                project_dir=project_dir,
-                ui=Console(non_interactive=True),
-            )
-
-            # Should not raise even without statusline.json
-            step.run(ctx)
-
-
 class TestFinalSuccessPanel:
     """Test final success panel display."""
 

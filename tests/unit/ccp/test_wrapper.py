@@ -22,7 +22,7 @@ class TestWrapperLicenseIntegration:
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
 
-        mock_state = LicenseState(license_key="KEY", tier="commercial")
+        mock_state = LicenseState(license_key="KEY", tier="standard")
 
         with patch.object(wrapper, "_license_manager") as mock_manager:
             mock_manager.get_state.return_value = mock_state
@@ -30,7 +30,7 @@ class TestWrapperLicenseIntegration:
             valid, tier, expired, error = wrapper._check_license()
 
         assert valid is True
-        assert tier == "commercial"
+        assert tier == "standard"
         assert expired is False
         assert error == ""
 
@@ -71,40 +71,40 @@ class TestWrapperLicenseIntegration:
         assert expired is True
         assert "Trial" in error or "expired" in error.lower()
 
-    def test_wrapper_revalidates_commercial_license(self, tmp_path: Path) -> None:
-        """Wrapper re-validates commercial license with Gumroad."""
+    def test_wrapper_revalidates_standard_license(self, tmp_path: Path) -> None:
+        """Wrapper re-validates standard license with Gumroad."""
         from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
 
-        commercial_state = LicenseState(
-            license_key="COMMERCIAL-KEY",
-            tier="commercial",
+        standard_state = LicenseState(
+            license_key="STANDARD-KEY",
+            tier="standard",
             last_validated_at=datetime.now(timezone.utc) - timedelta(hours=25),
         )
 
         with patch.object(wrapper, "_license_manager") as mock_manager:
-            mock_manager.get_state.return_value = commercial_state
+            mock_manager.get_state.return_value = standard_state
             mock_manager.validate.return_value = (True, "")
             valid, tier, expired, error = wrapper._check_license()
 
         assert valid is True
-        assert tier == "commercial"
+        assert tier == "standard"
         mock_manager.validate.assert_called_once()
 
     def test_wrapper_detects_cancelled_subscription(self, tmp_path: Path) -> None:
-        """Wrapper detects cancelled commercial subscription."""
+        """Wrapper detects cancelled standard subscription."""
         from ccp.wrapper import ClaudeWrapper
 
         pipe_dir = tmp_path / "pipes"
         wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
 
-        commercial_state = LicenseState(license_key="COMMERCIAL-KEY", tier="commercial")
+        standard_state = LicenseState(license_key="STANDARD-KEY", tier="standard")
 
         with patch.object(wrapper, "_license_manager") as mock_manager:
             # First call returns state, second call (after removal) returns None
-            mock_manager.get_state.side_effect = [commercial_state, None]
+            mock_manager.get_state.side_effect = [standard_state, None]
             mock_manager.validate.return_value = (False, "Subscription has been cancelled")
             valid, tier, expired, error = wrapper._check_license()
 
@@ -115,23 +115,23 @@ class TestWrapperLicenseIntegration:
 class TestWrapperBannerWithLicense:
     """Tests for wrapper banner showing license status."""
 
-    def test_print_banner_shows_free_tier(self, capsys) -> None:
-        """Banner shows free tier indicator."""
+    def test_print_banner_shows_standard(self, capsys) -> None:
+        """Banner shows standard tier indicator."""
         from ccp.wrapper import print_banner
 
-        print_banner(tier="free")
+        print_banner(tier="standard")
         captured = capsys.readouterr()
 
-        assert "Free" in captured.out
+        assert "Standard" in captured.out
 
-    def test_print_banner_shows_commercial(self, capsys) -> None:
-        """Banner shows commercial tier indicator."""
+    def test_print_banner_shows_enterprise(self, capsys) -> None:
+        """Banner shows enterprise tier indicator."""
         from ccp.wrapper import print_banner
 
-        print_banner(tier="commercial")
+        print_banner(tier="enterprise")
         captured = capsys.readouterr()
 
-        assert "Licensed" in captured.out
+        assert "Enterprise" in captured.out
 
     def test_print_banner_shows_trial(self, capsys) -> None:
         """Banner shows trial tier indicator."""
@@ -368,3 +368,78 @@ class TestWrapperUpdateCheck:
 
         mock_download.assert_called_once()
         assert result is True
+
+
+class TestWrapperAuditorIntegration:
+    """Tests for Auditor agent integration into wrapper."""
+
+    def test_wrapper_has_auditor_attributes(self, tmp_path: Path) -> None:
+        """Wrapper initializes with auditor-related attributes."""
+        from ccp.wrapper import ClaudeWrapper
+
+        pipe_dir = tmp_path / "pipes"
+        wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
+
+        assert hasattr(wrapper, "_auditor")
+        assert hasattr(wrapper, "_auditor_loop")
+        assert hasattr(wrapper, "_auditor_thread")
+        assert wrapper._auditor is None
+        assert wrapper._auditor_loop is None
+        assert wrapper._auditor_thread is None
+
+    def test_start_auditor_initializes_components(self, tmp_path: Path) -> None:
+        """_start_auditor creates auditor components."""
+        from ccp.wrapper import ClaudeWrapper
+
+        pipe_dir = tmp_path / "pipes"
+        wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
+
+        # Start auditor
+        wrapper._start_auditor()
+
+        assert wrapper._auditor is not None
+        assert wrapper._auditor_thread is not None
+        assert wrapper._auditor_thread.is_alive()
+
+        # Clean up
+        wrapper._stop_auditor()
+
+    def test_stop_auditor_cleans_up(self, tmp_path: Path) -> None:
+        """_stop_auditor stops thread and clears feedback file."""
+        from ccp.auditor.feedback import FeedbackWriter
+        from ccp.wrapper import ClaudeWrapper
+
+        pipe_dir = tmp_path / "pipes"
+        wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
+
+        # Create a findings file
+        findings_path = Path("/tmp/ccp-auditor-findings.json")
+        FeedbackWriter(findings_path=findings_path).write([])
+
+        # Start and stop auditor
+        wrapper._start_auditor()
+        assert wrapper._auditor_thread is not None
+
+        wrapper._stop_auditor()
+
+        # Thread should be stopped
+        assert wrapper._auditor_thread is None or not wrapper._auditor_thread.is_alive()
+        # Findings file should be cleared
+        assert not findings_path.exists()
+
+    def test_cleanup_stops_auditor(self, tmp_path: Path) -> None:
+        """_cleanup method stops the auditor."""
+        from ccp.wrapper import ClaudeWrapper
+
+        pipe_dir = tmp_path / "pipes"
+        wrapper = ClaudeWrapper(claude_args=[], pipe_dir=pipe_dir)
+        wrapper._create_pipe()
+
+        # Start auditor
+        wrapper._start_auditor()
+        assert wrapper._auditor is not None
+
+        # Cleanup should stop auditor
+        wrapper._cleanup()
+
+        assert wrapper._auditor_thread is None or not wrapper._auditor_thread.is_alive()

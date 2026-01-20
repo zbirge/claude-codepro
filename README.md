@@ -10,7 +10,7 @@ TDD enforced. Quality automated. Ship with confidence. 🚀
 [![Stars](https://img.shields.io/github/stars/maxritter/claude-codepro?style=flat&color=yellow)](https://github.com/maxritter/claude-codepro/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/maxritter/claude-codepro?color=blue)](https://github.com/maxritter/claude-codepro/commits/main)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/maxritter/claude-codepro/pulls)
-![License](https://img.shields.io/badge/License-AGPL--3.0%20%2F%20Commercial-blue.svg)
+![License](https://img.shields.io/badge/License-AGPL--3.0%20%2F%20Paid-blue.svg)
 
 #### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 💼 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
 
@@ -104,12 +104,12 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 - **Context7 / Firecrawl** - External context retrieval for code and web search / scraping
 - **agent-browser** - Headless browser automation and testing within the Dev Container
 
-### ✅ Quality Hooks Automation
+### ✅ Quality Automation
 
-- **Python Quality** - Post-edit hook for ruff, basedpyright and Python LSP server (optional)
-- **TypeScript Quality** - Post-edit hook for eslint, tsc, prettier and TypeScript LSP server (optional)
-- **General Quality** - Post-edit hook using QLTY for all languages for automated formatting and checking
+- **Auditor Agent** - Background AI that monitors rule compliance and surfaces violations in real-time
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
+- **Language Quality** - Post-edit hooks for Python (ruff, basedpyright) and TypeScript (eslint, tsc)
+- **Status Line** - Live display of context usage, memory status, auditor state, and license info
 
 ### 🛠️ One-Command Installer
 
@@ -189,6 +189,7 @@ Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/e
 
 - **Standard Rules** in `.claude/rules/standard/` - Best-Practices updated on install, don't modify those
 - **Custom Rules** in `.claude/rules/custom/` - Your project-specific rules, never touched by updates
+- **Auditor Agent** - Background AI that monitors every 60s and alerts you when rules are violated
 
 
 ---
@@ -203,8 +204,8 @@ Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/e
 
 ## 📄 License
 
-This project is dual-licensed. See the [LICENSE](LICENSE) file for details.
+**Standard** - All features, continuous updates, basic support via GitHub. [Subscribe](https://license.claude-code.pro)
 
-**Free (AGPL-3.0)** - Personal use, students, educators, nonprofits, and open source projects.
+**Enterprise** - Everything in Standard plus dedicated email support and optional training sessions. [Subscribe](https://license.claude-code.pro)
 
-**Commercial License** - For proprietary or closed-source projects, [purchase a license](https://license.claude-code.pro).
+A 7-day free trial is available for evaluation. Most source code is open source under AGPL-3.0. See the [LICENSE](LICENSE) file for details.

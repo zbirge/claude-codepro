@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from installer import __version__
@@ -24,34 +22,7 @@ class FinalizeStep(BaseStep):
 
     def run(self, ctx: InstallContext) -> None:
         """Run final cleanup tasks and display success."""
-
-        self._install_statusline_config(ctx)
         self._display_success(ctx)
-
-    def _install_statusline_config(self, ctx: InstallContext) -> None:
-        """Install statusline configuration to user config directory."""
-        ui = ctx.ui
-        source_config = ctx.project_dir / ".claude" / "statusline.json"
-
-        if not source_config.exists():
-            if ui:
-                ui.warning("statusline.json not found, skipping")
-            return
-
-        if ui:
-            ui.status("Installing statusline configuration...")
-
-        target_dir = Path.home() / ".config" / "ccstatusline"
-        target_config = target_dir / "settings.json"
-
-        try:
-            target_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source_config, target_config)
-            if ui:
-                ui.success("Installed statusline configuration")
-        except (OSError, IOError) as e:
-            if ui:
-                ui.warning(f"Failed to install statusline config: {e}")
 
     def _display_success(self, ctx: InstallContext) -> None:
         """Display success panel with next steps."""
@@ -70,6 +41,7 @@ class FinalizeStep(BaseStep):
                 "Claude CodePro rules",
                 "Shell alias (ccp)",
                 "Endless Mode (session continuity)",
+                "Auditor Agent (background rule monitoring)",
             ]
         )
 
@@ -111,15 +83,6 @@ class FinalizeStep(BaseStep):
             ]
         )
 
-        if not ctx.is_local_install:
-            steps.append(
-                (
-                    "Image Pasting (Optional)",
-                    "Install dkodr.claudeboard extension via the Marketplace\n"
-                    "     Only works in VS Code's integrated terminal",
-                )
-            )
-
         steps.append(
             (
                 "Custom MCP Servers (Optional)",
@@ -127,22 +90,6 @@ class FinalizeStep(BaseStep):
                 "     to generate documentation. Use mcp-cli to interact with them.",
             )
         )
-
-        if ctx.is_local_install:
-            steps.append(
-                (
-                    "Claude MEM Dashboard (Optional)",
-                    "View stored memories at http://localhost:37777",
-                )
-            )
-        else:
-            steps.append(
-                (
-                    "Claude MEM Dashboard (Optional)",
-                    "View stored memories and observations at http://localhost:37777\n"
-                    "     (Check VS Code Ports tab if 37777 is unavailable - may be 37778)",
-                )
-            )
 
         steps.extend(
             [

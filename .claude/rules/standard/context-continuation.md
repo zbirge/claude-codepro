@@ -49,7 +49,26 @@ uv run basedpyright installer/
 
 **DO NOT claim work is complete without showing verification output in the continuation file.**
 
-**Step 2: Write Session Summary to File (GUARANTEED BACKUP)**
+**Step 2: Check for Active Plan (MANDATORY)**
+
+**⚠️ CRITICAL: You MUST check for an active plan before deciding which handoff command to use.**
+
+```bash
+# Check for non-VERIFIED plans (most recent first by filename)
+ls -1 docs/plans/*.md 2>/dev/null | sort -r | head -5
+```
+
+Then check the Status field in the most recent plan file(s). An **active plan** is any plan with `Status: PENDING` or `Status: COMPLETE` (not `VERIFIED`).
+
+**Decision Tree:**
+| Situation | Command to Use |
+|-----------|----------------|
+| Active plan exists (PENDING/COMPLETE) | `.claude/bin/ccp send-clear docs/plans/YYYY-MM-DD-name.md` |
+| No active plan (all VERIFIED or none exist) | `.claude/bin/ccp send-clear --general` |
+
+**NEVER use `--general` when there's an active plan file. This loses the plan context!**
+
+**Step 3: Write Session Summary to File (GUARANTEED BACKUP)**
 
 Write the summary to `/tmp/claude-continuation.md` using the Write tool. Include VERIFIED status with actual command output.
 
@@ -57,6 +76,7 @@ Write the summary to `/tmp/claude-continuation.md` using the Write tool. Include
 # Session Continuation
 
 **Task:** [Brief description of what you were working on]
+**Active Plan:** [path/to/plan.md or "None"]
 
 ## VERIFIED STATUS (run just before handoff):
 - `uv run pytest tests/ -q` → **X passed** or **X failed** (be honest!)
@@ -82,7 +102,7 @@ Write the summary to `/tmp/claude-continuation.md` using the Write tool. Include
 
 **CRITICAL: If you were in the middle of fixing something, say EXACTLY what and where. The next agent cannot read your mind.**
 
-**Step 2: Output Session End Summary (For User Visibility)**
+**Step 4: Output Session End Summary (For User Visibility)**
 
 After writing the file, output the summary to the user:
 
@@ -96,9 +116,15 @@ After writing the file, output the summary to the user:
 Triggering session restart...
 ```
 
-**Step 3: Trigger Session Clear**
+**Step 5: Trigger Session Clear**
+
+**Use the correct command based on Step 2:**
 
 ```bash
+# If active plan exists (PREFERRED - preserves plan context):
+.claude/bin/ccp send-clear docs/plans/YYYY-MM-DD-name.md
+
+# ONLY if NO active plan exists:
 .claude/bin/ccp send-clear --general
 ```
 
@@ -168,12 +194,14 @@ If you're in general development (no plan file):
 # Trigger session continuation (no continuation prompt)
 .claude/bin/ccp send-clear
 
-# Trigger continuation with general prompt (for non-/spec sessions)
-.claude/bin/ccp send-clear --general
+# Trigger continuation WITH plan (PREFERRED when plan exists):
+.claude/bin/ccp send-clear docs/plans/YYYY-MM-DD-name.md
 
-# Trigger continuation with /spec prompt (for /spec sessions)
-.claude/bin/ccp send-clear <plan-path>
+# Trigger continuation WITHOUT plan (ONLY when no active plan):
+.claude/bin/ccp send-clear --general
 ```
+
+**⚠️ ALWAYS check for active plans before using `--general`. See Step 2 above.**
 
 ## Important Notes
 

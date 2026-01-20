@@ -35,7 +35,7 @@ class TestCLIActivate:
         mock_result.success = True
         mock_result.seats_total = 5
         mock_result.seats_used = 1
-        mock_result.tier = "commercial"
+        mock_result.tier = "standard"
 
         with patch("ccp.cli.LicenseManager") as mock_manager_class:
             mock_manager = MagicMock()
@@ -72,7 +72,7 @@ class TestCLIActivate:
         mock_result.success = True
         mock_result.seats_total = 5
         mock_result.seats_used = 1
-        mock_result.tier = "commercial"
+        mock_result.tier = "standard"
         mock_result.error = ""
 
         with patch("ccp.cli.LicenseManager") as mock_manager_class:
@@ -96,7 +96,7 @@ class TestCLIStatus:
         from ccp.cli import app
 
         mock_license_info = {
-            "tier": "commercial",
+            "tier": "standard",
             "email": "test@example.com",
             "created_at": "2026-01-01T00:00:00+00:00",
             "expires_at": None,
@@ -118,7 +118,7 @@ class TestCLIStatus:
         from ccp.cli import app
 
         mock_license_info = {
-            "tier": "commercial",
+            "tier": "standard",
             "email": "test@example.com",
             "created_at": "2026-01-01T00:00:00+00:00",
             "expires_at": None,

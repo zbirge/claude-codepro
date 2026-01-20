@@ -13,9 +13,11 @@ from ccp.auth import (
     LicenseResult,
     LicenseState,
     TamperedStateError,
+    TrialAlreadyUsedError,
     create_eval_state,
-    create_free_tier_state,
-    subscribe_to_gumroad,
+    get_machine_fingerprint,
+    has_used_trial,
+    mark_trial_used,
 )
 
 
@@ -27,13 +29,13 @@ class TestLicenseState:
         now = datetime.now(timezone.utc)
         state = LicenseState(
             license_key="TEST-KEY",
-            tier="commercial",
+            tier="standard",
             email="test@example.com",
             created_at=now,
         )
         d = state.to_dict()
         assert d["license_key"] == "TEST-KEY"
-        assert d["tier"] == "commercial"
+        assert d["tier"] == "standard"
         assert d["email"] == "test@example.com"
 
     def test_license_state_from_dict(self):
@@ -51,14 +53,14 @@ class TestLicenseState:
         assert state.tier == "trial"
         assert state.email == "test@example.com"
 
-    def test_is_trial_expired_false_for_free_tier(self):
-        """Free tier never expires."""
-        state = LicenseState(license_key="FREE", tier="free")
+    def test_is_trial_expired_false_for_standard(self):
+        """Standard tier never expires."""
+        state = LicenseState(license_key="KEY", tier="standard")
         assert state.is_trial_expired() is False
 
-    def test_is_trial_expired_false_for_commercial(self):
-        """Commercial tier never expires."""
-        state = LicenseState(license_key="KEY", tier="commercial")
+    def test_is_trial_expired_false_for_enterprise(self):
+        """Enterprise tier never expires."""
+        state = LicenseState(license_key="KEY", tier="enterprise")
         assert state.is_trial_expired() is False
 
     def test_is_trial_expired_false_when_trial_active(self):
@@ -102,14 +104,14 @@ class TestLicenseState:
         )
         assert state.days_remaining() == 0
 
-    def test_days_remaining_none_for_free(self):
-        """days_remaining returns None for free tier."""
-        state = LicenseState(license_key="FREE", tier="free")
+    def test_days_remaining_none_for_standard(self):
+        """days_remaining returns None for standard tier."""
+        state = LicenseState(license_key="KEY", tier="standard")
         assert state.days_remaining() is None
 
-    def test_days_remaining_none_for_commercial(self):
-        """days_remaining returns None for commercial tier."""
-        state = LicenseState(license_key="KEY", tier="commercial")
+    def test_days_remaining_none_for_enterprise(self):
+        """days_remaining returns None for enterprise tier."""
+        state = LicenseState(license_key="KEY", tier="enterprise")
         assert state.days_remaining() is None
 
 
@@ -171,48 +173,52 @@ class TestGumroadLicenseVerifier:
         assert "Network error" in result.error
 
 
-class TestSubscribeToGumroad:
-    """Tests for subscribe_to_gumroad function."""
-
-    @patch("ccp.auth.httpx.post")
-    def test_subscribe_success(self, mock_post):
-        """Successful subscription returns success=True."""
-        mock_post.return_value.status_code = 200
-
-        result = subscribe_to_gumroad("test@example.com")
-
-        assert result.success is True
-
-    @patch("ccp.auth.httpx.post")
-    def test_subscribe_failure(self, mock_post):
-        """Failed subscription returns success=False."""
-        mock_post.return_value.status_code = 500
-
-        result = subscribe_to_gumroad("test@example.com")
-
-        assert result.success is False
-
-
 class TestLicenseManager:
     """Tests for LicenseManager."""
 
-    def test_activate_success(self, tmp_path):
-        """Successful activation saves state."""
+    def test_activate_success_standard(self, tmp_path):
+        """Successful activation saves state with standard tier."""
         mock_verifier = MagicMock()
         mock_verifier.verify_license.return_value = LicenseResult(
-            success=True, seats_total=1, seats_used=1, email="test@example.com"
+            success=True,
+            seats_total=1,
+            seats_used=1,
+            email="test@example.com",
+            raw_response={"purchase": {"variants": "Standard License"}},
         )
 
         manager = LicenseManager(config_dir=tmp_path, verifier=mock_verifier)
         result = manager.activate("TEST-KEY")
 
         assert result.success is True
-        assert result.tier == "commercial"
+        assert result.tier == "standard"
 
         state = manager.get_state()
         assert state is not None
-        assert state.tier == "commercial"
+        assert state.tier == "standard"
         assert state.email == "test@example.com"
+
+    def test_activate_success_enterprise(self, tmp_path):
+        """Successful activation saves state with enterprise tier."""
+        mock_verifier = MagicMock()
+        mock_verifier.verify_license.return_value = LicenseResult(
+            success=True,
+            seats_total=5,
+            seats_used=1,
+            email="enterprise@example.com",
+            raw_response={"purchase": {"variants": "Enterprise License"}},
+        )
+
+        manager = LicenseManager(config_dir=tmp_path, verifier=mock_verifier)
+        result = manager.activate("ENTERPRISE-KEY")
+
+        assert result.success is True
+        assert result.tier == "enterprise"
+
+        state = manager.get_state()
+        assert state is not None
+        assert state.tier == "enterprise"
+        assert state.email == "enterprise@example.com"
 
     def test_activate_failure(self, tmp_path):
         """Failed activation returns error."""
@@ -233,7 +239,7 @@ class TestLicenseManager:
     def test_deactivate_removes_state(self, tmp_path):
         """deactivate removes the license file."""
         manager = LicenseManager(config_dir=tmp_path)
-        create_free_tier_state(config_dir=tmp_path, email="test@example.com")
+        create_eval_state(config_dir=tmp_path)
 
         assert manager.get_state() is not None
         assert manager.deactivate() is True
@@ -244,68 +250,50 @@ class TestLicenseManager:
         manager = LicenseManager(config_dir=tmp_path)
         assert manager.deactivate() is False
 
-    def test_get_license_info(self, tmp_path):
-        """get_license_info returns tier, email, and date fields."""
-        create_free_tier_state(config_dir=tmp_path, email="test@example.com")
+    def test_get_license_info_trial(self, tmp_path):
+        """get_license_info returns expiration info for trial."""
+        create_eval_state(config_dir=tmp_path)
         manager = LicenseManager(config_dir=tmp_path)
 
         info = manager.get_license_info()
         assert info is not None
-        assert info["tier"] == "free"
+        assert info["tier"] == "trial"
+        assert info["days_remaining"] is not None
+        assert info["created_at"] is not None
+        assert info["expires_at"] is not None
+        assert info["is_expired"] is False
+
+    def test_get_license_info_standard(self, tmp_path):
+        """get_license_info returns info for standard tier."""
+        manager = LicenseManager(config_dir=tmp_path)
+        state = LicenseState(
+            license_key="STANDARD-KEY",
+            tier="standard",
+            email="test@example.com",
+            created_at=datetime.now(timezone.utc),
+        )
+        manager._save_state(state)
+
+        info = manager.get_license_info()
+        assert info is not None
+        assert info["tier"] == "standard"
         assert info["email"] == "test@example.com"
         assert info["days_remaining"] is None
         assert info["created_at"] is not None
         assert info["expires_at"] is None
         assert info["is_expired"] is False
 
-    def test_get_license_info_trial(self, tmp_path):
-        """get_license_info returns expiration info for trial."""
-        create_eval_state(config_dir=tmp_path, email="trial@example.com")
-        manager = LicenseManager(config_dir=tmp_path)
-
-        info = manager.get_license_info()
-        assert info is not None
-        assert info["tier"] == "trial"
-        assert info["email"] == "trial@example.com"
-        assert info["days_remaining"] is not None
-        assert info["created_at"] is not None
-        assert info["expires_at"] is not None
-        assert info["is_expired"] is False
-
     def test_tamper_detection(self, tmp_path):
         """Tampered state file raises error."""
         manager = LicenseManager(config_dir=tmp_path)
-        create_free_tier_state(config_dir=tmp_path)
+        create_eval_state(config_dir=tmp_path)
 
         license_file = tmp_path / ".license"
         content = license_file.read_text()
-        license_file.write_text(content.replace("free", "commercial"))
+        license_file.write_text(content.replace("trial", "standard"))
 
         with pytest.raises(TamperedStateError):
             manager._load_state()
-
-
-class TestCreateFreeTierState:
-    """Tests for create_free_tier_state."""
-
-    def test_creates_free_tier(self, tmp_path):
-        """Creates a free tier state."""
-        state = create_free_tier_state(config_dir=tmp_path, email="test@example.com")
-
-        assert state.tier == "free"
-        assert state.license_key == "FREE"
-        assert state.email == "test@example.com"
-        assert state.expires_at is None
-
-    def test_state_is_persisted(self, tmp_path):
-        """State is saved to disk."""
-        create_free_tier_state(config_dir=tmp_path)
-
-        manager = LicenseManager(config_dir=tmp_path)
-        state = manager.get_state()
-
-        assert state is not None
-        assert state.tier == "free"
 
 
 class TestCreateEvalState:
@@ -313,11 +301,10 @@ class TestCreateEvalState:
 
     def test_creates_trial_tier(self, tmp_path):
         """Creates a trial tier state with 7-day expiration."""
-        state = create_eval_state(config_dir=tmp_path, email="test@example.com")
+        state = create_eval_state(config_dir=tmp_path)
 
         assert state.tier == "trial"
         assert state.license_key == "TRIAL"
-        assert state.email == "test@example.com"
         assert state.expires_at is not None
 
     def test_trial_expires_in_7_days(self, tmp_path):
@@ -338,19 +325,16 @@ class TestCreateEvalState:
         assert state is not None
         assert state.tier == "trial"
 
+    def test_trial_already_used_raises_error(self, tmp_path):
+        """Creating trial when already used raises TrialAlreadyUsedError."""
+        mark_trial_used(config_dir=tmp_path)
+
+        with pytest.raises(TrialAlreadyUsedError):
+            create_eval_state(config_dir=tmp_path)
+
 
 class TestLicenseValidation:
     """Tests for license validation and re-validation."""
-
-    def test_validate_free_tier_always_valid(self, tmp_path):
-        """Free tier license is always valid."""
-        create_free_tier_state(config_dir=tmp_path)
-        manager = LicenseManager(config_dir=tmp_path)
-
-        is_valid, error = manager.validate()
-
-        assert is_valid is True
-        assert error == ""
 
     def test_validate_trial_not_expired(self, tmp_path):
         """Valid trial license passes validation."""
@@ -388,54 +372,58 @@ class TestLicenseValidation:
         assert is_valid is False
         assert "No license" in error
 
-    def test_needs_revalidation_commercial_old(self, tmp_path):
-        """Commercial license needs revalidation after 24 hours."""
+    def test_needs_revalidation_standard_old(self):
+        """Standard license needs revalidation after 24 hours."""
         state = LicenseState(
-            license_key="COMMERCIAL-KEY",
-            tier="commercial",
+            license_key="STANDARD-KEY",
+            tier="standard",
             last_validated_at=datetime.now(timezone.utc) - timedelta(hours=25),
         )
 
         assert state.needs_revalidation() is True
 
-    def test_needs_revalidation_commercial_recent(self, tmp_path):
-        """Commercial license doesn't need revalidation within 24 hours."""
+    def test_needs_revalidation_standard_recent(self):
+        """Standard license doesn't need revalidation within 24 hours."""
         state = LicenseState(
-            license_key="COMMERCIAL-KEY",
-            tier="commercial",
+            license_key="STANDARD-KEY",
+            tier="standard",
             last_validated_at=datetime.now(timezone.utc) - timedelta(hours=12),
         )
 
         assert state.needs_revalidation() is False
 
-    def test_needs_revalidation_free_tier(self):
-        """Free tier never needs revalidation."""
-        state = LicenseState(license_key="FREE", tier="free")
+    def test_needs_revalidation_enterprise(self):
+        """Enterprise license needs revalidation after 24 hours."""
+        state = LicenseState(
+            license_key="ENTERPRISE-KEY",
+            tier="enterprise",
+            last_validated_at=datetime.now(timezone.utc) - timedelta(hours=25),
+        )
 
-        assert state.needs_revalidation() is False
+        assert state.needs_revalidation() is True
 
-    def test_validate_commercial_revalidates_with_gumroad(self, tmp_path):
-        """Commercial license re-validates with Gumroad API when needed."""
+    def test_validate_standard_revalidates_with_gumroad(self, tmp_path):
+        """Standard license re-validates with Gumroad API when needed."""
         mock_verifier = MagicMock()
         mock_verifier.verify_license.return_value = LicenseResult(success=True)
 
         manager = LicenseManager(config_dir=tmp_path, verifier=mock_verifier)
 
-        # Create commercial state that needs revalidation
+        # Create standard state that needs revalidation
         state = LicenseState(
-            license_key="COMMERCIAL-KEY",
-            tier="commercial",
+            license_key="STANDARD-KEY",
+            tier="standard",
             last_validated_at=datetime.now(timezone.utc) - timedelta(hours=25),
         )
         manager._save_state(state)
 
-        is_valid, error = manager.validate()
+        is_valid, _ = manager.validate()
 
         assert is_valid is True
-        mock_verifier.verify_license.assert_called_once_with("COMMERCIAL-KEY", increment_uses=False)
+        mock_verifier.verify_license.assert_called_once_with("STANDARD-KEY", increment_uses=False)
 
-    def test_validate_commercial_subscription_cancelled(self, tmp_path):
-        """Commercial license fails when subscription is cancelled."""
+    def test_validate_standard_subscription_cancelled(self, tmp_path):
+        """Standard license fails when subscription is cancelled."""
         mock_verifier = MagicMock()
         mock_verifier.verify_license.return_value = LicenseResult(
             success=False, error="Subscription has been cancelled"
@@ -443,10 +431,10 @@ class TestLicenseValidation:
 
         manager = LicenseManager(config_dir=tmp_path, verifier=mock_verifier)
 
-        # Create commercial state that needs revalidation
+        # Create standard state that needs revalidation
         state = LicenseState(
-            license_key="COMMERCIAL-KEY",
-            tier="commercial",
+            license_key="STANDARD-KEY",
+            tier="standard",
             last_validated_at=datetime.now(timezone.utc) - timedelta(hours=25),
         )
         manager._save_state(state)
@@ -457,3 +445,78 @@ class TestLicenseValidation:
         assert "cancelled" in error.lower()
         # License file should be removed
         assert manager.get_state() is None
+
+
+class TestHardwareFingerprint:
+    """Tests for hardware fingerprint functions."""
+
+    def test_get_machine_fingerprint_returns_consistent_value(self):
+        """Machine fingerprint returns same value on repeated calls."""
+        fp1 = get_machine_fingerprint()
+        fp2 = get_machine_fingerprint()
+
+        assert fp1 == fp2
+        assert isinstance(fp1, str)
+        assert len(fp1) > 0
+
+    def test_get_machine_fingerprint_returns_sha256_hex(self):
+        """Machine fingerprint is a valid SHA256 hex string."""
+        fp = get_machine_fingerprint()
+
+        # SHA256 produces 64 hex characters
+        assert len(fp) == 64
+        assert all(c in "0123456789abcdef" for c in fp)
+
+    def test_get_machine_fingerprint_fallback_path(self):
+        """Machine fingerprint uses hostname/username fallback when machine-id unavailable."""
+        with patch("ccp.auth.Path") as mock_path_class:
+            # Mock Path to simulate no machine-id files
+            mock_path = MagicMock()
+            mock_path.exists.return_value = False
+            mock_path_class.return_value = mock_path
+
+            with patch("ccp.auth.platform.system", return_value="Linux"):
+                with patch("ccp.auth.socket.gethostname", return_value="test-host"):
+                    with patch("ccp.auth.getpass.getuser", return_value="test-user"):
+                        fp = get_machine_fingerprint()
+
+                        # Should still return valid fingerprint
+                        assert len(fp) == 64
+                        assert all(c in "0123456789abcdef" for c in fp)
+
+    def test_has_used_trial_returns_false_initially(self, tmp_path):
+        """has_used_trial returns False when no trial has been used."""
+        result = has_used_trial(config_dir=tmp_path)
+
+        assert result is False
+
+    def test_mark_trial_used_creates_file(self, tmp_path):
+        """mark_trial_used creates the .trial_used file."""
+        mark_trial_used(config_dir=tmp_path)
+
+        trial_used_file = tmp_path / ".trial_used"
+        assert trial_used_file.exists()
+
+    def test_has_used_trial_returns_true_after_marking(self, tmp_path):
+        """has_used_trial returns True after mark_trial_used is called."""
+        assert has_used_trial(config_dir=tmp_path) is False
+
+        mark_trial_used(config_dir=tmp_path)
+
+        assert has_used_trial(config_dir=tmp_path) is True
+
+    def test_deactivate_does_not_remove_trial_used(self, tmp_path):
+        """Deactivating license does not remove trial_used marker."""
+        # Create trial and mark as used
+        create_eval_state(config_dir=tmp_path)
+
+        manager = LicenseManager(config_dir=tmp_path)
+        assert manager.get_state() is not None
+        assert has_used_trial(config_dir=tmp_path) is True
+
+        # Deactivate
+        manager.deactivate()
+
+        # License gone but trial marker remains
+        assert manager.get_state() is None
+        assert has_used_trial(config_dir=tmp_path) is True

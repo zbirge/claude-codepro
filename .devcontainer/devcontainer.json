@@ -30,14 +30,6 @@
       ]
     }
   },
-  "forwardPorts": [
-    37777 // claude-mem
-  ],
-  "portsAttributes": {
-    "37777": {
-      "label": "claude-mem"
-    }
-  },
   /* GET FROM: https://containers.dev/features */
   "features": {
     /* https://github.com/devcontainers/features/tree/main/src/common-utils */

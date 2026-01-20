@@ -165,3 +165,20 @@ Need to add/change behavior?
 │   └─ Test passes immediately? → Rewrite test
 └─ NO (docs/config only) → Skip TDD
 ```
+
+### Auditor Detection Guidance
+
+The Auditor agent should be **conservative** when flagging TDD violations because git diffs cannot reliably show the order of operations.
+
+**Clear TDD violations (flag these):**
+- New `.py` file with functions but NO corresponding test file exists anywhere in `tests/`
+- Function explicitly described in conversation as "added without tests"
+- Session activity shows code implementation without any test execution
+
+**NOT TDD violations (do not flag):**
+- New code appears in diff AND tests for that code exist in `tests/` (regardless of whether tests appear in the diff)
+- Test file modifications appear in the same diff as code changes
+- Code is in a test file itself (`test_*.py` or `*_test.py`)
+- Changes are to configuration, documentation, or type hints only
+
+**When uncertain:** Do NOT flag. TDD process violations require strong evidence of missing tests, not just inference from diff order.

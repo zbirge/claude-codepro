@@ -34,7 +34,7 @@ class TestLicenseStateFlow:
         # Manually create state (simulating successful activation)
         new_state = LicenseState(
             license_key="TEST-KEY",
-            tier="commercial",
+            tier="standard",
             email="test@example.com",
             created_at=datetime.now(timezone.utc),
         )
@@ -43,7 +43,7 @@ class TestLicenseStateFlow:
         # Now get_state returns the state
         state = manager.get_state()
         assert state is not None
-        assert state.tier == "commercial"
+        assert state.tier == "standard"
         assert state.email == "test@example.com"
 
         # Deactivate
@@ -108,7 +108,7 @@ class TestLicenseStateFlow:
                 {
                     "state": {
                         "license_key": "TAMPERED",
-                        "tier": "commercial",
+                        "tier": "standard",
                         "email": "fake@example.com",
                         "created_at": datetime.now(timezone.utc).isoformat(),
                     },
@@ -126,27 +126,6 @@ class TestLicenseStateFlow:
         except TamperedStateError:
             pass  # Expected
 
-    def test_free_tier_state(self, tmp_path: Path) -> None:
-        """Test free tier state creation and retrieval."""
-        from ccp.auth import LicenseManager, create_free_tier_state
-
-        config_dir = tmp_path / "config"
-        config_dir.mkdir()
-
-        state = create_free_tier_state(config_dir=config_dir, email="free@example.com")
-        assert state.tier == "free"
-        assert state.email == "free@example.com"
-        assert state.license_key == "FREE"
-        assert state.is_trial_expired() is False  # Free tier never expires
-        assert state.days_remaining() is None  # No expiration for free
-
-        # Verify it was persisted
-        manager = LicenseManager(config_dir=config_dir)
-        loaded = manager.get_state()
-        assert loaded is not None
-        assert loaded.tier == "free"
-        assert loaded.email == "free@example.com"
-
     def test_trial_tier_state(self, tmp_path: Path) -> None:
         """Test trial tier state creation and retrieval."""
         from ccp.auth import TRIAL_DAYS, LicenseManager, create_eval_state
@@ -154,9 +133,8 @@ class TestLicenseStateFlow:
         config_dir = tmp_path / "config"
         config_dir.mkdir()
 
-        state = create_eval_state(config_dir=config_dir, email="trial@example.com")
+        state = create_eval_state(config_dir=config_dir)
         assert state.tier == "trial"
-        assert state.email == "trial@example.com"
         assert state.license_key == "TRIAL"
         assert state.is_trial_expired() is False
         # days_remaining() uses delta.days which truncates, so TRIAL_DAYS returns TRIAL_DAYS-1
@@ -168,6 +146,82 @@ class TestLicenseStateFlow:
         assert loaded is not None
         assert loaded.tier == "trial"
         assert loaded.expires_at is not None
+
+    def test_enterprise_tier_state(self, tmp_path: Path) -> None:
+        """Test enterprise tier state creation and retrieval."""
+        from ccp.auth import LicenseManager, LicenseState
+
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+
+        manager = LicenseManager(config_dir=config_dir)
+
+        # Create enterprise state (simulating successful activation)
+        new_state = LicenseState(
+            license_key="ENTERPRISE-KEY",
+            tier="enterprise",
+            email="enterprise@example.com",
+            created_at=datetime.now(timezone.utc),
+        )
+        manager._save_state(new_state)
+
+        # Verify state
+        state = manager.get_state()
+        assert state is not None
+        assert state.tier == "enterprise"
+        assert state.email == "enterprise@example.com"
+        assert state.is_trial_expired() is False  # Enterprise never expires
+
+    def test_trial_blocked_after_first_use(self, tmp_path: Path) -> None:
+        """Test that trial cannot be restarted after first use."""
+        from ccp.auth import (
+            TrialAlreadyUsedError,
+            create_eval_state,
+            has_used_trial,
+        )
+
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+
+        # Initially, trial should not be used
+        assert has_used_trial(config_dir=config_dir) is False
+
+        # Create first trial - should succeed
+        state = create_eval_state(config_dir=config_dir)
+        assert state.tier == "trial"
+
+        # Trial should now be marked as used
+        assert has_used_trial(config_dir=config_dir) is True
+
+        # Attempting second trial should fail
+        with pytest.raises(TrialAlreadyUsedError):
+            create_eval_state(config_dir=config_dir)
+
+    def test_fingerprint_persists_after_deactivate(self, tmp_path: Path) -> None:
+        """Test that trial fingerprint persists even after deactivate."""
+        from ccp.auth import (
+            LicenseManager,
+            create_eval_state,
+            has_used_trial,
+        )
+
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+
+        # Create trial
+        state = create_eval_state(config_dir=config_dir)
+        assert state.tier == "trial"
+        assert has_used_trial(config_dir=config_dir) is True
+
+        # Deactivate license
+        manager = LicenseManager(config_dir=config_dir)
+        assert manager.deactivate() is True
+
+        # License should be gone
+        assert manager.get_state() is None
+
+        # But trial fingerprint should persist
+        assert has_used_trial(config_dir=config_dir) is True
 
 
 class TestCLIIntegration:

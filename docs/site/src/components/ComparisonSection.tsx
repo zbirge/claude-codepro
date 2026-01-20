@@ -133,7 +133,7 @@ const ComparisonSection = () => {
                 </div>
                 <div className="text-green-400/80 flex items-center gap-2 text-xs">
                   <ShieldCheck className="h-3 w-3 flex-shrink-0" />
-                  <span>Quality hooks: formatted, linted</span>
+                  <span>Auditor + hooks: monitoring, formatted</span>
                 </div>
                 <div className="border-t border-border/50 pt-2.5 text-xs">
                   <span className="text-blue-400">→ Verifying:</span>

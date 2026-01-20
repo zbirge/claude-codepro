@@ -182,7 +182,7 @@ class TestLicenseInfo:
 
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout='{"tier": "commercial", "email": "test@example.com"}',
+            stdout='{"tier": "standard", "email": "test@example.com"}',
             stderr="",
         )
 
@@ -193,7 +193,7 @@ class TestLicenseInfo:
 
         result = _get_license_info(tmp_path)
         assert result is not None
-        assert result["tier"] == "commercial"
+        assert result["tier"] == "standard"
 
     @patch("subprocess.run")
     def test_get_license_info_detects_expired_trial(self, mock_run, tmp_path: Path):

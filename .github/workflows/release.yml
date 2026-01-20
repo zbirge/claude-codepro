@@ -8,7 +8,7 @@ name: Release
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build binaries for (e.g., 3.3.0)'
+        description: "Version to build binaries for (e.g., 3.3.0)"
         required: true
         type: string
 
@@ -260,7 +260,7 @@ jobs:
           python-version: "3.12"
 
       - name: Cache pip dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-pyinstaller
@@ -321,7 +321,7 @@ jobs:
           python-version: "3.12"
 
       - name: Cache pip dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-pyinstaller

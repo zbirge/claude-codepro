@@ -130,6 +130,27 @@ def _validate_license_key(
         return False
 
 
+def _start_trial(
+    console: Console,
+    _project_dir: Path,
+    _local_mode: bool,
+    _local_repo_dir: Path | None,
+) -> bool:
+    """Start a 7-day trial using the auth module directly."""
+    from ccp.auth import TrialAlreadyUsedError, create_trial_state
+
+    try:
+        with console.spinner("Starting trial..."):
+            create_trial_state()
+        return True
+    except TrialAlreadyUsedError:
+        console.error("Trial has already been used on this machine")
+        return False
+    except Exception as e:
+        console.error(f"Failed to start trial: {e}")
+        return False
+
+
 def _get_license_info(
     project_dir: Path,
     local: bool = False,
@@ -249,7 +270,7 @@ def install(
         ccp_step.run(ccp_ctx)
 
     license_info = _get_license_info(project_dir, local, effective_local_repo_dir, console)
-    license_acknowledged = license_info is not None and license_info.get("tier") in ("free", "trial", "commercial")
+    license_acknowledged = license_info is not None and license_info.get("tier") in ("trial", "standard", "enterprise")
 
     if not skip_prompts and license_acknowledged and license_info:
         console.print()
@@ -265,15 +286,15 @@ def install(
         is_expired = license_info.get("is_expired", False)
         days_remaining = license_info.get("days_remaining")
 
-        if tier == "free":
-            console.print("  [bold green]Tier: Free[/bold green] (personal/student/nonprofit/OSS)")
-        elif tier == "trial":
+        if tier == "trial":
             if is_expired:
                 console.print("  [bold red]Tier: Trial (EXPIRED)[/bold red]")
             else:
                 console.print(f"  [bold yellow]Tier: Trial[/bold yellow] ({days_remaining} days remaining)")
-        elif tier == "commercial":
-            console.print("  [bold green]Tier: Commercial[/bold green]")
+        elif tier == "standard":
+            console.print("  [bold green]Tier: Standard[/bold green]")
+        elif tier == "enterprise":
+            console.print("  [bold green]Tier: Enterprise[/bold green]")
 
         if email:
             console.print(f"  Email: {email}")
@@ -299,7 +320,7 @@ def install(
             console.print("  [bold red]Your trial has expired.[/bold red]")
             console.print()
             console.print("  [bold]Enter your license key to continue:[/bold]")
-            console.print("  [dim]Purchase at: https://license.claude-code.pro[/dim]")
+            console.print("  [dim]Subscribe: https://license.claude-code.pro[/dim]")
             console.print()
 
             for attempt in range(3):
@@ -315,14 +336,9 @@ def install(
                     console.print("  [dim]Please check your license key and try again.[/dim]")
             else:
                 console.error("License validation failed after 3 attempts.")
-                console.print("  [bold]Purchase a license at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                console.print("  [bold]Subscribe at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
                 raise typer.Exit(1)
 
-            console.print()
-        elif tier == "free":
-            console.print(
-                "  [bold yellow]Upgrade to Commercial:[/bold yellow] [cyan]https://license.claude-code.pro[/cyan]"
-            )
             console.print()
 
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
@@ -334,43 +350,29 @@ def install(
         console.print("  [bold]📜 License Agreement[/bold]")
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
-        console.print("  Claude CodePro is [bold green]FREE[/bold green] for:")
-        console.print("    • Personal use")
-        console.print("    • Students and educators")
-        console.print("    • Nonprofit organizations")
-        console.print("    • Open source projects (AGPL-3.0 compatible)")
+        console.print("  [bold green]7-day free trial[/bold green] to explore all features")
         console.print()
-        console.print("  [bold yellow]Commercial License REQUIRED[/bold yellow] for:")
-        console.print("    • Companies and organizations")
-        console.print("    • Freelancers and agencies")
-        console.print("    • SaaS products and internal tools")
-        console.print("    • Any revenue-generating use")
+        console.print("  [bold]After trial, choose a plan:[/bold]")
+        console.print("    • [bold]Standard[/bold]")
+        console.print("    • [bold]Enterprise[/bold] (priority support + training)")
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
-        console.print("  [bold]💡 What's Included with a Commercial License?[/bold]")
-        console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
-        console.print("    • You can modify Claude CodePro to fit your own workflow and requirements")
-        console.print("    • Continuous updates and improvements for the duration of your subscription")
-        console.print("    • Anything you generate using Claude CodePro is yours to use commercially forever")
-        console.print()
-        console.print("  [bold yellow]Subscribe:[/bold yellow] [bold cyan]https://license.claude-code.pro[/bold cyan]")
-        console.print()
+        console.print("  [dim]Subscribe: https://license.claude-code.pro[/dim]")
         console.print("  [dim]License terms: https://claude-code.pro/#licensing[/dim]")
-        console.print("  [dim]Full license: https://github.com/maxritter/claude-codepro/blob/main/LICENSE[/dim]")
         console.print()
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
 
-        license_choices = [
-            "Free tier (personal/student/nonprofit/open-source)",
-            "Commercial - 7 day trial",
-            "Commercial - I have a license key",
-        ]
-        choice = console.select("How will you use Claude CodePro?", license_choices)
+        from ccp.auth import has_used_trial
 
-        if choice == license_choices[2]:
+        trial_used = has_used_trial()
+
+        if trial_used:
+            console.print("  [bold yellow]Trial already used on this machine.[/bold yellow]")
+            console.print("  Please enter a license key to continue.")
             console.print()
+
             for attempt in range(3):
                 license_key = console.input("Enter your license key").strip()
                 if not license_key:
@@ -381,63 +383,62 @@ def install(
 
                 validated = _validate_license_key(console, project_dir, license_key, local, effective_local_repo_dir)
                 if validated:
-                    use_type = "commercial"
                     break
                 else:
                     if attempt < 2:
                         console.print()
                         console.print("  [dim]Please check your license key and try again.[/dim]")
-                        console.print("  [dim]Purchase at: https://license.claude-code.pro[/dim]")
+                        console.print("  [dim]Subscribe: https://license.claude-code.pro[/dim]")
                         console.print()
             else:
                 console.print()
                 console.error("License validation failed after 3 attempts.")
-                console.print("  [bold]Purchase a license at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                console.print("  [bold]Subscribe at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
                 console.print()
                 raise typer.Exit(1)
-        elif choice == license_choices[1]:
-            use_type = "commercial_trial"
         else:
-            use_type = "free"
+            license_choices = [
+                "Start 7-day free trial",
+                "I have a license key",
+            ]
+            choice = console.select("How would you like to proceed?", license_choices)
 
-        if use_type != "commercial":
-            console.print()
-            console.print("  Enter your email to register:")
-            console.print("  [dim](Your email is only stored locally in your license file.[/dim]")
-            console.print("  [dim]We won't spam you or share it anywhere.)[/dim]")
-            console.print()
-            email = console.input("Email").strip()
-
-            if not email or "@" not in email:
+            if choice == license_choices[1]:
                 console.print()
-                console.error("Valid email required for registration.")
-                raise typer.Exit(1)
+                for attempt in range(3):
+                    license_key = console.input("Enter your license key").strip()
+                    if not license_key:
+                        console.error("License key is required")
+                        if attempt < 2:
+                            console.print("  [dim]Please try again.[/dim]")
+                        continue
 
-            console.print()
-            subscribe = console.confirm("Subscribe to newsletter for updates?", default=True)
-
-            tier = "trial" if use_type == "commercial_trial" else "free"
-            registered = _register_email(console, project_dir, email, tier, subscribe, local, effective_local_repo_dir)
-
-            if registered:
-                console.print()
-                console.success("Registered successfully!")
-                tier_display = (
-                    "7-day Trial" if use_type == "commercial_trial" else "Free (personal/student/nonprofit/OSS)"
-                )
-                console.print(f"  Tier: {tier_display}")
-                console.print(f"  Email: {email}")
-                if subscribe:
-                    console.print()
-                    console.print("  [dim]Please confirm your newsletter subscription.[/dim]")
-                    console.print("  [dim]Check your email for a message from Gumroad (check spam folder).[/dim]")
-                if use_type == "commercial_trial":
-                    console.print()
-                    console.print(
-                        "  [bold yellow]Please purchase a license within 7 days for continued use.[/bold yellow]"
+                    validated = _validate_license_key(
+                        console, project_dir, license_key, local, effective_local_repo_dir
                     )
-                    console.print("  [bold]Purchase:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
-                console.print()
+                    if validated:
+                        break
+                    else:
+                        if attempt < 2:
+                            console.print()
+                            console.print("  [dim]Please check your license key and try again.[/dim]")
+                            console.print("  [dim]Subscribe: https://license.claude-code.pro[/dim]")
+                            console.print()
+                else:
+                    console.print()
+                    console.error("License validation failed after 3 attempts.")
+                    console.print("  [bold]Subscribe at:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                    console.print()
+                    raise typer.Exit(1)
+            else:
+                started = _start_trial(console, project_dir, local, effective_local_repo_dir)
+                if started:
+                    console.print()
+                    console.success("Your 7-day trial has started!")
+                    console.print("  All features are unlocked for 7 days.")
+                    console.print()
+                    console.print("  [bold]Subscribe after trial:[/bold] [cyan]https://license.claude-code.pro[/cyan]")
+                    console.print()
 
     claude_dir = Path.cwd() / ".claude"
     if claude_dir.exists() and not skip_prompts:

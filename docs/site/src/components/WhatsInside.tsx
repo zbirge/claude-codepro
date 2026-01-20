@@ -58,12 +58,12 @@ const insideItems: InsideItem[] = [
   },
   {
     icon: ShieldCheck,
-    title: "Quality Hooks",
+    title: "Quality Automation",
     items: [
-      "Qlty - Post-edit formatting and linting",
+      "Auditor Agent - AI rule compliance monitor",
       "TDD Enforcer - Pre-edit test requirement",
-      "Context Monitor - Automated context hook",
-      "LSP Servers - Python (Pyright) & TypeScript",
+      "Language Quality - Python & TypeScript hooks",
+      "Status Line - Live context and auditor state",
     ],
   },
   {
