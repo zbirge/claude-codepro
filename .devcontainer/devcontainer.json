@@ -74,7 +74,14 @@
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/spaceship */
     "ghcr.io/braun-daniel/devcontainer-features/spaceship:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/fzf */
-    "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {}
+    "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {},
+    /* https://github.com/zbirge/devcontainer-feature-cuda/tree/main/src/nvidia-cuda */
+    "ghcr.io/zbirge/devcontainer-feature-cuda/nvidia-cuda:1": {
+      "installCudnnDev": true,
+      "installToolkit": true,
+      "cudaVersion": "12.5",
+      "cudnnVersion": "automatic"
+    }
   },
   "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.0.6/install.sh | bash",
   "remoteUser": "root",
