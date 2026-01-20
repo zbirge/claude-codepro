@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="5.0.0"
+VERSION="5.0.1"
 
 REPO="zbirge/claude-codepro"
 REPO_RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
